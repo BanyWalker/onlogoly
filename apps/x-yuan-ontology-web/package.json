@@ -1,0 +1,83 @@
+{
+	"name": "x-admin-element-vue3",
+	"version": "0.1.0",
+	"private": true,
+	"packageManager": "pnpm@10.25.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "run-p type-check build-only",
+		"build:develop": "run-s type-check build-only:develop",
+		"preview": "vite preview",
+		"build-only": "vite build",
+		"build-only:develop": "vite build --mode development",
+		"type-check": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
+		"lint": "eslint \"**/*.{vue,js,jsx,cjs,mjs,ts,tsx,cts,mts}\" --fix",
+		"lint:prettier": "prettier --write --log-level warn \"src/**/*.{js,ts,json,tsx,css,less,scss,vue,html,md}\"",
+		"lint:stylelint": "stylelint --cache --fix \"**/*.{vue,less,postcss,css,scss}\" --cache --cache-location node_modules/.cache/stylelint/",
+		"lint:lint-staged": "lint-staged",
+		"prepare": "husky install"
+	},
+	"engines": {
+		"node": ">=20.19.0"
+	},
+	"dependencies": {
+		"@antv/x6": "^2.18.1",
+		"@element-plus/icons-vue": "^2.3.2",
+		"@tailwindcss/postcss": "^4.3.0",
+		"axios": "^1.17.0",
+		"dayjs": "^1.11.21",
+		"element-plus": "^2.14.1",
+		"pinia": "^2.3.1",
+		"tailwindcss": "^4.3.0",
+		"vue": "^3.5.35",
+		"vue-i18n": "^11.4.5",
+		"vue-router": "^4.6.4"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^19.8.1",
+		"@commitlint/config-conventional": "^19.8.1",
+		"@commitlint/types": "^19.8.1",
+		"@eslint/eslintrc": "^3.3.5",
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^24.13.1",
+		"@typescript-eslint/eslint-plugin": "^8.61.0",
+		"@typescript-eslint/parser": "^8.61.0",
+		"@vitejs/plugin-vue": "^6.0.7",
+		"@vue/eslint-config-prettier": "^10.2.0",
+		"@vue/eslint-config-typescript": "^14.8.0",
+		"autoprefixer": "^10.5.0",
+		"commitizen": "^4.3.1",
+		"cz-git": "^1.13.1",
+		"eslint": "^10.4.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.6",
+		"eslint-plugin-vue": "^10.9.2",
+		"globals": "^17.6.0",
+		"husky": "^8.0.3",
+		"lint-staged": "^17.0.7",
+		"npm-run-all": "^4.1.5",
+		"postcss": "^8.5.15",
+		"postcss-html": "^1.8.1",
+		"prettier": "^3.8.4",
+		"sass": "^1.100.0",
+		"stylelint": "^17.13.0",
+		"stylelint-config-html": "^1.1.0",
+		"stylelint-config-recess-order": "^7.7.0",
+		"stylelint-config-recommended-scss": "^17.0.1",
+		"stylelint-config-recommended-vue": "^1.6.1",
+		"stylelint-config-standard": "^40.0.0",
+		"stylelint-config-standard-scss": "^17.0.0",
+		"terser": "^5.48.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.61.0",
+		"vite": "^8.0.16",
+		"vue-tsc": "^3.3.4"
+	},
+	"pnpm": {
+		"overrides": {
+			"lodash": "4.18.1",
+			"tmp": "0.2.7"
+		}
+	}
+}

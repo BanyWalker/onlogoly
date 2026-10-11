@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: x-admin-element-vue3-web
+  namespace: cbbg-xws-prod
+spec:
+  selector:
+    matchLabels:
+      name: x-admin-element-vue3-web
+  template:
+    metadata:
+      labels:
+        name: x-admin-element-vue3-web
+    spec:
+      imagePullSecrets:
+        - name: pingtai-harbor-secret
+      containers:
+        - name: x-admin-element-vue3-web
+          image: gz02-artifact.srdcloud.cn/mspc-xws-release-docker-local/x-admin-element-vue3-web:{{.Tag}}
+          imagePullPolicy: 'Always'
+          resources:
+            requests:
+              cpu: '0.1'
+              memory: '512Mi'
+            limits:
+              cpu: '2'
+              memory: '2048Mi'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: x-admin-element-vue3-web
+  namespace: cbbg-xws-prod
+  labels:
+    workloadKind: Deployment
+    workloadName: x-admin-element-vue3-web
+spec:
+  selector:
+    name: x-admin-element-vue3-web
+  ports:
+    - name: x-admin-element-vue3-web
+      port: 80
+      targetPort: 80
+      nodePort: 31256
+  type: 'NodePort'

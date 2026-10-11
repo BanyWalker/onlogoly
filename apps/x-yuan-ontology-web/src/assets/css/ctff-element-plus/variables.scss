@@ -1,0 +1,437 @@
+@use "../ctff-theme/tokens.scss" as ctff;
+
+$ctff-element-plus-table-row-hover-bg: #f5fbff;
+$ctff-element-plus-button-divide-border-color: rgb(255 255 255 / 50%);
+$ctff-element-plus-table-fixed-left-column-shadow: inset 10px 0 10px -10px rgb(0 0 0 / 15%);
+$ctff-element-plus-table-fixed-right-column-shadow: inset -10px 0 10px -10px rgb(0 0 0 / 15%);
+
+@forward "element-plus/theme-chalk/src/common/var.scss" with (
+	$colors: (
+		"primary": (
+			"base": ctff.$ctff-brand-color
+		),
+		"success": (
+			"base": ctff.$ctff-success-color
+		),
+		"warning": (
+			"base": ctff.$ctff-warning-color
+		),
+		"danger": (
+			"base": ctff.$ctff-error-color
+		),
+		"error": (
+			"base": ctff.$ctff-error-color
+		),
+		"info": (
+			"base": ctff.$ctff-info-color
+		)
+	),
+	$text-color: (
+		"primary": ctff.$ctff-text-color-primary,
+		"regular": ctff.$ctff-text-color-secondary,
+		"secondary": ctff.$ctff-text-color-tertiary,
+		"placeholder": ctff.$ctff-text-color-quaternary,
+		"disabled": ctff.$ctff-text-color-quaternary
+	),
+	$bg-color: (
+		"": ctff.$ctff-bg-color-container,
+		"page": ctff.$ctff-bg-color-page,
+		"overlay": ctff.$ctff-bg-color-pop
+	),
+	$fill-color: (
+		"": ctff.$ctff-bg-color-component,
+		"light": ctff.$ctff-bg-color-component,
+		"lighter": ctff.$ctff-bg-color-component,
+		"extra-light": ctff.$ctff-bg-color-component,
+		"dark": ctff.$ctff-bg-color-avatar,
+		"darker": ctff.$ctff-bg-color-data,
+		"blank": ctff.$ctff-bg-color-container
+	),
+	$border-color: (
+		"": ctff.$ctff-border-color-basic,
+		"light": ctff.$ctff-border-color-component,
+		"lighter": ctff.$ctff-border-color-grid,
+		"extra-light": ctff.$ctff-border-color-grid,
+		"dark": ctff.$ctff-border-color-basic,
+		"darker": ctff.$ctff-border-color-basic
+	),
+	$border-color-hover: ctff.$ctff-border-color-hover,
+	$border-radius: (
+		"base": 4px,
+		"small": 2px,
+		"round": 499px,
+		"circle": 100%
+	),
+	$font-family: (
+		"": (
+			-apple-system,
+			BlinkMacSystemFont,
+			"Segoe UI",
+			Roboto,
+			"Helvetica Neue",
+			Arial,
+			"PingFang SC",
+			"Hiragino Sans GB",
+			"Microsoft YaHei UI",
+			"Microsoft YaHei",
+			"Source Han Sans SC",
+			"Noto Sans CJK SC",
+			sans-serif
+		)
+	),
+	$font-size: (
+		"extra-large": 20px,
+		"large": 16px,
+		"medium": 14px,
+		"base": 14px,
+		"small": 12px,
+		"extra-small": 10px
+	),
+	$disabled: (
+		"bg-color": ctff.$ctff-bg-color-disable,
+		"text-color": ctff.$ctff-text-color-quaternary,
+		"border-color": ctff.$ctff-border-color-grid
+	),
+	$input: (
+		"text-color": ctff.$ctff-text-color-primary,
+		"border": 1px solid ctff.$ctff-border-color-basic,
+		"hover-border": ctff.$ctff-brand-color-hover,
+		"focus-border": ctff.$ctff-brand-color,
+		"transparent-border": 0 0 0 1px transparent inset,
+		"border-color": ctff.$ctff-border-color-basic,
+		"border-radius": 4px,
+		"bg-color": ctff.$ctff-bg-color-container,
+		"icon-color": ctff.$ctff-text-color-tertiary,
+		"placeholder-color": ctff.$ctff-text-color-quaternary,
+		"hover-border-color": ctff.$ctff-brand-color-hover,
+		"clear-hover-color": ctff.$ctff-brand-color,
+		"focus-border-color": ctff.$ctff-brand-color,
+		"width": 100%
+	),
+	$input-disabled: (
+		"fill": ctff.$ctff-bg-color-disable,
+		"border": ctff.$ctff-border-color-grid,
+		"text-color": ctff.$ctff-text-color-quaternary,
+		"placeholder-color": ctff.$ctff-text-color-quaternary
+	),
+	$input-font-size: (
+		"large": 14px,
+		"default": 14px,
+		"small": 12px
+	),
+	$input-padding-horizontal: (
+		"large": 12px,
+		"default": 12px,
+		"small": 8px
+	),
+	$select: (
+		"border-color-hover": ctff.$ctff-brand-color-hover,
+		"disabled-color": ctff.$ctff-text-color-quaternary,
+		"disabled-border": ctff.$ctff-border-color-grid,
+		"font-size": 14px,
+		"close-hover-color": ctff.$ctff-brand-color,
+		"input-color": ctff.$ctff-text-color-primary,
+		"multiple-input-color": ctff.$ctff-text-color-primary,
+		"input-focus-border-color": ctff.$ctff-brand-color,
+		"input-font-size": 14px,
+		"width": 100%
+	),
+	$select-wrapper-padding: (
+		"large": 8px 12px,
+		"default": 4px 12px,
+		"small": 2px 8px
+	),
+	$select-option: (
+		"text-color": ctff.$ctff-text-color-secondary,
+		"disabled-color": ctff.$ctff-text-color-quaternary,
+		"height": 32px,
+		"hover-background": ctff.$ctff-brand-color-background,
+		"selected-text-color": ctff.$ctff-brand-color
+	),
+	$select-group: (
+		"text-color": ctff.$ctff-info-color,
+		"height": 32px,
+		"font-size": 12px
+	),
+	$select-dropdown: (
+		"bg-color": ctff.$ctff-bg-color-pop,
+		"shadow": ctff.$ctff-shadow-1,
+		"empty-color": ctff.$ctff-text-color-tertiary,
+		"max-height": 274px,
+		"padding": 6px 0,
+		"empty-padding": 10px 0,
+		"header-padding": 10px,
+		"footer-padding": 10px,
+		"border": 1px solid ctff.$ctff-border-color-component
+	),
+	$select-item-height: (
+		"large": 32px,
+		"default": 32px,
+		"small": 28px
+	),
+	$button: (
+		"font-weight": 400,
+		"border-color": ctff.$ctff-border-color-basic,
+		"bg-color": ctff.$ctff-bg-color-container,
+		"text-color": ctff.$ctff-text-color-primary,
+		"disabled-text-color": ctff.$ctff-text-color-quaternary,
+		"disabled-bg-color": ctff.$ctff-bg-color-disable,
+		"disabled-border-color": ctff.$ctff-border-color-grid,
+		"divide-border-color": $ctff-element-plus-button-divide-border-color,
+		"hover-text-color": ctff.$ctff-brand-color,
+		"hover-bg-color": ctff.$ctff-bg-color-container,
+		"hover-border-color": ctff.$ctff-brand-color,
+		"active-text-color": ctff.$ctff-brand-color-active,
+		"active-border-color": ctff.$ctff-brand-color-active,
+		"active-bg-color": ctff.$ctff-bg-color-container,
+		"outline-color": ctff.$ctff-brand-color-hover,
+		"hover-link-text-color": ctff.$ctff-text-color-tertiary,
+		"active-color": ctff.$ctff-text-color-primary
+	),
+	$button-font-size: (
+		"large": 16px,
+		"default": 14px,
+		"small": 14px
+	),
+	$button-border-radius: (
+		"large": 4px,
+		"default": 4px,
+		"small": 3px
+	),
+	// Element Plus subtracts the 1px button border when compiling horizontal padding.
+	$button-padding-horizontal: (
+			"large": 17px,
+			"default": 17px,
+			"small": 13px
+		),
+	$pagination: (
+		"font-size": 12px,
+		"bg-color": transparent,
+		"text-color": ctff.$ctff-text-color-secondary,
+		"border-radius": 4px,
+		"button-color": ctff.$ctff-text-color-secondary,
+		"button-width": 28px,
+		"button-height": 28px,
+		"button-disabled-color": ctff.$ctff-text-color-quaternary,
+		"button-disabled-bg-color": transparent,
+		"button-bg-color": transparent,
+		"hover-color": ctff.$ctff-brand-color,
+		"font-size-small": 12px,
+		"button-width-small": 24px,
+		"button-height-small": 24px,
+		"button-width-large": 32px,
+		"button-height-large": 32px,
+		"item-gap": 8px
+	),
+	$table: (
+		"border-color": ctff.$ctff-border-color-grid,
+		"border": 1px solid ctff.$ctff-border-color-grid,
+		"text-color": ctff.$ctff-text-color-primary,
+		"header-text-color": ctff.$ctff-text-color-tertiary,
+		"row-hover-bg-color": $ctff-element-plus-table-row-hover-bg,
+		"current-row-bg-color": ctff.$ctff-brand-color-background,
+		"header-bg-color": ctff.$ctff-bg-color-component,
+		"fixed-box-shadow": ctff.$ctff-shadow-1,
+		"bg-color": ctff.$ctff-bg-color-container,
+		"tr-bg-color": ctff.$ctff-bg-color-container,
+		"expanded-cell-bg-color": ctff.$ctff-bg-color-container,
+		"fixed-left-column": $ctff-element-plus-table-fixed-left-column-shadow,
+		"fixed-right-column": $ctff-element-plus-table-fixed-right-column-shadow,
+		"index": 0
+	),
+	$menu: (
+		"active-color": ctff.$ctff-brand-color,
+		"text-color": ctff.$ctff-text-color-tertiary,
+		"hover-text-color": ctff.$ctff-brand-color,
+		"bg-color": transparent,
+		"hover-bg-color": ctff.$ctff-brand-color-background,
+		"item-height": 40px,
+		"sub-item-height": 40px,
+		"horizontal-height": 40px,
+		"horizontal-sub-item-height": 32px,
+		"item-font-size": 14px,
+		"item-hover-fill": ctff.$ctff-brand-color-background,
+		"border-color": ctff.$ctff-border-color-grid,
+		"base-level-padding": 16px,
+		"level-padding": 16px,
+		"icon-width": 24px
+	),
+	$card: (
+		"border-color": ctff.$ctff-border-color-grid,
+		"border-radius": 8px,
+		"padding": 16px,
+		"bg-color": ctff.$ctff-bg-color-container
+	),
+	$descriptions: (
+		"table-border": 1px solid ctff.$ctff-border-color-grid,
+		"item-bordered-label-background": ctff.$ctff-bg-color-component
+	),
+	$collapse: (
+		"border-color": ctff.$ctff-border-color-grid,
+		"header-height": 39px,
+		"header-bg-color": ctff.$ctff-bg-color-container,
+		"header-text-color": ctff.$ctff-text-color-primary,
+		"header-font-size": 14px,
+		"content-bg-color": ctff.$ctff-bg-color-container,
+		"content-font-size": 14px,
+		"content-text-color": ctff.$ctff-text-color-tertiary
+	),
+	$tag: (
+		"font-size": 12px,
+		"border-radius": 2px,
+		"border-radius-rounded": 499px
+	),
+	$tag-height: (
+		"large": 24px,
+		"default": 20px,
+		"small": 20px
+	),
+	$tag-padding: (
+		"large": 12px,
+		"default": 8px,
+		"small": 4px
+	),
+	$checkbox: (
+		"font-size": 14px,
+		"font-weight": 400,
+		"text-color": ctff.$ctff-text-color-tertiary,
+		"input-height": 16px,
+		"input-width": 16px,
+		"border-radius": 2px,
+		"bg-color": ctff.$ctff-bg-color-container,
+		"input-border": 1px solid ctff.$ctff-border-color-basic,
+		"disabled-border-color": ctff.$ctff-border-color-grid,
+		"disabled-input-fill": ctff.$ctff-bg-color-disable,
+		"disabled-icon-color": ctff.$ctff-text-color-quaternary,
+		"disabled-checked-input-fill": ctff.$ctff-brand-color-disabled,
+		"disabled-checked-input-border-color": ctff.$ctff-brand-color-disabled-border,
+		"disabled-checked-icon-color": ctff.$ctff-bg-color-container,
+		"checked-text-color": ctff.$ctff-brand-color,
+		"checked-input-border-color": ctff.$ctff-brand-color,
+		"checked-bg-color": ctff.$ctff-brand-color,
+		"checked-icon-color": ctff.$ctff-bg-color-container,
+		"input-border-color-hover": ctff.$ctff-brand-color-hover
+	),
+	$checkbox-button: (
+		"checked-bg-color": ctff.$ctff-brand-color,
+		"checked-text-color": ctff.$ctff-bg-color-container,
+		"checked-border-color": ctff.$ctff-brand-color,
+		"disabled-checked-fill": ctff.$ctff-bg-color-disable
+	),
+	$radio: (
+		"font-size": 14px,
+		"text-color": ctff.$ctff-text-color-tertiary,
+		"font-weight": 400,
+		"input-height": 16px,
+		"input-width": 16px,
+		"input-border-radius": 499px,
+		"input-bg-color": ctff.$ctff-bg-color-container,
+		"input-border": 1px solid ctff.$ctff-border-color-basic,
+		"input-border-color": ctff.$ctff-border-color-basic,
+		"input-border-color-hover": ctff.$ctff-brand-color-hover
+	),
+	$radio-button: (
+		"checked-bg-color": ctff.$ctff-brand-color,
+		"checked-text-color": ctff.$ctff-bg-color-container,
+		"checked-border-color": ctff.$ctff-brand-color,
+		"disabled-checked-fill": ctff.$ctff-bg-color-disable
+	),
+	$switch: (
+		"on-color": ctff.$ctff-brand-color,
+		"off-color": ctff.$ctff-border-color-basic
+	),
+	$alert: (
+		"padding": 8px 12px,
+		"border-radius-base": 4px,
+		"title-font-size": 14px,
+		"title-with-description-font-size": 16px,
+		"description-font-size": 12px,
+		"close-font-size": 14px,
+		"close-customed-font-size": 12px,
+		"icon-size": 16px,
+		"icon-large-size": 28px
+	),
+	$dialog: (
+		"width": 50%,
+		"margin-top": 15vh,
+		"bg-color": ctff.$ctff-bg-color-pop,
+		"box-shadow": ctff.$ctff-shadow-3,
+		"title-font-size": 18px,
+		"content-font-size": 14px,
+		"font-line-height": 22px,
+		"padding-primary": 20px,
+		"border-radius": 12px
+	),
+	$messagebox: (
+		"title-color": ctff.$ctff-text-color-primary,
+		"width": 420px,
+		"border-radius": 12px,
+		"box-shadow": ctff.$ctff-shadow-3,
+		"font-size": 18px,
+		"content-font-size": 14px,
+		"content-color": ctff.$ctff-text-color-tertiary,
+		"error-font-size": 12px,
+		"padding-primary": 16px,
+		"font-line-height": 22px
+	),
+	$message: (
+		"bg-color": ctff.$ctff-bg-color-pop,
+		"border-color": ctff.$ctff-border-color-component,
+		"padding": 12px 16px,
+		"close-size": 16px,
+		"close-icon-color": ctff.$ctff-text-color-tertiary,
+		"close-hover-color": ctff.$ctff-brand-color
+	),
+	$notification: (
+		"width": 330px,
+		"padding": 16px 24px 16px 16px,
+		"radius": 12px,
+		"shadow": ctff.$ctff-shadow-2,
+		"border-color": ctff.$ctff-border-color-component,
+		"icon-size": 24px,
+		"close-font-size": 16px,
+		"group-margin-left": 12px,
+		"group-margin-right": 8px,
+		"content-font-size": 14px,
+		"content-color": ctff.$ctff-text-color-tertiary,
+		"title-font-size": 16px,
+		"title-color": ctff.$ctff-text-color-primary,
+		"close-color": ctff.$ctff-text-color-tertiary,
+		"close-hover-color": ctff.$ctff-brand-color
+	),
+	$timeline: (
+		"node-size-normal": 10px,
+		"node-size-large": 16px,
+		"node-color": ctff.$ctff-brand-color
+	),
+	$tabs: (
+		"header-height": 40px
+	),
+	$link: (
+		"font-size": 14px,
+		"font-weight": 400,
+		"text-color": ctff.$ctff-text-color-tertiary,
+		"hover-text-color": ctff.$ctff-brand-color,
+		"disabled-text-color": ctff.$ctff-text-color-quaternary
+	),
+	$box-shadow: (
+		"": ctff.$ctff-shadow-2,
+		"light": ctff.$ctff-shadow-1,
+		"lighter": ctff.$ctff-shadow-1,
+		"dark": ctff.$ctff-shadow-3
+	),
+	$common-component-size: (
+		"large": 40px,
+		"default": 32px,
+		"small": 24px
+	),
+	$overlay-color: (
+		"": ctff.$ctff-bg-color-covering,
+		"light": ctff.$ctff-dawn-blue-6,
+		"lighter": ctff.$ctff-dawn-blue-7
+	),
+	$mask-color: (
+		"": ctff.$ctff-bg-color-covering,
+		"extra-light": ctff.$ctff-dawn-blue-8
+	)
+);

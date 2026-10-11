@@ -1,0 +1,69 @@
+{
+  "retrievedOn": "2026-10-09",
+  "sourceUrl": "https://start.spring.io/starter.zip?type=maven-project&language=java&bootVersion=4.1.1.RELEASE&groupId=com.xiyuan&artifactId=ontology-api&name=OntologyApi&description=Xiyuan+ontology+platform+backend+foundation&packageName=com.xiyuan.ontology&packaging=jar&javaVersion=21&dependencies=web%2Cvalidation%2Cactuator%2Csecurity%2Coauth2-resource-server%2Cjooq%2Cpostgresql%2Cflyway%2Cmodulith%2Cconfiguration-processor",
+  "sha256": "c3bc526ce2d6c93d5683b2c1dbcb6570ab9a3a963839d8804357b09118a5efda",
+  "archive": "spring-initializr-ontology-api-boot-4.1.1.zip",
+  "parameters": {
+    "type": "maven-project",
+    "language": "java",
+    "bootVersion": "4.1.1.RELEASE",
+    "groupId": "com.xiyuan",
+    "artifactId": "ontology-api",
+    "name": "OntologyApi",
+    "description": "Xiyuan ontology platform backend foundation",
+    "packageName": "com.xiyuan.ontology",
+    "packaging": "jar",
+    "javaVersion": "21",
+    "dependencies": "web,validation,actuator,security,oauth2-resource-server,jooq,postgresql,flyway,modulith,configuration-processor"
+  },
+  "files": [
+    ".gitattributes",
+    ".gitignore",
+    "HELP.md",
+    ".mvn/wrapper/maven-wrapper.properties",
+    "src/test/java/com/xiyuan/ontology/OntologyApiApplicationTests.java",
+    "src/main/resources/application.properties",
+    "src/main/java/com/xiyuan/ontology/OntologyApiApplication.java",
+    "pom.xml",
+    "mvnw.cmd",
+    "mvnw"
+  ],
+  "maven": {
+    "version": "3.9.16",
+    "sourceUrl": "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip",
+    "sha512Source": "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip.sha512",
+    "sha512": "ed41650d42485cfc243fad22158caf9cbb5dc408ce7a09ddb94dd42a019de929ca43065bfa450612cf12bf78b5cafa3884b96c090de326ff590448c933454af3",
+    "sha256": "5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce",
+    "archive": "apache-maven-3.9.16-bin.zip"
+  },
+  "localAdaptations": [
+    "Normalize the generated Maven parent version from 4.1.1.RELEASE to the published 4.1.1 coordinates.",
+    "Add no-database bootstrap, explicit PostgreSQL and OIDC profiles, deny-by-default security and verification tests."
+  ],
+  "frameworks": [
+    {
+      "name": "Spring Boot",
+      "version": "4.1.1",
+      "repository": "https://github.com/spring-projects/spring-boot",
+      "license": "Apache-2.0",
+      "licenseSource": "https://raw.githubusercontent.com/spring-projects/spring-boot/v4.1.1/LICENSE.txt",
+      "licenseSha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628"
+    },
+    {
+      "name": "Spring Modulith",
+      "version": "2.1.1",
+      "repository": "https://github.com/spring-projects/spring-modulith",
+      "license": "Apache-2.0",
+      "licenseSource": "https://raw.githubusercontent.com/spring-projects/spring-modulith/2.1.1/LICENSE",
+      "licenseSha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    }
+  ],
+  "packagingDependencyRecovery": {
+    "artifact": "org.ow2.asm:asm:9.7",
+    "sourceUrl": "https://maven-central.storage-download.googleapis.com/maven2/org/ow2/asm/asm/9.7/asm-9.7.jar",
+    "checksumSource": "https://repo1.maven.org/maven2/org/ow2/asm/asm/9.7/asm-9.7.jar.sha1",
+    "sha1": "073d7b3086e14beb604ced229c302feff6449723",
+    "sha256": "adf46d5e34940bdf148ecdd26a9ee8eea94496a72034ff7141066b3eea5c4e9d",
+    "reason": "Maven Central direct download timed out; official-repository checksum matched before caching."
+  }
+}

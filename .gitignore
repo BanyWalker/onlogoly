@@ -1,0 +1,19 @@
+# 构建和测试输出
+build/
+dist/
+coverage/
+.cache/
+.tmp/
+node_modules/
+*.tsbuildinfo
+
+# 本地配置和敏感信息
+.env
+.env
+.env.*
+!.env.example
+secrets/
+
+# 本地模型导出和数据库数据目录
+ontology/exports/
+database/data/

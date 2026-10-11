@@ -1,0 +1,548 @@
+/* Structural patches that cannot be expressed through Element Plus public vars. */
+
+.ctff-element-plus-theme .el-table {
+	--ctff-table-header-separator-display: block;
+
+	font-size: var(--ctff-table-font-size);
+}
+
+.ctff-element-plus-theme .el-table:is(.el-table--border, .ctff-table--no-header-separator) {
+	--ctff-table-header-separator-display: none;
+}
+
+.ctff-element-plus-theme .el-table th.el-table__cell {
+	height: var(--ctff-table-cell-height);
+	font-weight: var(--ctff-font-weight-regular);
+}
+
+.ctff-element-plus-theme .el-table td.el-table__cell {
+	height: var(--ctff-table-cell-height);
+}
+
+.ctff-element-plus-theme .el-table .el-table__cell {
+	padding: 0;
+}
+
+.ctff-element-plus-theme .el-table .cell {
+	padding-inline: var(--ctff-table-cell-padding-x);
+	line-height: var(--ctff-line-height-body);
+}
+
+.ctff-element-plus-theme .el-table .el-table-column--selection {
+	width: var(--ctff-table-checkbox-cell-width);
+	min-width: var(--ctff-table-checkbox-cell-width);
+}
+
+.ctff-element-plus-theme .el-table .el-table-column--selection .cell {
+	display: flex;
+	justify-content: flex-end;
+	padding-inline: var(--ctff-table-checkbox-cell-padding-start) 0;
+}
+
+.ctff-element-plus-theme .el-table .el-table-column--selection .el-checkbox {
+	margin: 0;
+}
+
+.ctff-element-plus-theme .el-table .el-checkbox__inner {
+	width: var(--ctff-table-checkbox-size);
+	height: var(--ctff-table-checkbox-size);
+}
+
+.ctff-element-plus-theme
+	:where(.el-table__header-wrapper, .el-table__body-header)
+	th.el-table__cell.is-leaf:not(.el-table-column--selection)
+	+ th.el-table__cell.is-leaf:not(.gutter)::after {
+	position: absolute;
+	inset-inline-start: 0;
+	top: 50%;
+	display: var(--ctff-table-header-separator-display);
+	width: var(--ctff-table-separator-width);
+	height: var(--ctff-table-header-separator-height);
+	pointer-events: none;
+	content: "";
+	background: var(--ctff-table-separator-color);
+	transform: translateY(-50%);
+}
+
+.ctff-element-plus-theme .el-tag {
+	font-weight: var(--ctff-font-weight-regular);
+	line-height: var(--ctff-line-height-8);
+}
+
+.ctff-element-plus-theme .el-tag.ctff-tag--important.is-hit {
+	border-color: var(--el-color-important);
+}
+
+.ctff-element-plus-theme {
+	font-family: var(--ctff-font-family-system);
+	font-size: var(--ctff-font-size-body);
+	line-height: var(--ctff-line-height-body);
+	color: var(--ctff-text-color-primary);
+}
+
+.ctff-element-plus-theme .el-button:where(:not(.is-link)) {
+	--ctff-button-current-height: var(--ctff-button-height-medium);
+	--ctff-button-current-padding-x: var(--ctff-button-padding-x-medium);
+	--ctff-button-current-font-size: var(--ctff-button-font-size-medium);
+	--ctff-button-current-line-height: var(--ctff-button-line-height-medium);
+
+	height: var(--ctff-button-current-height);
+	min-height: var(--ctff-button-current-height);
+	padding-block: 0;
+	padding-inline: var(--ctff-button-current-padding-x);
+	font-size: var(--ctff-button-current-font-size);
+	line-height: var(--ctff-button-current-line-height);
+}
+
+.ctff-element-plus-theme .el-button.el-button--small:where(:not(.is-link)) {
+	--ctff-button-current-height: var(--ctff-button-height-small);
+	--ctff-button-current-padding-x: var(--ctff-button-padding-x-small);
+	--ctff-button-current-font-size: var(--ctff-button-font-size-small);
+	--ctff-button-current-line-height: var(--ctff-button-line-height-small);
+}
+
+.ctff-element-plus-theme .el-button.el-button--large:where(:not(.is-link)) {
+	--ctff-button-current-height: var(--ctff-button-height-large);
+	--ctff-button-current-padding-x: var(--ctff-button-padding-x-large);
+	--ctff-button-current-font-size: var(--ctff-button-font-size-large);
+	--ctff-button-current-line-height: var(--ctff-button-line-height-large);
+}
+
+.ctff-element-plus-theme .el-button.ctff-button--mini:where(:not(.is-link)) {
+	--ctff-button-current-height: var(--ctff-button-height-mini);
+	--ctff-button-current-padding-x: var(--ctff-button-padding-x-mini);
+	--ctff-button-current-font-size: var(--ctff-button-font-size-mini);
+	--ctff-button-current-line-height: var(--ctff-button-line-height-mini);
+}
+
+.ctff-element-plus-theme .el-button.ctff-button--huge:where(:not(.is-link)) {
+	--ctff-button-current-height: var(--ctff-button-height-huge);
+	--ctff-button-current-padding-x: var(--ctff-button-padding-x-huge);
+	--ctff-button-current-font-size: var(--ctff-button-font-size-huge);
+	--ctff-button-current-line-height: var(--ctff-button-line-height-huge);
+}
+
+.ctff-element-plus-theme .el-button.is-circle:where(:not(.is-link)) {
+	width: var(--ctff-button-current-height);
+	min-width: var(--ctff-button-current-height);
+	padding: 0;
+}
+
+/*
+ * Element Plus hard-codes 12px between adjacent buttons.
+ * CTFF keeps an 8px fallback for bare adjacent buttons and lets action containers opt out.
+ */
+.ctff-element-plus-theme .el-button + .el-button {
+	margin-left: var(--ctff-button-sibling-gap);
+}
+
+.ctff-element-plus-theme .el-button-group {
+	--ctff-button-sibling-gap: 0px;
+}
+
+.ctff-element-plus-theme .el-input__wrapper,
+.ctff-element-plus-theme .el-select__wrapper,
+.ctff-element-plus-theme .el-textarea__inner {
+	min-height: var(--ctff-control-height-default);
+}
+
+/*
+ * Filterable select reveals a real text input on focus.
+ * Keep that inner input at the Element Plus default content height
+ * so the 32px wrapper does not expand to 40px.
+ */
+.ctff-element-plus-theme .el-select--default .el-select__input {
+	height: var(--ctff-height-24);
+	line-height: var(--ctff-height-24);
+}
+
+.ctff-element-plus-theme .el-select--small .el-select__input {
+	height: 20px;
+	line-height: 20px;
+}
+
+.ctff-element-plus-theme .el-select--large .el-select__input {
+	height: var(--ctff-height-24);
+	line-height: var(--ctff-height-24);
+}
+
+.ctff-element-plus-theme .el-input:not(.is-disabled) .el-input__wrapper:hover,
+.ctff-element-plus-theme .el-select__wrapper:not(.is-disabled):hover,
+.ctff-element-plus-theme .el-textarea:not(.is-disabled) .el-textarea__inner:hover {
+	box-shadow: 0 0 0 var(--ctff-line-width) var(--ctff-brand-color-hover) inset;
+}
+
+.ctff-element-plus-theme .el-input:not(.is-disabled) .el-input__wrapper.is-focus,
+.ctff-element-plus-theme .el-select__wrapper.is-focused:not(.is-disabled),
+.ctff-element-plus-theme .el-textarea:not(.is-disabled) .el-textarea__inner:focus {
+	box-shadow:
+		0 0 0 var(--ctff-line-width) var(--ctff-brand-color) inset,
+		var(--ctff-focus-ring);
+}
+
+.ctff-element-plus-theme .el-date-editor.el-input,
+.ctff-element-plus-theme .el-date-editor.el-input__wrapper {
+	width: 100%;
+}
+
+.ctff-element-plus-theme .el-date-editor .el-range-separator,
+.ctff-element-plus-theme .el-date-editor .el-range-input {
+	font-size: var(--ctff-font-size-body);
+	color: var(--ctff-text-color-secondary);
+}
+
+.ctff-element-plus-theme .el-form-item.is-error .el-input__wrapper,
+.ctff-element-plus-theme .el-form-item.is-error .el-select__wrapper,
+.ctff-element-plus-theme .el-form-item.is-error .el-textarea__inner {
+	box-shadow: 0 0 0 var(--ctff-line-width) var(--ctff-error-color) inset;
+}
+
+.ctff-element-plus-theme .el-form-item {
+	margin-bottom: var(--ctff-form-item-margin-bottom);
+}
+
+.ctff-element-plus-theme .el-form-item__label {
+	color: var(--ctff-text-color-secondary);
+}
+
+.ctff-element-plus-theme .el-card {
+	box-shadow: none;
+}
+
+.ctff-element-plus-theme .el-collapse {
+	display: grid;
+	gap: var(--ctff-section-panel-gap);
+	border: 0;
+}
+
+.ctff-element-plus-theme .el-collapse .el-collapse-item {
+	margin-bottom: 0;
+	overflow: hidden;
+	background: var(--ctff-section-panel-bg, #fff);
+	border: var(--ctff-line-width, 1px) solid var(--ctff-section-panel-border-color, rgb(10 21 52 / 8%));
+	border-radius: var(--ctff-section-panel-radius, 8px);
+}
+
+.ctff-element-plus-theme .el-collapse .el-collapse-item__header {
+	height: var(--el-collapse-header-height);
+	min-height: var(--el-collapse-header-height);
+	padding-inline: var(--ctff-section-panel-header-padding-x);
+	font-size: var(--el-collapse-header-font-size);
+	font-weight: var(--ctff-section-panel-header-font-weight);
+	line-height: var(--ctff-section-panel-header-line-height);
+	color: var(--el-collapse-header-text-color);
+	background: var(--el-collapse-header-bg-color);
+	border-bottom: var(--ctff-line-width, 1px) solid var(--el-collapse-border-color);
+}
+
+.ctff-element-plus-theme .el-collapse .el-collapse-item__arrow {
+	font-size: var(--ctff-section-panel-toggle-size);
+}
+
+.ctff-element-plus-theme .el-collapse .el-collapse-item__wrap {
+	background: var(--el-collapse-content-bg-color);
+	border-bottom: 0;
+}
+
+.ctff-element-plus-theme .el-collapse .el-collapse-item__content {
+	padding: var(--ctff-section-panel-body-padding-y) var(--ctff-section-panel-body-padding-x);
+	font-size: var(--el-collapse-content-font-size);
+	color: var(--el-collapse-content-text-color);
+}
+
+.ctff-element-plus-theme .el-input-number {
+	--el-input-number-controls-height: var(--ctff-control-height-sm);
+}
+
+.ctff-element-plus-theme .el-input-number__decrease,
+.ctff-element-plus-theme .el-input-number__increase {
+	width: var(--ctff-input-number-control-width);
+	color: var(--ctff-text-color-tertiary);
+	background: var(--ctff-bg-color-component);
+	border-color: var(--ctff-border-color-component);
+}
+
+.ctff-element-plus-theme .el-input-number__decrease:not(.is-disabled):hover,
+.ctff-element-plus-theme .el-input-number__increase:not(.is-disabled):hover {
+	color: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-upload-dragger,
+.ctff-element-plus-theme .el-upload--picture-card,
+.ctff-element-plus-theme .el-upload-list__item {
+	background: var(--ctff-bg-color-container);
+	border-color: var(--ctff-border-color-component);
+	border-radius: var(--ctff-radius-large);
+}
+
+.ctff-element-plus-theme .el-upload:not(.is-disabled) .el-upload-dragger:hover,
+.ctff-element-plus-theme .el-upload--picture-card:not(.is-disabled):hover {
+	border-color: var(--ctff-brand-color-hover);
+}
+
+.ctff-element-plus-theme .el-upload__tip,
+.ctff-element-plus-theme .el-upload-list__item-name {
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.ctff-element-plus-theme .el-progress-bar__outer {
+	height: var(--ctff-progress-height);
+	background: var(--ctff-bg-color-component);
+	border-radius: var(--ctff-radius-round);
+}
+
+.ctff-element-plus-theme .el-progress-bar__inner {
+	border-radius: var(--ctff-radius-round);
+}
+
+.ctff-element-plus-theme .el-progress__text {
+	min-width: auto;
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-secondary);
+}
+
+.ctff-element-plus-theme .el-step__head {
+	color: var(--ctff-text-color-quaternary);
+	border-color: var(--ctff-border-color-component);
+}
+
+.ctff-element-plus-theme .el-step__icon {
+	width: var(--ctff-steps-node-size);
+	height: var(--ctff-steps-node-size);
+	font-size: var(--ctff-font-size-12);
+	background: var(--ctff-bg-color-container);
+}
+
+.ctff-element-plus-theme .el-step__line {
+	background: var(--ctff-border-color-grid);
+}
+
+.ctff-element-plus-theme .el-step__title {
+	font-size: var(--ctff-font-size-body);
+	font-weight: var(--ctff-font-weight-medium);
+	line-height: var(--ctff-line-height-body);
+}
+
+.ctff-element-plus-theme .el-step__description {
+	font-size: var(--ctff-font-size-12);
+	line-height: var(--ctff-line-height-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.ctff-element-plus-theme .el-step__head.is-process,
+.ctff-element-plus-theme .el-step__title.is-process {
+	color: var(--ctff-brand-color);
+	border-color: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-step__head.is-success,
+.ctff-element-plus-theme .el-step__title.is-success {
+	color: var(--ctff-success-color);
+	border-color: var(--ctff-success-color);
+}
+
+.ctff-element-plus-theme .el-step__head.is-error,
+.ctff-element-plus-theme .el-step__title.is-error {
+	color: var(--ctff-error-color);
+	border-color: var(--ctff-error-color);
+}
+
+.ctff-element-plus-theme .el-step__head.is-finish,
+.ctff-element-plus-theme .el-step__title.is-finish {
+	color: var(--ctff-text-color-primary);
+	border-color: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-timeline-item__tail {
+	border-left-color: var(--ctff-border-color-grid);
+}
+
+.ctff-element-plus-theme .el-timeline-item__timestamp {
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.ctff-element-plus-theme .el-timeline-item__content {
+	font-size: var(--ctff-font-size-body);
+	line-height: var(--ctff-line-height-body);
+	color: var(--ctff-text-color-primary);
+}
+
+.ctff-element-plus-theme .el-tabs__item {
+	font-weight: var(--ctff-font-weight-regular);
+	color: var(--ctff-text-color-secondary);
+}
+
+.ctff-element-plus-theme .el-tabs__item.is-active,
+.ctff-element-plus-theme .el-tabs__item:not(.is-disabled):hover {
+	color: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-tabs__active-bar {
+	background: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-tabs__nav-wrap::after {
+	height: var(--ctff-line-width);
+	background: var(--ctff-border-color-grid);
+}
+
+.ctff-element-plus-theme .el-loading-mask {
+	background: var(--ctff-loading-mask-bg);
+	backdrop-filter: var(--ctff-backdrop-blur);
+}
+
+.ctff-element-plus-theme .el-loading-spinner .circular {
+	width: var(--ctff-loading-spinner-size);
+	height: var(--ctff-loading-spinner-size);
+}
+
+.ctff-element-plus-theme .el-loading-spinner .path {
+	stroke: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-loading-spinner .el-loading-text {
+	font-size: var(--ctff-font-size-body);
+	color: var(--ctff-brand-color);
+}
+
+.el-dialog {
+	color: var(--ctff-text-color-primary);
+	background: var(--ctff-bg-color-pop);
+	border-radius: var(--ctff-pop-radius);
+	box-shadow: var(--ctff-shadow-3);
+}
+
+.el-dialog__header {
+	padding: var(--ctff-space-20) var(--ctff-space-24) var(--ctff-space-12);
+	margin-right: 0;
+	border-bottom: var(--ctff-line-width) solid var(--ctff-border-color-component);
+}
+
+.el-dialog__title {
+	font-size: var(--ctff-font-size-title);
+	font-weight: var(--ctff-font-weight-medium);
+	line-height: var(--ctff-line-height-26);
+	color: var(--ctff-text-color-primary);
+}
+
+.el-dialog__body {
+	padding: var(--ctff-space-20) var(--ctff-space-24);
+	font-size: var(--ctff-font-size-body);
+	line-height: var(--ctff-line-height-body);
+	color: var(--ctff-text-color-secondary);
+}
+
+.el-dialog__footer {
+	padding: var(--ctff-space-12) var(--ctff-space-24) var(--ctff-space-20);
+	border-top: var(--ctff-line-width) solid var(--ctff-border-color-component);
+}
+
+.el-popper {
+	font-family: var(--ctff-font-family-system);
+	border-color: var(--ctff-border-color-component);
+	border-radius: var(--ctff-pop-radius);
+	box-shadow: var(--ctff-shadow-2);
+}
+
+.el-popover.el-popper {
+	color: var(--ctff-text-color-secondary);
+	background: var(--ctff-bg-color-pop);
+	border-color: var(--ctff-border-color-component);
+	border-radius: var(--ctff-pop-radius);
+	box-shadow: var(--ctff-shadow-2);
+}
+
+.el-dropdown-menu__item,
+.el-select-dropdown__item {
+	min-height: var(--ctff-dropdown-item-height);
+	font-size: var(--ctff-font-size-body);
+	line-height: var(--ctff-dropdown-item-height);
+	color: var(--ctff-text-color-secondary);
+}
+
+.el-select-dropdown__item {
+	height: var(--ctff-select-option-height);
+	line-height: var(--ctff-select-option-height);
+}
+
+.el-select__popper.el-popper {
+	color: var(--ctff-text-color-secondary);
+	background: var(--ctff-bg-color-pop);
+	border-color: var(--ctff-border-color-component);
+}
+
+.el-dropdown-menu__item:not(.is-disabled):focus,
+.el-dropdown-menu__item:not(.is-disabled):hover,
+.el-select-dropdown__item.is-hovering {
+	color: var(--ctff-brand-color);
+	background: var(--ctff-brand-color-background);
+}
+
+.el-select-dropdown__item.is-selected {
+	font-weight: var(--ctff-font-weight-medium);
+	color: var(--ctff-brand-color);
+}
+
+.el-date-table-cell {
+	height: var(--ctff-picker-cell-size);
+}
+
+.el-message {
+	box-shadow: var(--ctff-shadow-1);
+}
+
+.ctff-element-plus-theme .el-descriptions__label:not(.is-bordered-label) {
+	margin-right: var(--ctff-description-label-gap);
+	font-weight: var(--ctff-font-weight-regular);
+	line-height: var(--ctff-description-item-line-height);
+	vertical-align: top;
+	color: var(--ctff-text-color-tertiary);
+}
+
+/*
+ * Fixed columns are sticky overlays.
+ * Paint an opaque table base first, then layer state tints on top so
+ * translucent striped/hover/current colors keep their look without
+ * revealing scrolling cell content underneath.
+ */
+.ctff-element-plus-theme .el-table .el-table__cell.el-table-fixed-column--left,
+.ctff-element-plus-theme .el-table .el-table__cell.el-table-fixed-column--right {
+	background-color: var(--el-table-tr-bg-color) !important;
+	background-image: none !important;
+}
+
+.ctff-element-plus-theme .el-table .el-table__row--striped > .el-table__cell.el-table-fixed-column--left,
+.ctff-element-plus-theme .el-table .el-table__row--striped > .el-table__cell.el-table-fixed-column--right {
+	background-color: var(--el-table-tr-bg-color) !important;
+	background-image: linear-gradient(var(--el-fill-color-lighter), var(--el-fill-color-lighter)) !important;
+}
+
+.ctff-element-plus-theme .el-table th.el-table__cell.el-table-fixed-column--left,
+.ctff-element-plus-theme .el-table th.el-table__cell.el-table-fixed-column--right {
+	background-color: var(--el-table-bg-color) !important;
+	background-image: linear-gradient(var(--el-table-header-bg-color), var(--el-table-header-bg-color)) !important;
+}
+
+.ctff-element-plus-theme .el-table .hover-row > .el-table__cell.el-table-fixed-column--left,
+.ctff-element-plus-theme .el-table .hover-row > .el-table__cell.el-table-fixed-column--right {
+	background-color: var(--el-table-tr-bg-color) !important;
+	background-image: linear-gradient(var(--el-table-row-hover-bg-color), var(--el-table-row-hover-bg-color)) !important;
+}
+
+.ctff-element-plus-theme .el-table .current-row > .el-table__cell.el-table-fixed-column--left,
+.ctff-element-plus-theme .el-table .current-row > .el-table__cell.el-table-fixed-column--right {
+	background-color: var(--el-table-tr-bg-color) !important;
+	background-image: linear-gradient(var(--el-table-current-row-bg-color), var(--el-table-current-row-bg-color)) !important;
+}
+
+.ctff-element-plus-theme .el-table .el-table__cell.el-table-fixed-column--left > .cell,
+.ctff-element-plus-theme .el-table .el-table__cell.el-table-fixed-column--right > .cell {
+	position: relative;
+}
+
+.ctff-element-plus-theme .el-table .el-table__fixed-right-patch {
+	background-color: var(--el-table-bg-color) !important;
+	background-image: linear-gradient(var(--el-table-header-bg-color), var(--el-table-header-bg-color)) !important;
+}

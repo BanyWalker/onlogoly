@@ -1,0 +1,10 @@
+/dist/*
+/html/*
+.local
+/node_modules/**
+.yarnrc
+.npmrc
+**/*.svg
+**/*.sh
+
+/public/*

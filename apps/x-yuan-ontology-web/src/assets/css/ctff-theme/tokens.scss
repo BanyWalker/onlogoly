@@ -1,0 +1,499 @@
+// CTFF default azure theme Sass tokens used by the runtime token output and
+// the Element Plus compile-time theme configuration.
+$ctff-azure-1: #e8f8ff;
+$ctff-azure-2: #bae8ff;
+$ctff-azure-3: #8bd5ff;
+$ctff-azure-4: #5dbeff;
+$ctff-azure-5: #2ea5ff;
+$ctff-azure-6: #008aff;
+$ctff-azure-7: #0069d2;
+$ctff-azure-8: #004da6;
+$ctff-azure-9: #003479;
+$ctff-azure-10: #001f4d;
+$ctff-success-1: #e9ffe8;
+$ctff-success-2: #b4edb4;
+$ctff-success-3: #86db89;
+$ctff-success-4: #5dc964;
+$ctff-success-5: #39b746;
+$ctff-success-6: #1ba52e;
+$ctff-success-7: #128f26;
+$ctff-success-8: #0a7920;
+$ctff-success-9: #04631a;
+$ctff-success-10: #004d14;
+$ctff-yellow-alarm-1: #fffde8;
+$ctff-yellow-alarm-2: #fcf5bc;
+$ctff-yellow-alarm-3: #faea91;
+$ctff-yellow-alarm-4: #f7dd67;
+$ctff-yellow-alarm-5: #f5cd3e;
+$ctff-yellow-alarm-6: #f2bb16;
+$ctff-yellow-alarm-7: #c9940e;
+$ctff-yellow-alarm-8: #9f6f07;
+$ctff-yellow-alarm-9: #764e03;
+$ctff-yellow-alarm-10: #4d2f00;
+$ctff-orange-alarm-1: #fff6e8;
+$ctff-orange-alarm-2: #fce2bc;
+$ctff-orange-alarm-3: #facb91;
+$ctff-orange-alarm-4: #f7b267;
+$ctff-orange-alarm-5: #f5963e;
+$ctff-orange-alarm-6: #f27816;
+$ctff-orange-alarm-7: #c95c0e;
+$ctff-orange-alarm-8: #9f4207;
+$ctff-orange-alarm-9: #762b03;
+$ctff-orange-alarm-10: #4d1800;
+$ctff-light-rose-1: #ffe8e9;
+$ctff-light-rose-2: #fcc5c8;
+$ctff-light-rose-3: #f8a2ab;
+$ctff-light-rose-4: #f58190;
+$ctff-light-rose-5: #f16078;
+$ctff-light-rose-6: #ee4063;
+$ctff-light-rose-7: #c6284d;
+$ctff-light-rose-8: #9d1539;
+$ctff-light-rose-9: #750829;
+$ctff-light-rose-10: #4d0019;
+$ctff-dawn-blue-0: #0a1534;
+$ctff-dawn-blue-1: rgb(10 21 52 / 95%);
+$ctff-dawn-blue-2: rgb(10 21 52 / 88%);
+$ctff-dawn-blue-3: rgb(10 21 52 / 72%);
+$ctff-dawn-blue-4: rgb(10 21 52 / 64%);
+$ctff-dawn-blue-5: rgb(10 21 52 / 46%);
+$ctff-dawn-blue-6: rgb(10 21 52 / 24%);
+$ctff-dawn-blue-7: rgb(10 21 52 / 14%);
+$ctff-dawn-blue-8: rgb(10 21 52 / 8%);
+$ctff-dawn-blue-9: rgb(10 21 52 / 4%);
+$ctff-dawn-blue-10: rgb(10 21 52 / 2%);
+$ctff-white-0: #fff;
+$ctff-white-1: rgb(255 255 255 / 95%);
+$ctff-white-2: rgb(255 255 255 / 88%);
+$ctff-white-3: rgb(255 255 255 / 72%);
+$ctff-white-4: rgb(255 255 255 / 64%);
+$ctff-white-5: rgb(255 255 255 / 46%);
+$ctff-white-6: rgb(255 255 255 / 24%);
+$ctff-white-7: rgb(255 255 255 / 14%);
+$ctff-white-8: rgb(255 255 255 / 8%);
+$ctff-white-9: rgb(255 255 255 / 4%);
+$ctff-white-10: rgb(255 255 255 / 2%);
+$ctff-brand-color: $ctff-azure-6;
+$ctff-brand-color-hover: $ctff-azure-5;
+$ctff-brand-color-active: $ctff-azure-7;
+$ctff-brand-color-disabled: $ctff-azure-3;
+$ctff-brand-color-disabled-border: $ctff-azure-2;
+$ctff-brand-color-background: $ctff-azure-1;
+$ctff-success-color: $ctff-success-6;
+$ctff-success-color-hover: $ctff-success-5;
+$ctff-success-color-active: $ctff-success-7;
+$ctff-success-color-disabled: $ctff-success-3;
+$ctff-success-color-disabled-border: $ctff-success-2;
+$ctff-success-color-background: $ctff-success-1;
+$ctff-warning-color: $ctff-yellow-alarm-6;
+$ctff-warning-color-hover: $ctff-yellow-alarm-5;
+$ctff-warning-color-active: $ctff-yellow-alarm-7;
+$ctff-warning-color-disabled: $ctff-yellow-alarm-3;
+$ctff-warning-color-disabled-border: $ctff-yellow-alarm-2;
+$ctff-warning-color-background: $ctff-yellow-alarm-1;
+$ctff-orange-alarm-color: $ctff-orange-alarm-6;
+$ctff-orange-alarm-color-hover: $ctff-orange-alarm-5;
+$ctff-orange-alarm-color-active: $ctff-orange-alarm-7;
+$ctff-orange-alarm-color-disabled: $ctff-orange-alarm-3;
+$ctff-orange-alarm-color-disabled-border: $ctff-orange-alarm-2;
+$ctff-orange-alarm-color-background: $ctff-orange-alarm-1;
+$ctff-error-color: $ctff-light-rose-6;
+$ctff-error-color-hover: $ctff-light-rose-5;
+$ctff-error-color-active: $ctff-light-rose-7;
+$ctff-error-color-disabled: $ctff-light-rose-3;
+$ctff-error-color-disabled-border: $ctff-light-rose-2;
+$ctff-error-color-background: $ctff-light-rose-1;
+$ctff-text-color-primary: $ctff-dawn-blue-0;
+$ctff-text-color-secondary: $ctff-dawn-blue-2;
+$ctff-text-color-tertiary: $ctff-dawn-blue-4;
+$ctff-text-color-quaternary: $ctff-dawn-blue-6;
+$ctff-bg-color-page: $ctff-dawn-blue-9;
+$ctff-bg-color-container: $ctff-white-0;
+$ctff-bg-color-component: $ctff-dawn-blue-9;
+$ctff-bg-color-pop: $ctff-white-1;
+$ctff-bg-color-disable: $ctff-dawn-blue-9;
+$ctff-bg-color-element01: rgb(255 255 255 / 32%);
+$ctff-bg-color-element02: $ctff-white-4;
+$ctff-bg-color-avatar: $ctff-dawn-blue-7;
+$ctff-bg-color-covering: $ctff-dawn-blue-5;
+$ctff-bg-color-data: $ctff-dawn-blue-5;
+$ctff-border-color-basic: $ctff-dawn-blue-6;
+$ctff-border-color-component: $ctff-dawn-blue-7;
+$ctff-border-color-grid: $ctff-dawn-blue-8;
+$ctff-border-color-hover: $ctff-border-color-basic;
+$ctff-info-color: $ctff-text-color-tertiary;
+$ctff-shadow-1: (
+	0 -1px 3px -6px rgb(0 0 0 / 8%),
+	0 -2px 8px 0 rgb(0 0 0 / 6%),
+	0 4px 6px 0 rgb(0 0 0 / 8%),
+	0 2px 4px -1px rgb(0 0 0 / 12%)
+);
+$ctff-shadow-2: (
+	0 -1px 3px -6px rgb(0 0 0 / 8%),
+	0 -4px 12px 2px rgb(0 0 0 / 6%),
+	0 8px 10px 1px rgb(0 0 0 / 6%),
+	0 6px 6px -4px rgb(0 0 0 / 10%)
+);
+$ctff-shadow-3: (
+	0 -24px 24px 2px rgb(0 0 0 / 6%),
+	0 -1px 3px -6px rgb(0 0 0 / 8%),
+	0 6px 32px 6px rgb(0 0 0 / 8%),
+	0 8px 10px -6px rgb(0 0 0 / 12%)
+);
+
+/* CTFF design tokens. */
+:root,
+.ctff-element-plus-theme {
+	/* Core color palette from the CTFF visual spec. */
+	--ctff-azure-1: #{$ctff-azure-1};
+	--ctff-azure-2: #{$ctff-azure-2};
+	--ctff-azure-3: #{$ctff-azure-3};
+	--ctff-azure-4: #{$ctff-azure-4};
+	--ctff-azure-5: #{$ctff-azure-5};
+	--ctff-azure-6: #{$ctff-azure-6};
+	--ctff-azure-7: #{$ctff-azure-7};
+	--ctff-azure-8: #{$ctff-azure-8};
+	--ctff-azure-9: #{$ctff-azure-9};
+	--ctff-azure-10: #{$ctff-azure-10};
+	--ctff-success-1: #{$ctff-success-1};
+	--ctff-success-2: #{$ctff-success-2};
+	--ctff-success-3: #{$ctff-success-3};
+	--ctff-success-4: #{$ctff-success-4};
+	--ctff-success-5: #{$ctff-success-5};
+	--ctff-success-6: #{$ctff-success-6};
+	--ctff-success-7: #{$ctff-success-7};
+	--ctff-success-8: #{$ctff-success-8};
+	--ctff-success-9: #{$ctff-success-9};
+	--ctff-success-10: #{$ctff-success-10};
+	--ctff-yellow-alarm-1: #{$ctff-yellow-alarm-1};
+	--ctff-yellow-alarm-2: #{$ctff-yellow-alarm-2};
+	--ctff-yellow-alarm-3: #{$ctff-yellow-alarm-3};
+	--ctff-yellow-alarm-4: #{$ctff-yellow-alarm-4};
+	--ctff-yellow-alarm-5: #{$ctff-yellow-alarm-5};
+	--ctff-yellow-alarm-6: #{$ctff-yellow-alarm-6};
+	--ctff-yellow-alarm-7: #{$ctff-yellow-alarm-7};
+	--ctff-yellow-alarm-8: #{$ctff-yellow-alarm-8};
+	--ctff-yellow-alarm-9: #{$ctff-yellow-alarm-9};
+	--ctff-yellow-alarm-10: #{$ctff-yellow-alarm-10};
+	--ctff-orange-alarm-1: #{$ctff-orange-alarm-1};
+	--ctff-orange-alarm-2: #{$ctff-orange-alarm-2};
+	--ctff-orange-alarm-3: #{$ctff-orange-alarm-3};
+	--ctff-orange-alarm-4: #{$ctff-orange-alarm-4};
+	--ctff-orange-alarm-5: #{$ctff-orange-alarm-5};
+	--ctff-orange-alarm-6: #{$ctff-orange-alarm-6};
+	--ctff-orange-alarm-7: #{$ctff-orange-alarm-7};
+	--ctff-orange-alarm-8: #{$ctff-orange-alarm-8};
+	--ctff-orange-alarm-9: #{$ctff-orange-alarm-9};
+	--ctff-orange-alarm-10: #{$ctff-orange-alarm-10};
+	--ctff-light-rose-1: #{$ctff-light-rose-1};
+	--ctff-light-rose-2: #{$ctff-light-rose-2};
+	--ctff-light-rose-3: #{$ctff-light-rose-3};
+	--ctff-light-rose-4: #{$ctff-light-rose-4};
+	--ctff-light-rose-5: #{$ctff-light-rose-5};
+	--ctff-light-rose-6: #{$ctff-light-rose-6};
+	--ctff-light-rose-7: #{$ctff-light-rose-7};
+	--ctff-light-rose-8: #{$ctff-light-rose-8};
+	--ctff-light-rose-9: #{$ctff-light-rose-9};
+	--ctff-light-rose-10: #{$ctff-light-rose-10};
+
+	/* Neutral color palette from the CTFF visual spec. */
+	--ctff-dawn-blue-0: #{$ctff-dawn-blue-0};
+	--ctff-dawn-blue-1: #{$ctff-dawn-blue-1};
+	--ctff-dawn-blue-2: #{$ctff-dawn-blue-2};
+	--ctff-dawn-blue-3: #{$ctff-dawn-blue-3};
+	--ctff-dawn-blue-4: #{$ctff-dawn-blue-4};
+	--ctff-dawn-blue-5: #{$ctff-dawn-blue-5};
+	--ctff-dawn-blue-6: #{$ctff-dawn-blue-6};
+	--ctff-dawn-blue-7: #{$ctff-dawn-blue-7};
+	--ctff-dawn-blue-8: #{$ctff-dawn-blue-8};
+	--ctff-dawn-blue-9: #{$ctff-dawn-blue-9};
+	--ctff-dawn-blue-10: #{$ctff-dawn-blue-10};
+	--ctff-white-0: #{$ctff-white-0};
+	--ctff-white-1: #{$ctff-white-1};
+	--ctff-white-2: #{$ctff-white-2};
+	--ctff-white-3: #{$ctff-white-3};
+	--ctff-white-4: #{$ctff-white-4};
+	--ctff-white-5: #{$ctff-white-5};
+	--ctff-white-6: #{$ctff-white-6};
+	--ctff-white-7: #{$ctff-white-7};
+	--ctff-white-8: #{$ctff-white-8};
+	--ctff-white-9: #{$ctff-white-9};
+	--ctff-white-10: #{$ctff-white-10};
+
+	/* Global spacing tokens. */
+	--ctff-space-2: 2px;
+	--ctff-space-4: 4px;
+	--ctff-space-8: 8px;
+	--ctff-space-12: 12px;
+	--ctff-space-16: 16px;
+	--ctff-space-20: 20px;
+	--ctff-space-24: 24px;
+	--ctff-space-28: 28px;
+	--ctff-space-32: 32px;
+	--ctff-space-40: 40px;
+	--ctff-space-44: 44px;
+	--ctff-space-48: 48px;
+	--ctff-space-52: 52px;
+	--ctff-space-56: 56px;
+	--ctff-space-60: 60px;
+	--ctff-space-64: 64px;
+
+	/* Global height tokens. */
+	--ctff-height-24: 24px;
+	--ctff-height-28: 28px;
+	--ctff-height-32: 32px;
+	--ctff-height-36: 36px;
+	--ctff-height-40: 40px;
+	--ctff-height-44: 44px;
+	--ctff-height-48: 48px;
+
+	/* Typography tokens. */
+	--ctff-font-family-system:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
+		"Microsoft YaHei UI", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+	--ctff-font-family-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+	--ctff-font-family-numeric: "D-DIN Pro", "DIN Alternate", "Roboto Condensed", sans-serif;
+	--ctff-font-size-10: 10px;
+	--ctff-font-size-12: 12px;
+	--ctff-font-size-14: 14px;
+	--ctff-font-size-16: 16px;
+	--ctff-font-size-18: 18px;
+	--ctff-font-size-20: 20px;
+	--ctff-font-size-24: 24px;
+	--ctff-font-size-28: 28px;
+	--ctff-font-size-32: 32px;
+	--ctff-font-size-icon: 12px;
+	--ctff-font-size-body: var(--ctff-font-size-14);
+	--ctff-font-size-title: var(--ctff-font-size-18);
+	--ctff-line-height-8: 18px;
+	--ctff-line-height-12: 20px;
+	--ctff-line-height-16: 24px;
+	--ctff-line-height-22: 22px;
+	--ctff-line-height-26: 26px;
+	--ctff-line-height-28: 28px;
+	--ctff-line-height-32: 32px;
+	--ctff-line-height-36: 36px;
+	--ctff-line-height-40: 40px;
+	--ctff-line-height-body: var(--ctff-line-height-22);
+	--ctff-font-weight-regular: 400;
+	--ctff-font-weight-medium: 500;
+	--ctff-font-weight-strong: 600;
+
+	/* Radius tokens. */
+	--ctff-radius-none: 0;
+	--ctff-radius-small: 2px;
+	--ctff-radius-default: 4px;
+	--ctff-radius-large: 8px;
+	--ctff-radius-extra-large: 12px;
+	--ctff-radius-extraLarge: var(--ctff-radius-extra-large);
+	--ctff-radius-round: 499px;
+
+	/* Implementation tokens. */
+	--ctff-control-height-xs: 16px;
+	--ctff-control-height-sm: 24px;
+	--ctff-control-height-default: 32px;
+	--ctff-control-height-lg: 40px;
+	--ctff-section-panel-header-height: 39px;
+	--ctff-section-panel-header-padding-x: 16px;
+	--ctff-section-panel-body-padding-x: 24px;
+	--ctff-section-panel-body-padding-y: 24px;
+	--ctff-section-panel-gap: 16px;
+	--ctff-content-block-gap: var(--ctff-space-24);
+	--ctff-content-block-title-margin-bottom: var(--ctff-space-16);
+	--ctff-content-block-title-padding-left: var(--ctff-space-8);
+	--ctff-content-block-title-font-size: var(--ctff-font-size-14);
+	--ctff-content-block-title-font-weight: 700;
+	--ctff-content-block-title-line-height: var(--ctff-line-height-22);
+	--ctff-content-block-title-color: var(--ctff-text-color-primary);
+	--ctff-content-block-marker-offset-top: 4px;
+	--ctff-content-block-marker-width: 3px;
+	--ctff-content-block-marker-height: 14px;
+	--ctff-content-block-marker-color: var(--ctff-brand-color);
+	--ctff-content-block-marker-radius: var(--ctff-radius-round);
+	--ctff-content-block-body-indent: var(--ctff-space-12);
+	--ctff-control-padding-horizontal: 12px;
+	--ctff-control-padding-horizontal-sm: 8px;
+	--ctff-control-outline-width: 2px;
+	--ctff-control-interactive-size: 16px;
+	--ctff-size-unit: 4px;
+	--ctff-size-step: 4px;
+	--ctff-size-popup-arrow: 16px;
+	--ctff-line-width: 1px;
+	--ctff-line-width-bold: 2px;
+	--ctff-line-width-focus: 3px;
+	--ctff-line-type: solid;
+	--ctff-z-index-base: 0;
+	--ctff-z-index-popup-base: 1000;
+	--ctff-motion-duration-fast: 0.1s;
+	--ctff-motion-duration-mid: 0.2s;
+	--ctff-motion-duration-slow: 0.3s;
+	--ctff-motion-ease-out-circ: cubic-bezier(0.08, 0.82, 0.17, 1);
+	--ctff-motion-ease-in-out-circ: cubic-bezier(0.78, 0.14, 0.15, 0.86);
+	--ctff-motion-ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+	--ctff-motion-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+	--ctff-motion-ease-out-back: cubic-bezier(0.12, 0.4, 0.29, 1.46);
+	--ctff-motion-ease-in-back: cubic-bezier(0.71, -0.46, 0.88, 0.6);
+	--ctff-motion-ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+	--ctff-motion-ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+	--ctff-opacity-loading: 0.65;
+
+	/* Shadow and blur tokens from CTFF global style evidence. */
+	--ctff-shadow-1:
+		0 -1px 3px -6px rgb(0 0 0 / 8%), 0 -2px 8px 0 rgb(0 0 0 / 6%), 0 4px 6px 0 rgb(0 0 0 / 8%), 0 2px 4px -1px rgb(0 0 0 / 12%);
+	--ctff-shadow-2:
+		0 -1px 3px -6px rgb(0 0 0 / 8%), 0 -4px 12px 2px rgb(0 0 0 / 6%), 0 8px 10px 1px rgb(0 0 0 / 6%),
+		0 6px 6px -4px rgb(0 0 0 / 10%);
+	--ctff-shadow-3:
+		0 -24px 24px 2px rgb(0 0 0 / 6%), 0 -1px 3px -6px rgb(0 0 0 / 8%), 0 6px 32px 6px rgb(0 0 0 / 8%),
+		0 8px 10px -6px rgb(0 0 0 / 12%);
+	--ctff-backdrop-blur: blur(6px);
+
+	/* CTFF middle/back-office structure feature aliases. */
+	--ctff-canvas-width: 1440px;
+	--ctff-canvas-height: 900px;
+	--ctff-shell-min-width: 0px;
+	--ctff-shell-topbar-height: 56px;
+	--ctff-shell-sidebar-width: 224px;
+	--ctff-shell-sidebar-width-min: 180px;
+	--ctff-shell-sidebar-width-max: 300px;
+	--ctff-shell-sidebar-collapsed-width: 56px;
+	--ctff-shell-rightbar-width: 144px;
+	--ctff-shell-rightbar-width-min: 144px;
+	--ctff-shell-rightbar-width-max: 224px;
+	--ctff-page-padding-block: var(--ctff-space-16);
+	--ctff-page-padding-inline: var(--ctff-space-24);
+	--ctff-module-gap: var(--ctff-space-16);
+	--ctff-query-surface-padding: var(--ctff-space-16);
+	--ctff-button-gap: var(--ctff-space-8);
+	--ctff-button-sibling-gap: var(--ctff-button-gap);
+	--ctff-toolbar-gap: var(--ctff-button-gap);
+	--ctff-button-height-mini: 24px;
+	--ctff-button-height-small: 28px;
+	--ctff-button-height-medium: 32px;
+	--ctff-button-height-large: 36px;
+	--ctff-button-height-huge: 44px;
+	--ctff-button-padding-x-mini: var(--ctff-space-12);
+	--ctff-button-padding-x-small: var(--ctff-space-12);
+	--ctff-button-padding-x-medium: var(--ctff-space-16);
+	--ctff-button-padding-x-large: var(--ctff-space-16);
+	--ctff-button-padding-x-huge: var(--ctff-space-16);
+	--ctff-button-font-size-mini: var(--ctff-font-size-12);
+	--ctff-button-font-size-small: var(--ctff-font-size-14);
+	--ctff-button-font-size-medium: var(--ctff-font-size-14);
+	--ctff-button-font-size-large: var(--ctff-font-size-16);
+	--ctff-button-font-size-huge: var(--ctff-font-size-18);
+	--ctff-button-line-height-standard: 1.618;
+	--ctff-button-line-height-mini: var(--ctff-button-line-height-standard);
+	--ctff-button-line-height-small: var(--ctff-button-line-height-standard);
+	--ctff-button-line-height-medium: var(--ctff-button-line-height-standard);
+	--ctff-button-line-height-large: var(--ctff-button-line-height-standard);
+	--ctff-button-line-height-huge: 1.4;
+	--ctff-query-surface-radius: var(--ctff-radius-large);
+	--ctff-query-surface-border-color: var(--ctff-border-color-grid);
+	--ctff-query-field-min-width: 340px;
+	--ctff-query-label-width: 72px;
+	--ctff-query-column-count: 1;
+	--ctff-query-action-col: auto;
+	--ctff-query-action-row: auto;
+	--ctff-query-submit-button-width: 88px;
+	--ctff-query-secondary-button-min-width: 64px;
+	--ctff-query-grid-row-gap: var(--ctff-space-16);
+	--ctff-query-grid-column-gap: var(--ctff-space-32);
+	--ctff-query-field-label-control-gap: var(--ctff-space-12);
+	--ctff-query-action-gap: var(--ctff-button-gap);
+	--ctff-query-action-cluster-gap: var(--ctff-space-16);
+	--ctff-result-surface-bg: var(--ctff-bg-color-container);
+	--ctff-result-surface-radius: var(--ctff-radius-large);
+	--ctff-result-surface-border-color: var(--ctff-border-color-grid);
+	--ctff-card-radius: var(--ctff-radius-large);
+	--ctff-pop-radius: var(--ctff-radius-extra-large);
+	--ctff-card-padding: var(--ctff-space-16);
+	--ctff-form-item-margin-bottom: var(--ctff-space-20);
+	--ctff-input-width: 100%;
+	--ctff-select-width: 100%;
+	--ctff-section-panel-border-color: var(--ctff-border-color-grid);
+	--ctff-section-panel-bg: var(--ctff-bg-color-container);
+	--ctff-section-panel-radius: var(--ctff-radius-large);
+	--ctff-section-panel-header-bg: var(--ctff-bg-color-container);
+	--ctff-section-panel-header-text-color: var(--ctff-text-color-primary);
+	--ctff-section-panel-header-font-size: var(--ctff-font-size-14);
+	--ctff-section-panel-header-font-weight: 700;
+	--ctff-section-panel-header-line-height: var(--ctff-line-height-22);
+	--ctff-section-panel-divider-color: var(--ctff-border-color-grid);
+	--ctff-section-panel-body-bg: var(--ctff-bg-color-container);
+	--ctff-section-panel-body-text-color: var(--ctff-text-color-primary);
+	--ctff-section-panel-toggle-size: 14px;
+	--ctff-focus-ring: 0 0 0 var(--ctff-control-outline-width) var(--ctff-brand-color-background);
+	--ctff-table-cell-height: 38px;
+	--ctff-table-cell-height-default: var(--ctff-table-cell-height);
+	--ctff-table-cell-padding-x: 16px;
+	--ctff-table-checkbox-size: 16px;
+	--ctff-table-checkbox-cell-width: 32px;
+	--ctff-table-checkbox-cell-padding-start: var(--ctff-space-16);
+	--ctff-table-separator-color: var(--ctff-border-color-grid);
+	--ctff-table-separator-width: var(--ctff-line-width);
+	--ctff-table-header-separator-height: 14px;
+	--ctff-table-action-separator-color: var(--ctff-table-separator-color);
+	--ctff-table-action-separator-width: var(--ctff-table-separator-width);
+	--ctff-table-action-separator-height: 14px;
+	--ctff-table-action-separator-space: var(--ctff-space-8);
+	--ctff-table-action-separator-gap: calc(
+		var(--ctff-table-action-separator-space) * 2 + var(--ctff-table-action-separator-width)
+	);
+	--ctff-table-font-size: var(--ctff-font-size-body);
+	--ctff-table-fixed-shadow: var(--ctff-shadow-1);
+	--ctff-description-item-line-height: var(--ctff-line-height-16);
+	--ctff-description-row-gap: var(--ctff-space-8);
+	--ctff-description-column-gap: var(--ctff-space-48);
+	--ctff-description-label-gap: var(--ctff-space-8);
+	--ctff-detail-grid-gap: var(--ctff-space-16);
+	--ctff-detail-list-gap: 18px;
+	--ctff-detail-item-label-width: 104px;
+	--ctff-detail-item-gap: var(--ctff-space-16);
+	--ctff-detail-item-line-height: var(--ctff-line-height-22);
+	--ctff-detail-summary-gap-bottom: 10px;
+	--ctff-detail-meta-gap-row: var(--ctff-space-8);
+	--ctff-detail-meta-gap-column: var(--ctff-space-16);
+	--ctff-detail-meta-gap-column-compact: var(--ctff-space-12);
+	--ctff-detail-meta-divider-height: 14px;
+	--ctff-detail-status-dot-size: 8px;
+	--ctff-detail-status-dot-success-bg: #2db55d;
+	--ctff-table-row-hover-bg: color-mix(in srgb, var(--ctff-brand-color) 4%, var(--ctff-bg-color-container));
+
+	/* Fixed columns are sticky overlays, so table backgrounds must be opaque. */
+	--ctff-table-header-bg: var(--ctff-bg-color-component);
+	--ctff-pagination-button-size: var(--ctff-height-28);
+	--ctff-pagination-button-size-sm: var(--ctff-height-24);
+	--ctff-pagination-button-size-lg: var(--ctff-height-32);
+	--ctff-pagination-item-gap: var(--ctff-space-8);
+	--ctff-menu-item-height: 40px;
+	--ctff-menu-item-padding-x: 16px;
+	--ctff-dropdown-item-height: 32px;
+	--ctff-tabs-header-height: 40px;
+	--ctff-select-option-height: 32px;
+	--ctff-picker-cell-size: 32px;
+	--ctff-input-number-control-width: 32px;
+	--ctff-upload-picture-card-size: 96px;
+	--ctff-upload-dragger-padding-x: var(--ctff-space-24);
+	--ctff-upload-dragger-padding-y: var(--ctff-space-24);
+	--ctff-progress-height: 8px;
+	--ctff-steps-node-size: 24px;
+	--ctff-timeline-node-size: 10px;
+	--ctff-loading-spinner-size: var(--ctff-height-40);
+	--ctff-tag-radius: var(--ctff-radius-small);
+	--ctff-result-padding-block: var(--ctff-space-24);
+	--ctff-result-padding-inline: var(--ctff-space-24);
+	--ctff-result-gap: var(--ctff-space-16);
+	--ctff-result-tail-gap: var(--ctff-space-16);
+	--ctff-result-selection-offset: var(--ctff-space-16);
+	--ctff-list-pagination-gap: var(--ctff-space-12);
+	--ctff-list-pagination-extra-gap: var(--ctff-space-8);
+	--ctff-list-page-size-width: 92px;
+	--ctff-list-jump-input-width: 44px;
+	--ctff-icon-button-size: var(--ctff-control-height-default);
+	--ctff-topbar-icon-button-size: 32px;
+	--ctff-message-box-width: 420px;
+	--ctff-message-close-size: var(--ctff-control-interactive-size);
+	--ctff-notification-width: 330px;
+	--ctff-notification-icon-size: var(--ctff-height-24);
+	--ctff-notification-close-font-size: var(--ctff-font-size-16);
+}

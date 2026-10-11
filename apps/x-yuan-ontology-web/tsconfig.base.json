@@ -1,0 +1,35 @@
+{
+	"compilerOptions": {
+		// 指定 ECMAScript 的目标版本，这里设置为 ES2022 以支持较新的语言特性
+		"target": "ES2022",
+		// 指定需要包含的库文件
+		"lib": [
+			// 包含最新的 ECMAScript 标准库
+			"esnext"
+		],
+		// 指定模块系统，ESNext 表示使用最新的 ES 模块语法
+		"module": "ESNext",
+		// 跳过对声明文件（.d.ts）的类型检查，可以提升编译性能
+		"skipLibCheck": true,
+		// 不生成输出文件，只做类型检查（因为我们使用 Vite 等构建工具来处理编译）
+		"noEmit": true,
+		// 允许从没有设置默认导出的模块中默认导入。这并不影响代码的输出，仅为了类型检查
+		"allowSyntheticDefaultImports": true,
+		// 从 tslib 导入辅助工具函数（比如 __extends， __rest等），可以减小打包体积
+		"importHelpers": true,
+		/* Bundler mode */
+		// 使用 bundler 模式的模块解析策略，这是给 Vite、webpack 等打包工具使用的
+		"moduleResolution": "bundler",
+		// 确保每个文件都是一个独立的模块，这对于某些构建工具是必需的
+		"isolatedModules": true,
+		/* Linting */
+		// 启用所有严格的类型检查选项
+		"strict": true,
+		// 报告未使用的局部变量错误
+		"noUnusedLocals": true,
+		// 报告函数中未使用的参数错误
+		"noUnusedParameters": true,
+		// 防止 switch 语句中的 case 贯穿（必须使用 break 或 return）
+		"noFallthroughCasesInSwitch": true
+	}
+}

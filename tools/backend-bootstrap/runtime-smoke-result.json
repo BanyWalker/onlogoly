@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-09",
+  "artifact": "platform/services/api/target/ontology-api-0.0.1-SNAPSHOT.jar",
+  "artifactSha256": "867d2242c6a48dc21dc888c870b9c8c0a4c966d6dfa94adb1792756fb128dc82",
+  "checks": [
+    {
+      "path": "/actuator/health",
+      "httpStatus": 200,
+      "passed": true
+    },
+    {
+      "path": "/actuator/health/readiness",
+      "httpStatus": 200,
+      "passed": true
+    },
+    {
+      "path": "/api/v1/models",
+      "httpStatus": 401,
+      "passed": true
+    },
+    {
+      "path": "/actuator/env",
+      "httpStatus": 401,
+      "passed": true
+    }
+  ],
+  "boundAddress": "127.0.0.1",
+  "testPort": 13258,
+  "testProcessStopped": true
+}

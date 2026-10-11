@@ -1,0 +1,573 @@
+/* Runtime CTFF -> Element Plus CSS variable bridge. */
+:root,
+.ctff-element-plus-theme,
+.el-popper,
+.el-overlay {
+	--el-color-primary: var(--ctff-brand-color);
+	--el-color-primary-rgb: var(--ctff-brand-color-rgb);
+	--el-color-primary-light-3: var(--ctff-brand-color-hover);
+	--el-color-primary-light-5: var(--ctff-brand-color-disabled);
+	--el-color-primary-light-7: var(--ctff-brand-color-disabled);
+	--el-color-primary-light-8: var(--ctff-brand-color-disabled-border);
+	--el-color-primary-light-9: var(--ctff-brand-color-background);
+	--el-color-primary-dark-2: var(--ctff-brand-color-active);
+	--el-color-success: var(--ctff-success-color);
+	--el-color-success-rgb: var(--ctff-success-color-rgb);
+	--el-color-success-light-3: var(--ctff-success-color-hover);
+	--el-color-success-light-5: var(--ctff-success-color-disabled);
+	--el-color-success-light-7: var(--ctff-success-color-disabled);
+	--el-color-success-light-8: var(--ctff-success-color-disabled-border);
+	--el-color-success-light-9: var(--ctff-success-color-background);
+	--el-color-success-dark-2: var(--ctff-success-color-active);
+	--el-color-warning: var(--ctff-warning-color);
+	--el-color-warning-rgb: var(--ctff-warning-color-rgb);
+	--el-color-warning-light-3: var(--ctff-warning-color-hover);
+	--el-color-warning-light-5: var(--ctff-warning-color-disabled);
+	--el-color-warning-light-7: var(--ctff-warning-color-disabled);
+	--el-color-warning-light-8: var(--ctff-warning-color-disabled-border);
+	--el-color-warning-light-9: var(--ctff-warning-color-background);
+	--el-color-warning-dark-2: var(--ctff-warning-color-active);
+	--el-color-important: var(--ctff-orange-alarm-color);
+	--el-color-important-light-3: var(--ctff-orange-alarm-color-hover);
+	--el-color-important-light-5: var(--ctff-orange-alarm-color-disabled);
+	--el-color-important-light-7: var(--ctff-orange-alarm-color-disabled);
+	--el-color-important-light-8: var(--ctff-orange-alarm-color-disabled-border);
+	--el-color-important-light-9: var(--ctff-orange-alarm-color-background);
+	--el-color-important-dark-2: var(--ctff-orange-alarm-color-active);
+	--el-color-danger: var(--ctff-error-color);
+	--el-color-danger-rgb: var(--ctff-error-color-rgb);
+	--el-color-danger-light-3: var(--ctff-error-color-hover);
+	--el-color-danger-light-5: var(--ctff-error-color-disabled);
+	--el-color-danger-light-7: var(--ctff-error-color-disabled);
+	--el-color-danger-light-8: var(--ctff-error-color-disabled-border);
+	--el-color-danger-light-9: var(--ctff-error-color-background);
+	--el-color-danger-dark-2: var(--ctff-error-color-active);
+	--el-color-error: var(--ctff-error-color);
+	--el-color-error-rgb: var(--ctff-error-color-rgb);
+	--el-color-error-light-3: var(--ctff-error-color-hover);
+	--el-color-error-light-5: var(--ctff-error-color-disabled);
+	--el-color-error-light-7: var(--ctff-error-color-disabled);
+	--el-color-error-light-8: var(--ctff-error-color-disabled-border);
+	--el-color-error-light-9: var(--ctff-error-color-background);
+	--el-color-error-dark-2: var(--ctff-error-color-active);
+	--el-color-info: var(--ctff-info-color);
+	--el-color-info-rgb: var(--ctff-info-color-rgb);
+	--el-color-info-light-3: var(--ctff-info-color-hover);
+	--el-color-info-light-5: var(--ctff-info-color-disabled);
+	--el-color-info-light-7: var(--ctff-info-color-disabled-border);
+	--el-color-info-light-8: var(--ctff-info-color-background);
+	--el-color-info-light-9: var(--ctff-info-color-background);
+	--el-color-info-dark-2: var(--ctff-info-color-active);
+	--el-text-color-primary: var(--ctff-text-color-primary);
+	--el-text-color-regular: var(--ctff-text-color-secondary);
+	--el-text-color-secondary: var(--ctff-text-color-tertiary);
+	--el-text-color-placeholder: var(--ctff-text-color-quaternary);
+	--el-text-color-disabled: var(--ctff-text-color-quaternary);
+	--el-bg-color: var(--ctff-bg-color-container);
+	--el-bg-color-page: var(--ctff-bg-color-page);
+	--el-bg-color-overlay: var(--ctff-bg-color-pop);
+	--el-fill-color: var(--ctff-bg-color-component);
+	--el-fill-color-light: var(--ctff-bg-color-component);
+	--el-fill-color-lighter: var(--ctff-bg-color-component);
+	--el-fill-color-extra-light: var(--ctff-bg-color-component);
+	--el-fill-color-dark: var(--ctff-bg-color-avatar);
+	--el-fill-color-darker: var(--ctff-bg-color-data);
+	--el-fill-color-blank: var(--ctff-bg-color-container);
+	--el-disabled-bg-color: var(--ctff-bg-color-disable);
+	--el-disabled-text-color: var(--ctff-text-color-quaternary);
+	--el-disabled-border-color: var(--ctff-border-color-grid);
+	--el-overlay-color: var(--ctff-bg-color-covering);
+	--el-overlay-color-light: var(--ctff-overlay-color-light);
+	--el-overlay-color-lighter: var(--ctff-overlay-color-lighter);
+	--el-mask-color: var(--ctff-bg-color-covering);
+	--el-mask-color-extra-light: var(--ctff-mask-color-extra-light);
+	--el-border-width: var(--ctff-line-width);
+	--el-border-style: var(--ctff-line-type);
+	--el-border-color: var(--ctff-border-color-basic);
+	--el-border-color-light: var(--ctff-border-color-component);
+	--el-border-color-lighter: var(--ctff-border-color-grid);
+	--el-border-color-extra-light: var(--ctff-border-color-grid);
+	--el-border-color-dark: var(--ctff-border-color-basic);
+	--el-border-color-darker: var(--ctff-text-color-quaternary);
+	--el-border-color-hover: var(--ctff-border-color-hover);
+	--el-font-family: var(--ctff-font-family-system);
+	--el-font-size-base: var(--ctff-font-size-body);
+	--el-font-size-extra-small: var(--ctff-font-size-10);
+	--el-font-size-small: var(--ctff-font-size-12);
+	--el-font-size-medium: var(--ctff-font-size-14);
+	--el-font-size-large: var(--ctff-font-size-16);
+	--el-font-size-extra-large: var(--ctff-font-size-20);
+	--el-font-line-height-primary: var(--ctff-line-height-body);
+	--el-font-weight-primary: var(--ctff-font-weight-medium);
+	--el-border-radius-base: var(--ctff-radius-default);
+	--el-border-radius-small: var(--ctff-radius-small);
+	--el-border-radius-large: var(--ctff-radius-large);
+	--el-border-radius-round: var(--ctff-radius-round);
+	--el-border-radius-circle: 100%;
+	--el-component-size-small: var(--ctff-control-height-sm);
+	--el-component-size: var(--ctff-control-height-default);
+	--el-component-size-large: var(--ctff-control-height-lg);
+	--el-index-normal: var(--ctff-z-index-base);
+	--el-index-top: 1;
+	--el-index-popper: var(--ctff-z-index-popup-base);
+	--el-box-shadow-light: var(--ctff-shadow-1);
+	--el-box-shadow: var(--ctff-shadow-2);
+	--el-box-shadow-dark: var(--ctff-shadow-3);
+	--el-box-shadow-lighter: var(--ctff-shadow-1);
+	--el-transition-duration-fast: var(--ctff-motion-duration-fast);
+	--el-transition-duration: var(--ctff-motion-duration-mid);
+	--el-transition-function-ease-in-out-bezier: var(--ctff-motion-ease-in-out);
+	--el-transition-function-fast-bezier: var(--ctff-motion-ease-out);
+	--el-loading-spinner-size: var(--ctff-loading-spinner-size);
+	--el-loading-fullscreen-spinner-size: var(--ctff-loading-spinner-size);
+	--el-message-close-size: var(--ctff-message-close-size);
+	--el-popup-modal-bg-color: var(--ctff-bg-color-covering);
+	--el-popup-modal-opacity: 1;
+	--el-svg-monochrome-grey: var(--ctff-text-color-tertiary);
+}
+
+.ctff-element-plus-theme .el-button {
+	--el-button-font-weight: var(--ctff-font-weight-regular);
+	--el-button-text-color: var(--ctff-text-color-primary);
+	--el-button-bg-color: var(--ctff-bg-color-container);
+	--el-button-border-color: var(--ctff-border-color-basic);
+	--el-button-disabled-text-color: var(--ctff-text-color-quaternary);
+	--el-button-disabled-bg-color: var(--ctff-bg-color-disable);
+	--el-button-disabled-border-color: var(--ctff-border-color-grid);
+	--el-button-hover-text-color: var(--ctff-brand-color);
+	--el-button-hover-bg-color: var(--ctff-bg-color-container);
+	--el-button-hover-border-color: var(--ctff-brand-color);
+	--el-button-active-text-color: var(--ctff-brand-color-active);
+	--el-button-active-border-color: var(--ctff-brand-color-active);
+	--el-button-active-bg-color: var(--ctff-bg-color-container);
+	--el-button-outline-color: var(--ctff-brand-color-hover);
+	--el-button-hover-link-text-color: var(--ctff-text-color-tertiary);
+	--el-button-active-color: var(--ctff-text-color-primary);
+}
+
+.ctff-element-plus-theme .el-button--primary {
+	--el-button-text-color: var(--ctff-solid-text-color);
+	--el-button-bg-color: var(--ctff-brand-color);
+	--el-button-border-color: var(--ctff-brand-color);
+	--el-button-hover-text-color: var(--ctff-solid-text-color);
+	--el-button-hover-bg-color: var(--ctff-brand-color-hover);
+	--el-button-hover-border-color: var(--ctff-brand-color-hover);
+	--el-button-active-text-color: var(--ctff-solid-text-color);
+	--el-button-active-bg-color: var(--ctff-brand-color-active);
+	--el-button-active-border-color: var(--ctff-brand-color-active);
+	--el-button-disabled-text-color: var(--ctff-solid-text-color);
+	--el-button-disabled-bg-color: var(--ctff-brand-color-disabled);
+	--el-button-disabled-border-color: var(--ctff-brand-color-disabled);
+}
+
+.ctff-element-plus-theme .el-button.is-plain {
+	--el-button-bg-color: var(--ctff-bg-color-container);
+	--el-button-hover-bg-color: var(--ctff-brand-color-background);
+	--el-button-hover-border-color: var(--ctff-brand-color-hover);
+	--el-button-active-bg-color: var(--ctff-brand-color-background);
+	--el-button-active-border-color: var(--ctff-brand-color-active);
+	--el-button-disabled-bg-color: var(--ctff-bg-color-disable);
+	--el-button-disabled-border-color: var(--ctff-border-color-grid);
+}
+
+.ctff-element-plus-theme .el-button--primary.is-plain {
+	--el-button-text-color: var(--ctff-brand-color);
+	--el-button-border-color: var(--ctff-brand-color);
+	--el-button-hover-text-color: var(--ctff-brand-color-hover);
+	--el-button-active-text-color: var(--ctff-brand-color-active);
+	--el-button-disabled-text-color: var(--ctff-text-color-quaternary);
+}
+
+.ctff-element-plus-theme .el-button--danger {
+	--el-button-text-color: var(--ctff-solid-text-color);
+	--el-button-bg-color: var(--ctff-error-color);
+	--el-button-border-color: var(--ctff-error-color);
+	--el-button-hover-text-color: var(--ctff-solid-text-color);
+	--el-button-hover-bg-color: var(--ctff-error-color-hover);
+	--el-button-hover-border-color: var(--ctff-error-color-hover);
+	--el-button-active-text-color: var(--ctff-solid-text-color);
+	--el-button-active-bg-color: var(--ctff-error-color-active);
+	--el-button-active-border-color: var(--ctff-error-color-active);
+	--el-button-disabled-text-color: var(--ctff-solid-text-color);
+	--el-button-disabled-bg-color: var(--ctff-error-color-disabled);
+	--el-button-disabled-border-color: var(--ctff-error-color-disabled);
+	--el-button-outline-color: var(--ctff-error-color-hover);
+}
+
+.ctff-element-plus-theme .el-button--danger.is-plain {
+	--el-button-text-color: var(--ctff-error-color);
+	--el-button-bg-color: var(--ctff-bg-color-container);
+	--el-button-border-color: var(--ctff-error-color);
+	--el-button-hover-text-color: var(--ctff-error-color-hover);
+	--el-button-hover-bg-color: var(--ctff-error-color-background);
+	--el-button-hover-border-color: var(--ctff-error-color-hover);
+	--el-button-active-text-color: var(--ctff-error-color-active);
+	--el-button-active-bg-color: var(--ctff-error-color-background);
+	--el-button-active-border-color: var(--ctff-error-color-active);
+	--el-button-disabled-text-color: var(--ctff-text-color-quaternary);
+	--el-button-disabled-bg-color: var(--ctff-bg-color-disable);
+	--el-button-disabled-border-color: var(--ctff-border-color-grid);
+}
+
+.ctff-element-plus-theme .el-button--danger.is-text,
+.ctff-element-plus-theme .el-button--danger.is-link {
+	--el-button-text-color: var(--ctff-error-color);
+	--el-button-hover-text-color: var(--ctff-error-color-hover);
+	--el-button-active-text-color: var(--ctff-error-color-active);
+	--el-button-disabled-text-color: var(--ctff-text-color-quaternary);
+}
+
+.ctff-element-plus-theme .el-button.is-text,
+.ctff-element-plus-theme .el-button.is-link {
+	--el-button-text-color: var(--ctff-brand-color);
+	--el-button-bg-color: transparent;
+	--el-button-border-color: transparent;
+	--el-button-hover-bg-color: transparent;
+	--el-button-active-bg-color: transparent;
+	--el-button-disabled-bg-color: transparent;
+	--el-button-disabled-border-color: transparent;
+}
+
+.ctff-element-plus-theme .el-input,
+.ctff-element-plus-theme .el-textarea,
+.ctff-element-plus-theme .el-autocomplete,
+.ctff-element-plus-theme .el-input-number {
+	--el-input-text-color: var(--ctff-text-color-primary);
+	--el-input-border: var(--ctff-line-width) solid var(--ctff-border-color-basic);
+	--el-input-hover-border: var(--ctff-line-width) solid var(--ctff-brand-color-hover);
+	--el-input-focus-border: var(--ctff-line-width) solid var(--ctff-brand-color);
+	--el-input-transparent-border: 0 0 0 1px transparent inset;
+	--el-input-border-color: var(--ctff-border-color-basic);
+	--el-input-border-radius: var(--ctff-radius-default);
+	--el-input-bg-color: var(--ctff-bg-color-container);
+	--el-input-icon-color: var(--ctff-text-color-tertiary);
+	--el-input-placeholder-color: var(--ctff-text-color-quaternary);
+	--el-input-hover-border-color: var(--ctff-brand-color-hover);
+	--el-input-clear-hover-color: var(--ctff-brand-color);
+	--el-input-focus-border-color: var(--ctff-brand-color);
+	--el-input-width: var(--ctff-input-width);
+}
+
+.ctff-element-plus-theme .el-select {
+	--el-select-border-color-hover: var(--ctff-brand-color-hover);
+	--el-select-disabled-color: var(--ctff-text-color-quaternary);
+	--el-select-disabled-border: var(--ctff-border-color-grid);
+	--el-select-font-size: var(--ctff-font-size-body);
+	--el-select-close-hover-color: var(--ctff-brand-color);
+	--el-select-input-color: var(--ctff-text-color-primary);
+	--el-select-multiple-input-color: var(--ctff-text-color-primary);
+	--el-select-input-focus-border-color: var(--ctff-brand-color);
+	--el-select-input-font-size: var(--ctff-font-size-body);
+	--el-select-width: var(--ctff-select-width);
+}
+
+.ctff-element-plus-theme .el-table {
+	--el-table-border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	--el-table-border-color: var(--ctff-border-color-grid);
+	--el-table-header-bg-color: var(--ctff-table-header-bg);
+	--el-table-header-text-color: var(--ctff-text-color-secondary);
+	--el-table-text-color: var(--ctff-text-color-primary);
+	--el-table-row-hover-bg-color: var(--ctff-table-row-hover-bg);
+	--el-table-current-row-bg-color: var(--ctff-brand-color-background);
+	--el-table-expanded-cell-bg-color: var(--ctff-bg-color-container);
+	--el-table-fixed-box-shadow: var(--ctff-table-fixed-shadow);
+	--el-table-bg-color: var(--ctff-bg-color-container);
+	--el-table-tr-bg-color: var(--ctff-bg-color-container);
+}
+
+.ctff-element-plus-theme .el-pagination {
+	--el-pagination-font-size: var(--ctff-font-size-12);
+	--el-pagination-bg-color: transparent;
+	--el-pagination-text-color: var(--ctff-text-color-secondary);
+	--el-pagination-border-radius: var(--ctff-radius-default);
+	--el-pagination-button-color: var(--ctff-text-color-secondary);
+	--el-pagination-button-width: var(--ctff-pagination-button-size);
+	--el-pagination-button-height: var(--ctff-pagination-button-size);
+	--el-pagination-button-disabled-color: var(--ctff-text-color-quaternary);
+	--el-pagination-button-disabled-bg-color: transparent;
+	--el-pagination-button-bg-color: transparent;
+	--el-pagination-hover-color: var(--ctff-brand-color);
+	--el-pagination-font-size-small: var(--ctff-font-size-12);
+	--el-pagination-button-width-small: var(--ctff-pagination-button-size-sm);
+	--el-pagination-button-height-small: var(--ctff-pagination-button-size-sm);
+	--el-pagination-button-width-large: var(--ctff-pagination-button-size-lg);
+	--el-pagination-button-height-large: var(--ctff-pagination-button-size-lg);
+	--el-pagination-item-gap: var(--ctff-pagination-item-gap);
+}
+
+.ctff-element-plus-theme .el-menu {
+	--el-menu-active-color: var(--ctff-brand-color);
+	--el-menu-text-color: var(--ctff-text-color-secondary);
+	--el-menu-hover-text-color: var(--ctff-brand-color);
+	--el-menu-bg-color: transparent;
+	--el-menu-hover-bg-color: var(--ctff-brand-color-background);
+	--el-menu-item-height: var(--ctff-menu-item-height);
+	--el-menu-sub-item-height: var(--ctff-menu-item-height);
+	--el-menu-horizontal-height: var(--ctff-menu-item-height);
+	--el-menu-horizontal-sub-item-height: var(--ctff-dropdown-item-height);
+	--el-menu-item-font-size: var(--ctff-font-size-body);
+	--el-menu-item-hover-fill: var(--ctff-brand-color-background);
+	--el-menu-border-color: var(--ctff-border-color-grid);
+	--el-menu-base-level-padding: var(--ctff-menu-item-padding-x);
+	--el-menu-level-padding: var(--ctff-menu-item-padding-x);
+	--el-menu-icon-width: var(--ctff-height-24);
+}
+
+.ctff-element-plus-theme .el-collapse {
+	--el-collapse-border-color: var(--ctff-section-panel-border-color);
+	--el-collapse-header-height: var(--ctff-section-panel-header-height);
+	--el-collapse-header-bg-color: var(--ctff-section-panel-header-bg);
+	--el-collapse-header-text-color: var(--ctff-section-panel-header-text-color);
+	--el-collapse-header-font-size: var(--ctff-section-panel-header-font-size);
+	--el-collapse-content-bg-color: var(--ctff-section-panel-body-bg);
+	--el-collapse-content-font-size: var(--ctff-font-size-body);
+	--el-collapse-content-text-color: var(--ctff-section-panel-body-text-color);
+}
+
+.ctff-element-plus-theme .el-card {
+	--el-card-border-color: var(--ctff-border-color-grid);
+	--el-card-border-radius: var(--ctff-card-radius);
+	--el-card-padding: var(--ctff-card-padding);
+	--el-card-bg-color: var(--ctff-bg-color-container);
+}
+
+.ctff-element-plus-theme .el-tag {
+	--el-tag-font-size: var(--ctff-font-size-12);
+	--el-tag-border-radius: var(--ctff-tag-radius);
+	--el-tag-border-radius-rounded: var(--ctff-radius-round);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--primary:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-brand-color);
+	--el-tag-border-color: var(--ctff-brand-color);
+	--el-tag-hover-color: var(--ctff-brand-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--success:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-success-color);
+	--el-tag-border-color: var(--ctff-success-color);
+	--el-tag-hover-color: var(--ctff-success-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--warning:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-warning-color);
+	--el-tag-border-color: var(--ctff-warning-color);
+	--el-tag-hover-color: var(--ctff-warning-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--danger:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-error-color);
+	--el-tag-border-color: var(--ctff-error-color);
+	--el-tag-hover-color: var(--ctff-error-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--info:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-info-color);
+	--el-tag-border-color: var(--ctff-info-color);
+	--el-tag-hover-color: var(--ctff-info-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.ctff-tag--important {
+	--el-tag-bg-color: var(--el-color-important-light-9);
+	--el-tag-border-color: var(--el-color-important-light-8);
+	--el-tag-hover-color: var(--el-color-important);
+	--el-tag-text-color: var(--el-color-important);
+}
+
+.ctff-element-plus-theme .el-tag.ctff-tag--important:not(.el-tag--dark, .el-tag--plain) {
+	--el-tag-bg-color: var(--ctff-orange-alarm-color);
+	--el-tag-border-color: var(--ctff-orange-alarm-color);
+	--el-tag-hover-color: var(--ctff-orange-alarm-color);
+	--el-tag-text-color: var(--ctff-solid-text-color);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--dark.ctff-tag--important {
+	--el-tag-bg-color: var(--el-color-important);
+	--el-tag-border-color: var(--el-color-important);
+	--el-tag-hover-color: var(--el-color-important-light-3);
+	--el-tag-text-color: var(--el-color-white);
+}
+
+.ctff-element-plus-theme .el-tag.el-tag--plain.ctff-tag--important {
+	--el-tag-bg-color: var(--el-fill-color-blank);
+	--el-tag-border-color: var(--el-color-important-light-5);
+	--el-tag-hover-color: var(--el-color-important);
+	--el-tag-text-color: var(--el-color-important);
+}
+
+.ctff-element-plus-theme .el-checkbox {
+	--el-checkbox-font-size: var(--ctff-font-size-body);
+	--el-checkbox-font-weight: var(--ctff-font-weight-regular);
+	--el-checkbox-text-color: var(--ctff-text-color-secondary);
+	--el-checkbox-input-height: var(--ctff-control-interactive-size);
+	--el-checkbox-input-width: var(--ctff-control-interactive-size);
+	--el-checkbox-border-radius: var(--ctff-radius-small);
+	--el-checkbox-bg-color: var(--ctff-bg-color-container);
+	--el-checkbox-input-border: var(--ctff-line-width) solid var(--ctff-border-color-basic);
+	--el-checkbox-disabled-border-color: var(--ctff-border-color-grid);
+	--el-checkbox-disabled-input-fill: var(--ctff-bg-color-disable);
+	--el-checkbox-disabled-icon-color: var(--ctff-text-color-quaternary);
+	--el-checkbox-disabled-checked-input-fill: var(--ctff-brand-color-disabled);
+	--el-checkbox-disabled-checked-input-border-color: var(--ctff-brand-color-disabled-border);
+	--el-checkbox-disabled-checked-icon-color: var(--ctff-solid-text-color);
+	--el-checkbox-checked-text-color: var(--ctff-brand-color);
+	--el-checkbox-checked-input-border-color: var(--ctff-brand-color);
+	--el-checkbox-checked-bg-color: var(--ctff-brand-color);
+	--el-checkbox-checked-icon-color: var(--ctff-solid-text-color);
+	--el-checkbox-input-border-color-hover: var(--ctff-brand-color-hover);
+}
+
+.ctff-element-plus-theme .el-checkbox-button {
+	--el-checkbox-button-checked-bg-color: var(--ctff-brand-color);
+	--el-checkbox-button-checked-text-color: var(--ctff-solid-text-color);
+	--el-checkbox-button-checked-border-color: var(--ctff-brand-color);
+	--el-checkbox-button-disabled-checked-fill: var(--ctff-bg-color-disable);
+}
+
+.ctff-element-plus-theme .el-radio {
+	--el-radio-font-size: var(--ctff-font-size-body);
+	--el-radio-text-color: var(--ctff-text-color-secondary);
+	--el-radio-font-weight: var(--ctff-font-weight-regular);
+	--el-radio-input-height: var(--ctff-control-interactive-size);
+	--el-radio-input-width: var(--ctff-control-interactive-size);
+	--el-radio-input-border-radius: var(--ctff-radius-round);
+	--el-radio-input-bg-color: var(--ctff-bg-color-container);
+	--el-radio-input-border: var(--ctff-line-width) solid var(--ctff-border-color-basic);
+	--el-radio-input-border-color: var(--ctff-border-color-basic);
+	--el-radio-input-border-color-hover: var(--ctff-brand-color-hover);
+}
+
+.ctff-element-plus-theme .el-radio-button {
+	--el-radio-button-checked-bg-color: var(--ctff-brand-color);
+	--el-radio-button-checked-text-color: var(--ctff-solid-text-color);
+	--el-radio-button-checked-border-color: var(--ctff-brand-color);
+	--el-radio-button-disabled-checked-fill: var(--ctff-bg-color-disable);
+}
+
+.ctff-element-plus-theme .el-switch {
+	--el-switch-on-color: var(--ctff-brand-color);
+	--el-switch-off-color: var(--ctff-border-color-basic);
+}
+
+.ctff-element-plus-theme .el-alert {
+	--el-alert-padding: var(--ctff-space-8) var(--ctff-space-12);
+	--el-alert-border-radius-base: var(--ctff-radius-default);
+	--el-alert-title-font-size: var(--ctff-font-size-body);
+	--el-alert-title-with-description-font-size: var(--ctff-font-size-16);
+	--el-alert-description-font-size: var(--ctff-font-size-12);
+	--el-alert-close-font-size: var(--ctff-font-size-body);
+	--el-alert-close-customed-font-size: var(--ctff-font-size-12);
+	--el-alert-icon-size: var(--ctff-control-interactive-size);
+	--el-alert-icon-large-size: var(--ctff-height-28);
+}
+
+.el-dialog {
+	--el-dialog-width: 50%;
+	--el-dialog-margin-top: 15vh;
+	--el-dialog-bg-color: var(--ctff-bg-color-pop);
+	--el-dialog-box-shadow: var(--ctff-shadow-3);
+	--el-dialog-title-font-size: var(--ctff-font-size-title);
+	--el-dialog-content-font-size: var(--ctff-font-size-body);
+	--el-dialog-font-line-height: var(--ctff-line-height-body);
+	--el-dialog-padding-primary: var(--ctff-space-20);
+	--el-dialog-border-radius: var(--ctff-pop-radius);
+}
+
+.el-message-box {
+	--el-messagebox-title-color: var(--ctff-text-color-primary);
+	--el-messagebox-width: var(--ctff-message-box-width);
+	--el-messagebox-border-radius: var(--ctff-pop-radius);
+	--el-messagebox-box-shadow: var(--ctff-shadow-3);
+	--el-messagebox-font-size: var(--ctff-font-size-title);
+	--el-messagebox-content-font-size: var(--ctff-font-size-body);
+	--el-messagebox-content-color: var(--ctff-text-color-secondary);
+	--el-messagebox-error-font-size: var(--ctff-font-size-12);
+	--el-messagebox-padding-primary: var(--ctff-space-16);
+	--el-messagebox-font-line-height: var(--ctff-line-height-body);
+}
+
+.el-message {
+	--el-message-bg-color: var(--ctff-bg-color-pop);
+	--el-message-border-color: var(--ctff-border-color-component);
+	--el-message-padding: var(--ctff-space-12) var(--ctff-space-16);
+	--el-message-text-color: var(--ctff-text-color-primary);
+	--el-message-close-icon-color: var(--ctff-text-color-tertiary);
+	--el-message-close-hover-color: var(--ctff-brand-color);
+}
+
+.el-notification {
+	--el-notification-width: var(--ctff-notification-width);
+	--el-notification-padding: var(--ctff-space-16) var(--ctff-space-24) var(--ctff-space-16) var(--ctff-space-16);
+	--el-notification-radius: var(--ctff-pop-radius);
+	--el-notification-shadow: var(--ctff-shadow-2);
+	--el-notification-border-color: var(--ctff-border-color-component);
+	--el-notification-icon-size: var(--ctff-notification-icon-size);
+	--el-notification-close-font-size: var(--ctff-notification-close-font-size);
+	--el-notification-group-margin-left: var(--ctff-space-12);
+	--el-notification-group-margin-right: var(--ctff-space-8);
+	--el-notification-content-font-size: var(--ctff-font-size-body);
+	--el-notification-content-color: var(--ctff-text-color-secondary);
+	--el-notification-title-font-size: var(--ctff-font-size-16);
+	--el-notification-title-color: var(--ctff-text-color-primary);
+	--el-notification-close-color: var(--ctff-text-color-tertiary);
+	--el-notification-close-hover-color: var(--ctff-brand-color);
+	--el-notification-icon-color: var(--ctff-brand-color);
+}
+
+.ctff-element-plus-theme .el-timeline {
+	--el-timeline-node-color: var(--ctff-brand-color);
+	--el-timeline-node-size-normal: var(--ctff-timeline-node-size);
+	--el-timeline-node-size-large: var(--ctff-control-interactive-size);
+}
+
+.ctff-element-plus-theme .el-tabs {
+	--el-tabs-header-height: var(--ctff-tabs-header-height);
+}
+
+.ctff-element-plus-theme .el-link {
+	--el-link-font-size: var(--ctff-font-size-body);
+	--el-link-font-weight: var(--ctff-font-weight-regular);
+	--el-link-text-color: var(--ctff-text-color-tertiary);
+	--el-link-hover-text-color: var(--ctff-brand-color);
+	--el-link-disabled-text-color: var(--ctff-text-color-quaternary);
+}
+
+.ctff-element-plus-theme .el-upload {
+	--el-upload-dragger-padding-horizontal: var(--ctff-upload-dragger-padding-x);
+	--el-upload-dragger-padding-vertical: var(--ctff-upload-dragger-padding-y);
+	--el-upload-picture-card-size: var(--ctff-upload-picture-card-size);
+	--el-upload-list-picture-card-size: var(--ctff-upload-picture-card-size);
+}
+
+.el-dropdown__popper,
+.el-select__popper,
+.el-picker__popper,
+.el-popover.el-popper {
+	--el-dropdown-menu-box-shadow: var(--ctff-shadow-2);
+	--el-dropdown-menuItem-hover-fill: var(--ctff-brand-color-background);
+	--el-dropdown-menuItem-hover-color: var(--ctff-brand-color);
+	--el-datepicker-active-color: var(--ctff-brand-color);
+	--el-datepicker-hover-text-color: var(--ctff-brand-color);
+	--el-datepicker-inrange-bg-color: var(--ctff-brand-color-background);
+	--el-datepicker-inrange-hover-bg-color: var(--ctff-brand-color-disabled-border);
+	--el-datepicker-text-color: var(--ctff-text-color-primary);
+	--el-datepicker-off-text-color: var(--ctff-text-color-quaternary);
+	--el-datepicker-header-text-color: var(--ctff-text-color-primary);
+	--el-datepicker-icon-color: var(--ctff-text-color-tertiary);
+	--el-datepicker-border-color: var(--ctff-border-color-component);
+	--el-datepicker-bg-color: var(--ctff-bg-color-pop);
+	--el-datepicker-inner-border-color: var(--ctff-border-color-grid);
+	--el-popover-bg-color: var(--ctff-bg-color-pop);
+	--el-popover-font-size: var(--ctff-font-size-body);
+	--el-popover-border-color: var(--ctff-border-color-component);
+	--el-popover-padding: var(--ctff-space-12);
+	--el-popover-padding-large: var(--ctff-space-16);
+	--el-popover-title-font-size: var(--ctff-font-size-16);
+	--el-popover-title-text-color: var(--ctff-text-color-primary);
+	--el-popover-border-radius: var(--ctff-pop-radius);
+}
