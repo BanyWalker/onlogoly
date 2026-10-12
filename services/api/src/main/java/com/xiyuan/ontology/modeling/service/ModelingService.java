@@ -668,10 +668,6 @@ public class ModelingService {
 						List.of(new ErrorDetail("relationRef", relationRef, attrId)));
 			}
 		}
-		if (attribute.path("nullable").asBoolean(false) && attribute.path("nullMeaning").asString(null) == null) {
-			throw ApiException.badRequest("OBJ_ATTR_COMBO_INVALID", "nullable=true 时必须声明 nullMeaning",
-					List.of(new ErrorDetail("nullMeaning", null, attrId)));
-		}
 		String nullMeaning = attribute.path("nullMeaning").asString(null);
 		if (nullMeaning != null && !NULL_MEANINGS.contains(nullMeaning)) {
 			throw ApiException.badRequest("OBJ_ATTR_COMBO_INVALID", "未知 nullMeaning: " + nullMeaning,

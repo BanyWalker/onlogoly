@@ -422,9 +422,9 @@ function buildEdges(plans: ConnectionPlan[]) {
 				line: {
 					stroke: color,
 					strokeOpacity: dimmed ? 0.12 : 0.92,
-					strokeWidth: selected ? 2.8 : isBundle ? 2.6 : 2,
+					strokeWidth: selected ? 2 : isBundle ? 1.7 : 1.3,
 					strokeLinecap: "round",
-					targetMarker: { name: "block", size: 8, fill: color, stroke: color },
+					targetMarker: { name: "block", size: 6, fill: color, stroke: color },
 					sourceMarker: null
 				}
 			},
@@ -579,22 +579,12 @@ function updateSelection() {
 		const dimmed = hasFocus() && !focused;
 		const nodeOpacity = dimmed ? 0.24 : object.status === "deprecated" ? 0.45 : 1;
 		node.attr({
-			body: { stroke: selected || props.highlightedIds.has(node.id) ? color : "#D9E7F5", strokeWidth: selected || props.highlightedIds.has(node.id) ? 1.5 : 1, opacity: nodeOpacity },
-			headerBg: { opacity: nodeOpacity },
-			divider: { opacity: nodeOpacity },
-			iconChip: { opacity: nodeOpacity },
-			objectIcon: { opacity: nodeOpacity },
-			identityIcon: { opacity: nodeOpacity },
+			body: { stroke: selected || props.highlightedIds.has(node.id) ? color : "#E5EAF2", strokeWidth: selected || props.highlightedIds.has(node.id) ? 1.5 : 1, opacity: nodeOpacity },
+			domainChipBg: { opacity: dimmed ? 0.2 : 1 },
+			domainDot: { opacity: dimmed ? 0.3 : 1 },
 			domainLabel: { opacity: dimmed ? 0.3 : 1 },
-			statusDot: { opacity: dimmed ? 0.25 : 1 },
 			title: { annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
 			codeText: { annotations: searchAnnotations(object.id.toUpperCase()), opacity: dimmed ? 0.3 : 1 },
-			idChipBg: { opacity: dimmed ? 0.2 : 1 },
-			idChipText: { annotations: searchAnnotations(object.identityAttrNames.length ? object.identityAttrNames.join(" · ") : object.id), opacity: dimmed ? 0.3 : 1 },
-			attrsChipText: { opacity: dimmed ? 0.3 : 1 },
-			attrsChipBg: { opacity: object.attributeCount == null ? 0 : dimmed ? 0.2 : 1 },
-			relsChipBg: { opacity: dimmed ? 0.2 : 1 },
-			relsChipText: { opacity: dimmed ? 0.3 : 1 }
 		});
 	}
 	for (const edge of graph.getEdges()) {
@@ -610,7 +600,7 @@ function updateSelection() {
 		const dimmed = hasFocus() && !focused && !selected;
 		edge.setData({ ...data, selected, focused });
 		edge.attr("line/strokeOpacity", dimmed ? 0.12 : 0.92);
-		edge.attr("line/strokeWidth", selected ? 2.8 : data.bundleSize && data.bundleSize > 1 ? 2.6 : 2);
+		edge.attr("line/strokeWidth", selected ? 2 : data.bundleSize && data.bundleSize > 1 ? 1.7 : 1.3);
 		edge.getLabels().forEach((label, index) => {
 			const fill = label.attrs?.label?.fontSize === 12
 				? selected ? "#183D5D" : dimmed ? "#9AAABC" : "#2B5170"
@@ -636,98 +626,52 @@ onMounted(() => {
 			height: NODE_HEIGHT,
 			markup: [
 				{ tagName: "rect", selector: "body" },
-				// 头部染色区 + 分隔线（迭代五结构：领域色淡染而非色带）
-				{ tagName: "path", selector: "headerBg" },
-				{ tagName: "rect", selector: "divider" },
-				{ tagName: "rect", selector: "iconChip" },
-				{ tagName: "path", selector: "objectIcon" },
+				{ tagName: "rect", selector: "domainChipBg" },
+				{ tagName: "circle", selector: "domainDot" },
 				{ tagName: "text", selector: "domainLabel" },
-				{ tagName: "circle", selector: "statusDot" },
 				{ tagName: "text", selector: "title" },
 				{ tagName: "text", selector: "codeText" },
-				{ tagName: "rect", selector: "idChipBg" },
-				{ tagName: "path", selector: "identityIcon" },
-				{ tagName: "text", selector: "idChipText" },
-				{ tagName: "rect", selector: "attrsChipBg" },
-				{ tagName: "text", selector: "attrsChipText" },
-				{ tagName: "rect", selector: "relsChipBg" },
-				{ tagName: "text", selector: "relsChipText" }
 			],
 			attrs: {
 				body: {
 					refWidth: "100%",
 					refHeight: "100%",
-					rx: 12,
-					ry: 12,
+					rx: 16,
+					ry: 16,
 					fill: "#ffffff",
-					stroke: "#D9E7F5",
+					stroke: "#E5EAF2",
 					strokeWidth: 1,
 					cursor: "pointer"
 				},
-				headerBg: { d: `M12 0 H${NODE_WIDTH - 12} Q${NODE_WIDTH} 0 ${NODE_WIDTH} 12 V44 H0 V12 Q0 0 12 0 Z` },
-				divider: { x: 0, y: 43, width: NODE_WIDTH, height: 1 },
-				objectIcon: { d: "M24 14H32L36 18V29H24Z M32 14V18H36 M27 22H33 M27 25H31", fill: "none", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" },
-				identityIcon: { d: "M23 102a2.5 2.5 0 1 0 0 .1 M25 104l4 4 M27 106l1-1", fill: "none", strokeWidth: 1.4, strokeLinecap: "round" },
-				iconChip: { x: 14, y: 8, width: 28, height: 28, rx: 8, ry: 8 },
+				domainChipBg: { x: 18, y: 74, width: 118, height: 24, rx: 12 },
+				domainDot: { cx: 30, cy: 86, r: 3.5 },
 				domainLabel: {
-					refX: 50,
-					refY: 22,
-					fontSize: 10,
-					fontWeight: 700,
+					refX: 40,
+					refY: 86,
+					fontSize: 11,
+					fontWeight: 600,
 					textAnchor: "start",
 					textVerticalAnchor: "middle",
-					letterSpacing: 0.5
+					textWrap: { width: 88, height: 18, ellipsis: true }
 				},
-				statusDot: { cx: NODE_WIDTH - 20, cy: 22, r: 4.5, stroke: "#ffffff", strokeWidth: 2 },
 				title: {
-					refX: 14,
-					refY: 64,
-					fontSize: 16,
+					refX: 18,
+					refY: 28,
+					fontSize: 17,
 					fontWeight: 700,
 					fill: "#16324F",
 					textAnchor: "start",
 					textVerticalAnchor: "middle",
-					textWrap: { width: NODE_WIDTH - 28, height: 24, ellipsis: true }
+					textWrap: { width: NODE_WIDTH - 36, height: 24, ellipsis: true }
 				},
 				codeText: {
-					refX: 14,
-					refY: 82,
-					fontSize: 10,
-					fill: "#93A9BE",
+					refX: 18,
+					refY: 52,
+					fontSize: 12,
+					fill: "#8290A6",
 					textAnchor: "start",
 					textVerticalAnchor: "middle",
-					letterSpacing: 1,
-					textWrap: { width: NODE_WIDTH - 28, height: 13, ellipsis: true }
-				},
-				idChipBg: { x: 14, y: 94, width: 96, height: 20, rx: 10, ry: 10 },
-				idChipText: {
-					refX: 35,
-					refY: 104,
-					fontSize: 10,
-					fontWeight: 500,
-					textAnchor: "start",
-					textVerticalAnchor: "middle",
-					textWrap: { width: 68, height: 20, ellipsis: true }
-				},
-				attrsChipBg: { x: 116, y: 94, width: 48, height: 20, rx: 10, ry: 10 },
-				attrsChipText: {
-					refX: 140,
-					refY: 104,
-					fontSize: 10,
-					fontWeight: 500,
-					fill: "#6A87A3",
-					textAnchor: "middle",
-					textVerticalAnchor: "middle"
-				},
-				relsChipBg: { x: 170, y: 94, width: 48, height: 20, rx: 10, ry: 10 },
-				relsChipText: {
-					refX: 194,
-					refY: 104,
-					fontSize: 10,
-					fontWeight: 500,
-					fill: "#6A87A3",
-					textAnchor: "middle",
-					textVerticalAnchor: "middle"
+					textWrap: { width: NODE_WIDTH - 36, height: 16, ellipsis: true }
 				}
 			}
 		},
@@ -777,10 +721,10 @@ onMounted(() => {
 				attrs: {
 					line: {
 						stroke: "#38A6F2",
-						strokeWidth: 2,
+						strokeWidth: 1.3,
 						strokeDasharray: "6 4",
 						strokeLinecap: "round",
-						targetMarker: { name: "block", size: 8, fill: "#38A6F2", stroke: "#38A6F2" }
+						targetMarker: { name: "block", size: 6, fill: "#38A6F2", stroke: "#38A6F2" }
 					}
 				}
 			});
@@ -809,7 +753,7 @@ onMounted(() => {
 		}
 	});
 	graph.on("node:mouseleave", ({ node }) => {
-		node.attr("body/stroke", props.highlightedIds.has(node.id) || selectedIds().has(node.id) || props.selectedObjectId === node.id ? domainColorOfObject(node.id) : "#D9E7F5");
+		node.attr("body/stroke", props.highlightedIds.has(node.id) || selectedIds().has(node.id) || props.selectedObjectId === node.id ? domainColorOfObject(node.id) : "#E5EAF2");
 		for (const portId of ["p-left", "p-right", "p-top", "p-bottom"]) {
 			node.portProp(portId, "attrs/circle/opacity", 0);
 			node.portProp(portId, "attrs/hitArea/pointerEvents", "none");
@@ -824,14 +768,14 @@ onMounted(() => {
 	});
 	graph.on("edge:mouseenter", ({ edge }) => {
 		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
-		edge.attr("line/strokeWidth", data.selected ? 3.3 : data.bundleSize && data.bundleSize > 1 ? 3.1 : 2.5);
+		edge.attr("line/strokeWidth", data.selected ? 2.4 : data.bundleSize && data.bundleSize > 1 ? 2 : 1.8);
 		edge.getLabels().forEach((label, index) => {
 			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], "#183D5D");
 		});
 	});
 	graph.on("edge:mouseleave", ({ edge }) => {
 		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
-		edge.attr("line/strokeWidth", data.selected ? 2.8 : data.bundleSize && data.bundleSize > 1 ? 2.6 : 2);
+		edge.attr("line/strokeWidth", data.selected ? 2 : data.bundleSize && data.bundleSize > 1 ? 1.7 : 1.3);
 		edge.getLabels().forEach((label, index) => {
 			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], data.selected ? "#183D5D" : "#2B5170");
 		});
@@ -924,27 +868,21 @@ defineExpose({ zoomToFit, zoomIn, zoomOut, resetZoom, setZoomPercent, centerOn }
 	width: 100%;
 	height: 100%;
 	min-height: 0;
+
 	/* 迭代五：霜白微蓝底（近乎留白）+ 天蓝/薄荷青极轻氛围光斑，层次由节点投影承担 */
 	background:
-		radial-gradient(circle at 15% 0%, rgba(56, 166, 242, 0.07), transparent 26%),
-		radial-gradient(circle at 85% 100%, rgba(20, 200, 180, 0.06), transparent 28%),
+		radial-gradient(circle at 15% 0%, rgb(56 166 242 / 7%), transparent 26%),
+		radial-gradient(circle at 85% 100%, rgb(20 200 180 / 6%), transparent 28%),
 		#f7fafd;
 }
 
 :deep(.x6-node) {
-	/* 三层分层投影：贴边定义 + 结构深度 + 领域色氛围光 */
-	filter:
-		drop-shadow(0 1px 2px rgba(33, 51, 79, 0.04))
-		drop-shadow(0 6px 16px rgba(33, 51, 79, 0.06))
-		drop-shadow(0 12px 28px rgba(56, 134, 201, 0.12));
+	filter: drop-shadow(0 5px 14px rgb(33 51 79 / 8%));
 	transition: filter 0.2s ease;
 }
 
 :deep(.x6-node:hover) {
-	filter:
-		drop-shadow(0 1px 2px rgba(33, 51, 79, 0.05))
-		drop-shadow(0 6px 16px rgba(33, 51, 79, 0.08))
-		drop-shadow(0 12px 28px rgba(56, 134, 201, 0.18));
+	filter: drop-shadow(0 7px 18px rgb(33 51 79 / 13%));
 }
 
 </style>

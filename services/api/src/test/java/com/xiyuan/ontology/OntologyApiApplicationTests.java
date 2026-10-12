@@ -1,5 +1,7 @@
 package com.xiyuan.ontology;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,6 +10,7 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,6 +88,50 @@ class OntologyApiApplicationTests {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("DOMAIN_REQUIRED_MISSING"))
 			.andExpect(jsonPath("$.details[0].field").value("name"));
+	}
+
+	@Test
+	void nullableAttributeAcceptsMissingNullMeaning() throws Exception {
+		String attributeId = "ATTR-" + UUID.randomUUID();
+		mockMvc.perform(post("/api/v1/object-types/OBJ-SERVICE/attributes")
+				.contentType(APPLICATION_JSON)
+				.content("""
+						{"id":"%s","name":"optionalValue","dataType":"String","required":false,"nullable":true}
+						""".formatted(attributeId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.nullable").value(true))
+			.andExpect(jsonPath("$.data.nullMeaning").doesNotExist());
+	}
+
+	@Test
+	void nullableAttributeCanClearExistingNullMeaning() throws Exception {
+		String attributeId = "ATTR-" + UUID.randomUUID();
+		mockMvc.perform(post("/api/v1/object-types/OBJ-SERVICE/attributes")
+				.contentType(APPLICATION_JSON)
+				.content("""
+						{"id":"%s","name":"optionalMeaning","dataType":"String","required":false,"nullable":true,"nullMeaning":"UNKNOWN"}
+						""".formatted(attributeId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.nullMeaning").value("UNKNOWN"));
+
+		mockMvc.perform(patch("/api/v1/object-types/OBJ-SERVICE/attributes/{attributeId}", attributeId)
+				.contentType(APPLICATION_JSON)
+				.content("{\"nullMeaning\":null}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.nullable").value(true))
+			.andExpect(jsonPath("$.data.nullMeaning").doesNotExist());
+	}
+
+	@Test
+	void nullableAttributeStillRejectsUnknownNullMeaning() throws Exception {
+		mockMvc.perform(post("/api/v1/object-types/OBJ-SERVICE/attributes")
+				.contentType(APPLICATION_JSON)
+				.content("""
+						{"name":"invalidMeaning","dataType":"String","required":false,"nullable":true,"nullMeaning":"INVALID"}
+						"""))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("OBJ_ATTR_COMBO_INVALID"))
+			.andExpect(jsonPath("$.details[0].field").value("nullMeaning"));
 	}
 
 }

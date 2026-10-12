@@ -178,8 +178,10 @@
 							v-model="objectDraft"
 							:mode="store.drawerMode === 'create-object' ? 'create' : 'edit'"
 							:domains="store.domains"
-							:revision="store.currentObject?.revision"
-							:completeness="store.currentObject?.completeness"
+							:attributes="objectDetailDraft?.attributes ?? []"
+							:relations="store.relations"
+							:revision="store.currentObject?.revision ?? 1"
+							:completeness="store.currentObject?.completeness ?? 'draft'"
 							@domain-created="handleDomainCreated"
 						/>
 					</ElTabPane>
@@ -189,8 +191,6 @@
 					<ElTabPane label="关系" name="object-relations" :disabled="store.drawerMode === 'create-object'">
 						<RelationList v-if="store.currentObject" :object-id="store.currentObject.id" :relations="store.relations" @open="openRelationFromObject" />
 					</ElTabPane>
-					<ElTabPane label="约束" name="constraints" disabled><PlaceholderTab text="约束建模将在规则建模能力启用后接入。" /></ElTabPane>
-					<ElTabPane label="事件" name="events" disabled><PlaceholderTab text="待事件建模需求（Q-OM-009）。" /></ElTabPane>
 					<ElTabPane label="动作" name="actions" disabled><PlaceholderTab text="待行为建模需求。" /></ElTabPane>
 				</ElTabs>
 			</template>

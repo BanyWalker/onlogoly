@@ -75,14 +75,15 @@
 					</ElFormItem>
 				</div>
 				<ElFormItem label="实例取值">
-					<ElCheckbox v-model="editingAttribute.required" @change="requiredChanged">必须提供</ElCheckbox>
-					<ElCheckbox v-model="editingAttribute.nullable" @change="nullableChanged">允许空值</ElCheckbox>
-					<div class="field-hint">“必须提供”约束实例取值；“允许空值”须说明空值代表未知、未提供或不适用。</div>
-				</ElFormItem>
-				<ElFormItem v-if="editingAttribute.nullable" label="空值含义" required>
-					<ElSelect v-model="editingAttribute.nullMeaning" class="full-width">
-						<ElOption v-for="meaning in NULL_MEANINGS" :key="meaning" :label="nullMeaningLabel(meaning)" :value="meaning" />
-					</ElSelect>
+					<div class="value-rule-controls">
+						<ElCheckbox v-model="editingAttribute.required" @change="requiredChanged">必填</ElCheckbox>
+						<div v-if="!editingAttribute.required" class="null-meaning-control">
+							<span class="null-meaning-label">空值含义</span>
+							<ElSelect v-model="editingAttribute.nullMeaning" class="null-meaning-select" clearable placeholder="可选" aria-label="空值含义" @clear="editingAttribute.nullMeaning = null">
+								<ElOption v-for="meaning in NULL_MEANINGS" :key="meaning" :label="nullMeaningLabel(meaning)" :value="meaning" />
+							</ElSelect>
+						</div>
+					</div>
 				</ElFormItem>
 				<ElFormItem v-if="defaultKind !== 'none'" label="默认值">
 					<ElSelect v-if="defaultKind === 'boolean'" v-model="booleanDefault" class="full-width">
@@ -277,10 +278,6 @@ function attributeSummary(row: AttributeDef) {
 	if (row.nullable) details.push("空值：" + nullMeaningLabel(row.nullMeaning));
 	return details.join(" · ");
 }
-function ensureTypeConfig(row: AttributeDef) {
-	if (row.dataType === "Enumeration") row.allowedValues ??= [];
-	if (row.dataType === "Reference") row.referenceTarget ??= [];
-}
 function defaultValueError(row: AttributeDef): string | null {
 	const value = row.defaultValue;
 	if (value === undefined) return null;
@@ -302,7 +299,6 @@ function defaultValueError(row: AttributeDef): string | null {
 function openEditor(id: string) {
 	const row = props.object.attributes.find(item => item.id === id);
 	if (!row) return;
-	ensureTypeConfig(row);
 	editingId.value = id;
 	isCreating.value = false;
 	validationError.value = "";
@@ -316,7 +312,7 @@ function backToList() {
 }
 function addAttribute() {
 	const id = "ATTR-" + crypto.randomUUID().slice(0, 8).toUpperCase();
-	props.object.attributes.push({ id, name: "", dataType: "String", required: false, nullable: false, nullMeaning: null, cardinality: { min: 0, max: 1 }, termRefs: [] });
+	props.object.attributes.push({ id, name: "", dataType: "String", required: false, nullable: true, nullMeaning: null, cardinality: { min: 0, max: 1 }, termRefs: [] });
 	editingId.value = id;
 	isCreating.value = true;
 	validationError.value = "";
@@ -350,16 +346,13 @@ function changeType(next: DataType) {
 function requiredChanged() {
 	const row = editingAttribute.value;
 	if (!row) return;
-	// 保留接口必需的基数字段，由“必须提供”同步下限，不再单独配置。
+	syncValueRules(row);
 	row.cardinality.min = row.required ? Math.max(1, row.cardinality.min) : 0;
 	if (typeof row.cardinality.max === "number" && row.cardinality.max < row.cardinality.min) row.cardinality.max = row.cardinality.min;
 }
-function nullableChanged() {
-	const row = editingAttribute.value;
-	if (!row) return;
-	if (row.nullable) row.nullMeaning ??= "UNKNOWN";
-	else row.nullMeaning = null;
-	validationError.value = "";
+function syncValueRules(row: AttributeDef) {
+	row.nullable = !row.required;
+	if (row.required) row.nullMeaning = null;
 }
 function addEnumValue() {
 	const row = editingAttribute.value;
@@ -415,7 +408,6 @@ function removeAttribute(id: string) {
 function validate(): string | null {
 	validationError.value = "";
 	const fail = (row: AttributeDef, message: string) => {
-		ensureTypeConfig(row);
 		editingId.value = row.id;
 		isCreating.value = false;
 		return (validationError.value = message);
@@ -426,7 +418,6 @@ function validate(): string | null {
 		if (seen.has(row.id)) return fail(row, "属性标识重复：" + row.id);
 		seen.add(row.id);
 		if (!row.name.trim()) return fail(row, "属性 " + row.id + " 的属性名不能为空");
-		if (row.nullable && !row.nullMeaning) return fail(row, "属性 " + row.name + " 允许空值时必须声明空值含义");
 		const valueError = defaultValueError(row);
 		if (valueError) return fail(row, "属性 " + row.name + "：" + valueError);
 		if (row.dataType === "Enumeration") {
@@ -533,6 +524,29 @@ defineExpose({ validate });
 .config-block .section-bar { margin-bottom: 8px; }
 .config-block :deep(.el-form-item:last-child) { margin-bottom: 0; }
 .full-width { width: 100%; }
+
+.value-rule-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	align-items: center;
+}
+
+.null-meaning-control {
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.null-meaning-label {
+	color: var(--ctff-text-color-secondary);
+	white-space: nowrap;
+}
+
+.null-meaning-select {
+	width: 150px;
+}
+
 .enum-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .enum-row .el-input { width: 130px; }
 .field-hint { margin-top: 6px; color: var(--ctff-text-color-secondary); font-size: 12px; line-height: 1.6; }
