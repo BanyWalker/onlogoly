@@ -19,13 +19,20 @@
 						</span>
 					</ElOption>
 				</ElSelect>
-				<ElButton text type="primary" @click="inlineCreate?.open()">自定义新领域…</ElButton>
+				<ElButton text type="primary" @click="inlineCreate?.open()">添加新的域</ElButton>
 			</div>
 		</ElFormItem>
-		<ElDescriptions v-if="mode === 'edit'" :column="2" size="small" border class="meta-block">
-			<ElDescriptionsItem label="修订号">{{ revision }}</ElDescriptionsItem>
-			<ElDescriptionsItem label="完整性">{{ completeness === "complete" ? "完整" : "草稿" }}</ElDescriptionsItem>
-		</ElDescriptions>
+		<div v-if="mode === 'edit'" class="meta-block">
+			<div class="meta-block-title">对象元信息</div>
+			<ElDescriptions :column="2" size="small" border>
+				<ElDescriptionsItem label="修订版本">v{{ revision ?? "-" }}</ElDescriptionsItem>
+				<ElDescriptionsItem label="完整性状态">
+					<ElTag :type="completeness === 'complete' ? 'success' : 'info'" effect="light">
+						{{ completeness === "complete" ? "完整" : "草稿" }}
+					</ElTag>
+				</ElDescriptionsItem>
+			</ElDescriptions>
+		</div>
 		<DomainInlineCreate ref="inlineCreate" @created="handleDomainCreated" />
 	</ElForm>
 </template>
@@ -101,5 +108,12 @@ defineExpose({ validate });
 }
 .meta-block {
 	margin-top: 8px;
+}
+
+.meta-block-title {
+	margin-bottom: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--el-text-color-primary);
 }
 </style>

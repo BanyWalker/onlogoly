@@ -118,7 +118,7 @@ export const objectModelApi = {
 		return request<DomainDef[]>(() => http.get("/domains"));
 	},
 
-	createDomain(body: { name: string; description?: string; ownerRole: string; domainId?: string }) {
+	createDomain(body: { name: string; description?: string; domainId?: string }) {
 		return request<DomainDef>(() => http.post("/domains", body));
 	},
 

@@ -10,7 +10,12 @@
 				<strong>{{ appConfig.brandName }}</strong>
 			</div>
 			<div class="ctff-sidebar-menu">
-				<AppNavigation :items="sidebarNavigationItems" :active-name="activeMenu" :collapsed="effectiveSidebarCollapsed" />
+				<AppNavigation
+					:items="sidebarNavigationItems"
+					:active-name="activeMenu"
+					:collapsed="effectiveSidebarCollapsed"
+					static-categories
+				/>
 			</div>
 		</aside>
 
@@ -65,7 +70,12 @@
 			<div class="ctff-shell-body ctff-shell-body--split" :class="{ 'is-sidebar-collapsed': effectiveSidebarCollapsed }">
 				<aside v-if="navigationMode === 'top-side' && hasSidebar" id="ctff-primary-sidebar" class="ctff-shell-sidebar">
 					<div class="ctff-sidebar-menu">
-						<AppNavigation :items="sidebarNavigationItems" :active-name="activeMenu" :collapsed="effectiveSidebarCollapsed" />
+						<AppNavigation
+							:items="sidebarNavigationItems"
+							:active-name="activeMenu"
+							:collapsed="effectiveSidebarCollapsed"
+							static-categories
+						/>
 					</div>
 				</aside>
 

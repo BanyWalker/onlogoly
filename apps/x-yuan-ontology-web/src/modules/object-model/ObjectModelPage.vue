@@ -3,13 +3,7 @@
 		<div class="model-body">
 			<section class="canvas-panel">
 				<div class="canvas-toolbar">
-					<span class="stat-chip"><i class="status-dot" />{{ store.visibleObjects.length }} 对象 · {{ store.visibleRelations.length }} 关系</span>
-					<span class="domain-legend"><i class="domain-legend-mark" />圆点颜色表示所属领域</span>
-					<ElSelect v-model="store.domainFilter" clearable placeholder="全部领域" size="small" class="domain-select">
-						<ElOption v-for="domain in store.domains" :key="domain.domainId" :label="domain.name" :value="domain.domainId">
-							<span class="domain-option"><i class="domain-dot" :style="{ background: store.domainColorMap.get(domain.domainId) }" />{{ domain.name }}（{{ domain.objectCount ?? 0 }}）</span>
-						</ElOption>
-					</ElSelect>
+					<ElButton size="small" type="primary" plain :icon="Plus" @click="store.startCreateObject()">新建对象</ElButton>
 					<div class="search-cluster">
 						<ElInput v-model="store.searchText" clearable size="small" class="model-search" placeholder="搜索对象 / 标识 / 属性名…" @keyup.enter="focusSearchResult(searchCursor)">
 							<template #prefix><ElIcon><Search /></ElIcon></template>
@@ -27,14 +21,17 @@
 										<span class="search-results-count">{{ searchResults.length }} 项</span>
 									</div>
 									<button v-for="(result, index) in searchResults" :key="result.id" type="button" class="search-result-item" :class="{ 'is-current': index === searchCursor }" @click="focusSearchResult(index)">
-										<span class="search-result-name">{{ result.name }}</span>
-										<span class="search-result-code">{{ result.id }}</span>
+										<SearchHighlight class="search-result-name" :text="result.name" :query="store.searchText" />
+										<SearchHighlight class="search-result-code" :text="result.id" :query="store.searchText" />
+										<SearchHighlight v-if="matchingIdentityNames(result.identityAttrNames).length" class="search-result-code" :text="matchingIdentityNames(result.identityAttrNames).join(' · ')" :query="store.searchText" />
 									</button>
 									<div v-if="!searchResults.length" class="search-empty">未找到匹配对象，请尝试对象名称、编码或标识属性。</div>
 								</div>
 							</ElPopover>
-							<ElButton size="small" text :icon="ArrowUp" :disabled="!searchResults.length" aria-label="上一个搜索结果" @click="focusSearchResult(searchCursor - 1)" />
-							<ElButton size="small" text :icon="ArrowDown" :disabled="!searchResults.length" aria-label="下一个搜索结果" @click="focusSearchResult(searchCursor + 1)" />
+							<div class="search-navigation" role="group" aria-label="切换搜索结果">
+								<ElButton size="small" text :icon="ArrowUp" :disabled="!searchResults.length" aria-label="上一个搜索结果" @click="focusSearchResult(searchCursor - 1)" />
+								<ElButton size="small" text :icon="ArrowDown" :disabled="!searchResults.length" aria-label="下一个搜索结果" @click="focusSearchResult(searchCursor + 1)" />
+							</div>
 						</template>
 					</div>
 					<span class="toolbar-spacer" />
@@ -42,13 +39,22 @@
 						<ElButton size="small" text :icon="Sort">自动布局<ElIcon class="el-icon--right"><ArrowDown /></ElIcon></ElButton>
 						<template #dropdown>
 							<ElDropdownMenu>
-								<ElDropdownItem command="horizontal">横向层级布局{{ selectedObjectIds.length > 1 ? "（选中）" : "（全图）" }}</ElDropdownItem>
-								<ElDropdownItem command="vertical">纵向层级布局{{ selectedObjectIds.length > 1 ? "（选中）" : "（全图）" }}</ElDropdownItem>
+								<ElDropdownItem command="horizontal">横向布局</ElDropdownItem>
+								<ElDropdownItem command="vertical">纵向布局</ElDropdownItem>
 							</ElDropdownMenu>
 						</template>
 					</ElDropdown>
 					<ElButton size="small" text :icon="Refresh" :loading="store.loading" @click="store.loadGraph()">刷新</ElButton>
-					<ElButton size="small" type="primary" plain :icon="Plus" @click="store.startCreateObject()">新建对象</ElButton>
+					<div class="layout-history-actions" role="group" aria-label="布局历史">
+						<ElButton size="small" text :disabled="!store.layoutUndoStack.length || store.layoutBusy" title="撤销布局（Ctrl/Cmd+Z）" @click="undoLayout">
+							<template #icon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 4-5 5 5 5M4 9h9a6 6 0 0 1 0 12h-3" /></svg></template>
+							撤销
+						</ElButton>
+						<ElButton size="small" text :disabled="!store.layoutRedoStack.length || store.layoutBusy" title="重做布局（Ctrl/Cmd+Shift+Z）" @click="redoLayout">
+							<template #icon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 4 5 5-5 5M20 9h-9a6 6 0 0 0 0 12h3" /></svg></template>
+							重做
+						</ElButton>
+					</div>
 					<ElButton size="small" type="primary" :icon="Download" @click="exportModel">导出 JSON</ElButton>
 				</div>
 				<div ref="canvasHostRef" v-loading="store.loading" class="canvas-host">
@@ -59,6 +65,7 @@
 						:domain-color-map="store.domainColorMap"
 						:domain-name-map="store.domainNameMap"
 						:highlighted-ids="store.highlightedIds"
+						:search-text="store.searchText"
 						:selected-object-ids="selectedObjectIds"
 						:selected-object-id="store.drawerVisible ? store.currentObject?.id : undefined"
 						:selected-relation-id="store.drawerVisible ? store.currentRelation?.id : undefined"
@@ -83,21 +90,42 @@
 							<ElButton size="small" text title="垂直等距" :disabled="selectedObjectIds.length < 3" @click="alignSelection('distribute-y')">纵向等距</ElButton>
 						</ElButtonGroup>
 					</div>
-					<div class="canvas-bottom-left">
-						<ElButton size="small" text :icon="RefreshLeft" :disabled="!store.layoutUndoStack.length || store.layoutBusy" title="撤销布局（Ctrl/Cmd+Z）" @click="undoLayout">撤销</ElButton>
-						<ElButton size="small" text :icon="RefreshRight" :disabled="!store.layoutRedoStack.length || store.layoutBusy" title="重做布局（Ctrl/Cmd+Shift+Z）" @click="redoLayout">重做</ElButton>
-					</div>
+					<div class="canvas-footer">
+						<div class="canvas-status-bar">
+							<span class="stat-chip" aria-live="polite">{{ store.visibleObjects.length }} 对象 · {{ store.visibleRelations.length }} 关系</span>
+							<div class="domain-switcher" role="group" aria-label="领域筛选">
+								<button
+									v-for="domain in store.domains"
+									:key="domain.domainId"
+									type="button"
+									class="domain-filter-button"
+									:class="{ 'is-active': !store.domainFilter || store.domainFilter === domain.domainId }"
+									:aria-pressed="!store.domainFilter || store.domainFilter === domain.domainId"
+									:title="`${domain.name}（${domain.objectCount ?? 0} 个对象）`"
+									@click="store.domainFilter = store.domainFilter === domain.domainId ? null : domain.domainId"
+								>
+									<i class="domain-dot" :style="{ background: store.domainColorMap.get(domain.domainId) }" />{{ domain.name }}
+								</button>
+							</div>
+							<div class="relation-legend" role="group" aria-label="画布图例">
+								<span class="legend-item"><i class="legend-arrow" aria-hidden="true" />有向关系</span>
+								<span class="legend-item"><i class="legend-arrow is-highlighted" aria-hidden="true" />选中高亮链路</span>
+								<span class="legend-item" title="已废弃对象默认从画布隐藏"><i class="legend-deprecated" aria-hidden="true" />已废弃对象</span>
+							</div>
+						</div>
 					<div class="canvas-bottom-right">
 						<div class="zoom-control" role="group" aria-label="画布缩放">
 							<button type="button" class="zoom-button" aria-label="缩小" @click="canvasRef?.zoomOut()"><ElIcon><ZoomOut /></ElIcon></button>
 							<ElDropdown placement="top" trigger="click" popper-class="zoom-dropdown-popper" @command="selectZoomPreset">
-								<div class="zoom-value-editor" role="button" tabindex="0" aria-haspopup="menu" aria-label="选择缩放比例">
+								<div class="zoom-value-editor" role="combobox" tabindex="0" aria-haspopup="menu" aria-label="选择缩放比例">
 									<input
 										v-model="zoomInput"
 										class="zoom-input"
 										type="text"
 										inputmode="numeric"
 										aria-label="缩放比例"
+										@mousedown="focusZoomInput"
+										@click="focusZoomInput"
 										@keydown.enter.prevent="applyZoomInput"
 										@blur="applyZoomInput"
 									/>
@@ -111,8 +139,9 @@
 							</ElDropdown>
 							<button type="button" class="zoom-button" aria-label="放大" @click="canvasRef?.zoomIn()"><ElIcon><ZoomIn /></ElIcon></button>
 						</div>
-						<ElButton size="small" text :icon="FullScreen" @click="fitCanvas">适应画布</ElButton>
+						<ElButton size="small" text class="fit-canvas-button" :icon="Aim" @click="fitCanvas">适应画布</ElButton>
 						<ElButton size="small" text :icon="FullScreen" @click="toggleFullscreen">{{ isFullscreen ? "退出全屏" : "全屏" }}</ElButton>
+					</div>
 					</div>
 					<div v-if="store.loadError && !store.loading" class="canvas-error">
 						<ElEmpty description="对象模型暂时无法加载">
@@ -187,6 +216,7 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
 import {
+	Aim,
 	ArrowDown,
 	ArrowLeft,
 	ArrowUp,
@@ -194,8 +224,6 @@ import {
 	FullScreen,
 	Plus,
 	Refresh,
-	RefreshLeft,
-	RefreshRight,
 	Search,
 	Sort,
 	ZoomIn,
@@ -211,6 +239,7 @@ import OverviewTab, { type OverviewDraft } from "./components/tabs/OverviewTab.v
 import RelationEditor from "./components/tabs/RelationEditor.vue";
 import RelationList from "./components/tabs/RelationList.vue";
 import { useObjectModelStore } from "./store";
+import SearchHighlight from "./components/SearchHighlight.vue";
 import type { DomainDef, ObjectTypeDetail, RelationDetail } from "./types";
 
 const store = useObjectModelStore();
@@ -239,6 +268,10 @@ const searchResults = computed(() => {
 		object.identityAttrNames.some(name => name.toLowerCase().includes(keyword))
 	);
 });
+
+function matchingIdentityNames(names: string[]) {
+	return names.filter(name => name.toLowerCase().includes(store.searchText.trim().toLowerCase()));
+}
 
 // 关系浮窗内记录"来自哪个对象"，用于返回
 const relationReturnObjectId = ref<string | null>(null);
@@ -375,6 +408,10 @@ function applyZoomInput() {
 	}
 	const value = Math.min(300, Math.max(25, parsed));
 	canvasRef.value?.setZoomPercent(value);
+}
+
+function focusZoomInput(event: MouseEvent) {
+	(event.currentTarget as HTMLInputElement | null)?.focus();
 }
 
 function selectZoomPreset(value: number | string) {
@@ -619,6 +656,7 @@ const PlaceholderTab = defineComponent({
 
 .canvas-toolbar {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
 	align-items: center;
 	padding: 8px 12px;
@@ -634,51 +672,29 @@ const PlaceholderTab = defineComponent({
 	padding: 0 10px;
 	height: 24px;
 	border-radius: 12px;
-	background: #f1efff;
-	color: #554bb5;
+	background: #f0f5fb;
+	color: #58718b;
 	font-size: 12px;
 	white-space: nowrap;
 }
 
-.status-dot {
-	display: inline-block;
-	width: 6px;
-	height: 6px;
-	background: #16a394;
-	border-radius: 50%;
-}
-
-.domain-legend {
+.layout-history-actions {
 	display: inline-flex;
-	gap: 6px;
+	gap: 2px;
 	align-items: center;
-	color: #718096;
-	font-size: 12px;
-	white-space: nowrap;
+	padding-left: 8px;
+	border-left: 1px solid #e6edf5;
 }
 
-.domain-legend-mark {
-	display: inline-block;
-	width: 26px;
-	height: 4px;
-	background: linear-gradient(90deg, #635bff, #0ea5a0, #f97316);
-	border-radius: 999px;
-}
-
-.domain-select {
-	width: 160px;
-}
-
-.domain-option {
-	display: inline-flex;
-	gap: 6px;
-	align-items: center;
+.layout-history-actions :deep(.el-button + .el-button) {
+	margin-left: 0;
 }
 
 .domain-dot {
 	display: inline-block;
-	width: 8px;
-	height: 8px;
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
 	border-radius: 50%;
 }
 
@@ -690,6 +706,24 @@ const PlaceholderTab = defineComponent({
 	display: inline-flex;
 	gap: 2px;
 	align-items: center;
+}
+
+.search-navigation {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px;
+	border: 1px solid #e6edf5;
+	border-radius: 5px;
+	background: #f8fafc;
+}
+
+.search-navigation :deep(.el-button) {
+	width: 26px;
+	padding: 4px;
+}
+
+.search-navigation :deep(.el-button + .el-button) {
+	margin-left: 0;
 }
 
 .search-results-trigger {
@@ -775,10 +809,9 @@ const PlaceholderTab = defineComponent({
 	min-width: 0;
 	overflow: hidden;
 	background: #f7f9fd;
+	container-type: inline-size;
 }
 
-.canvas-bottom-left,
-.canvas-bottom-right,
 .selection-actions {
 	position: absolute;
 	display: flex;
@@ -787,25 +820,169 @@ const PlaceholderTab = defineComponent({
 	padding: 0;
 }
 
-.canvas-bottom-left {
-	bottom: 14px;
+.canvas-footer {
+	position: absolute;
+	right: 14px;
+	bottom: 12px;
 	left: 14px;
+	display: grid;
+	grid-template-columns: minmax(250px, 1fr) minmax(0, max-content) minmax(250px, 1fr);
+	gap: 10px;
+	align-items: center;
+	pointer-events: none;
+}
+
+.canvas-status-bar {
+	display: flex;
+	grid-column: 2;
+	flex-wrap: wrap;
+	gap: 10px 14px;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	max-width: 100%;
+	padding: 7px 12px;
+	border: 1px solid rgba(219, 229, 239, 0.8);
+	border-radius: 10px;
+	background: rgba(255, 255, 255, 0.94);
+	box-shadow: 0 4px 18px rgba(43, 76, 107, 0.06);
+	backdrop-filter: blur(8px);
+	pointer-events: auto;
+}
+
+.domain-switcher {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	min-width: 0;
+	overflow-x: auto;
+}
+
+.domain-filter-button {
+	display: inline-flex;
+	flex-shrink: 0;
+	gap: 7px;
+	align-items: center;
+	padding: 4px 7px;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	background: transparent;
+	color: #58718b;
+	font: inherit;
+	font-size: 12px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.domain-filter-button.is-active {
+	background: rgba(88, 113, 139, 0.04);
+}
+
+.domain-filter-button:not(.is-active) {
+	color: #94a3b8;
+}
+
+.domain-filter-button:not(.is-active) .domain-dot {
+	opacity: 0.45;
+}
+
+.domain-filter-button:hover {
+	background: rgba(88, 113, 139, 0.08);
+}
+
+.domain-filter-button:focus-visible {
+	outline: 2px solid var(--ctff-brand-color);
+	outline-offset: -2px;
+}
+
+.relation-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	align-items: center;
+	justify-content: center;
+}
+
+.legend-item {
+	display: inline-flex;
+	gap: 7px;
+	align-items: center;
+	color: #58718b;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.legend-arrow {
+	position: relative;
+	display: inline-block;
+	width: 24px;
+	height: 2px;
+	background: #a9b8cc;
+	color: #a9b8cc;
+}
+
+.legend-arrow::after {
+	position: absolute;
+	top: -4px;
+	right: -1px;
+	width: 0;
+	height: 0;
+	border-top: 5px solid transparent;
+	border-bottom: 5px solid transparent;
+	border-left: 8px solid currentColor;
+	content: "";
+}
+
+.legend-arrow.is-highlighted {
+	background: #50bfa7;
+	color: #50bfa7;
+}
+
+.legend-deprecated {
+	width: 20px;
+	height: 16px;
+	border: 1px dashed #d5deeb;
+	border-radius: 5px;
+	background: #f7f9fc;
 }
 
 .canvas-bottom-right {
-	right: 14px;
-	bottom: 14px;
+	display: flex;
+	grid-column: 3;
+	gap: 2px;
+	align-items: center;
+	justify-self: end;
+	white-space: nowrap;
+	pointer-events: auto;
 }
 
-.canvas-bottom-left :deep(.el-button),
+@container (max-width: 1000px) {
+	.canvas-footer {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.canvas-status-bar {
+		grid-column: 1;
+		width: fit-content;
+		justify-self: center;
+	}
+
+	.canvas-bottom-right {
+		grid-column: 2;
+	}
+}
+
+.canvas-bottom-right .fit-canvas-button {
+	margin-left: 8px;
+}
+
 .canvas-bottom-right :deep(.el-button) {
-	padding: 4px 5px;
+	padding: 4px 4px;
 	font-size: 11px;
 	font-weight: 500;
 	color: #71839a;
 }
 
-.canvas-bottom-left :deep(.el-button:hover),
 .canvas-bottom-right :deep(.el-button:hover) {
 	color: #28658f;
 	background: rgba(255, 255, 255, 0.68);
@@ -853,7 +1030,7 @@ const PlaceholderTab = defineComponent({
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
-	width: 58px;
+	width: 48px;
 	height: 20px;
 	border-right: 1px solid #e3ebf2;
 	border-left: 1px solid #e3ebf2;
@@ -863,20 +1040,20 @@ const PlaceholderTab = defineComponent({
 
 .zoom-input {
 	box-sizing: border-box;
-	width: 35px;
+	width: 28px;
 	padding: 0;
 	border: 0;
 	outline: 0;
 	background: transparent;
 	color: #526b84;
 	font: inherit;
-	font-size: 11px;
+	font-size: 10px;
 	font-variant-numeric: tabular-nums;
 	text-align: center;
 }
 
 .zoom-percent-sign {
-	font-size: 11px;
+	font-size: 10px;
 	color: #8a9caf;
 }
 
@@ -888,20 +1065,23 @@ const PlaceholderTab = defineComponent({
 }
 
 :deep(.zoom-dropdown-popper .el-dropdown-menu) {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 2px;
-	min-width: 164px;
-	padding: 2px;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	min-width: 112px;
+	padding: 4px;
 }
 
 :deep(.zoom-dropdown-popper .el-dropdown-menu__item) {
 	justify-content: center;
-	height: 28px;
-	padding: 0 6px;
+	box-sizing: border-box;
+	min-height: 32px;
+	height: 32px;
+	padding: 8px;
+	line-height: 16px;
 	border-radius: 5px;
 	color: #58718b;
-	font-size: 11px;
+	font-size: 10px;
 }
 
 :deep(.zoom-dropdown-popper .el-dropdown-menu__item:hover),
@@ -924,25 +1104,16 @@ const PlaceholderTab = defineComponent({
 	white-space: nowrap;
 }
 
-:deep(.canvas-bottom-left .el-button),
 :deep(.canvas-bottom-right .el-button),
 :deep(.selection-actions .el-button) {
 	color: #64748b;
 }
 
-:deep(.canvas-bottom-left .el-button.is-text:hover),
 :deep(.canvas-bottom-right .el-button.is-text:hover),
 :deep(.selection-actions .el-button.is-text:hover),
 :deep(.canvas-bottom-right .el-button.is-active) {
 	color: var(--ctff-brand-color);
 	background: var(--ctff-brand-color-background);
-}
-
-:deep(.canvas-bottom-left .el-button--primary),
-:deep(.canvas-bottom-left .el-button--primary:hover) {
-	color: #ffffff;
-	background: var(--ctff-brand-color);
-	border-color: var(--ctff-brand-color);
 }
 
 .canvas-error {
@@ -953,13 +1124,25 @@ const PlaceholderTab = defineComponent({
 	background: rgba(247, 249, 253, 0.9);
 }
 
-:deep(.canvas-toolbar .el-button) {
-	color: #64748b;
+:deep(.canvas-toolbar .el-button.is-text) {
+	color: var(--ctff-text-color-secondary);
 }
 
-:deep(.canvas-toolbar .el-button:hover) {
-	color: #554bb5;
-	background: #f1efff;
+:deep(.canvas-toolbar .el-button.is-text:not(.is-disabled):hover),
+:deep(.canvas-toolbar .el-button.is-text:not(.is-disabled):focus-visible) {
+	color: var(--ctff-brand-color);
+	background: var(--ctff-brand-color-background);
+}
+
+:deep(.canvas-toolbar .el-button.is-text:not(.is-disabled):active),
+:deep(.canvas-toolbar .el-button.is-text:not(.is-disabled).is-active) {
+	color: var(--ctff-brand-color-active);
+	background: var(--ctff-brand-color-background);
+}
+
+:deep(.canvas-toolbar .el-button.is-text.is-disabled) {
+	color: var(--ctff-text-color-quaternary);
+	background: transparent;
 }
 
 :deep(.canvas-toolbar .el-input__wrapper),
@@ -975,24 +1158,39 @@ const PlaceholderTab = defineComponent({
 	color: #3a4961;
 }
 
-:deep(.canvas-toolbar .el-button--primary.is-plain) {
+:deep(.canvas-toolbar .el-button--primary.is-plain:not(.is-disabled)) {
 	color: var(--ctff-brand-color);
 	background: var(--ctff-brand-color-background);
 	border-color: var(--ctff-brand-color-disabled-border);
 }
 
-:deep(.canvas-toolbar .el-button--primary:not(.is-plain)) {
-	color: #ffffff !important;
+:deep(.canvas-toolbar .el-button--primary.is-plain:not(.is-disabled):hover),
+:deep(.canvas-toolbar .el-button--primary.is-plain:not(.is-disabled):focus-visible) {
+	color: var(--ctff-brand-color-hover);
+	border-color: var(--ctff-brand-color-hover);
+}
+
+:deep(.canvas-toolbar .el-button--primary.is-plain:not(.is-disabled):active) {
+	color: var(--ctff-brand-color-active);
+	border-color: var(--ctff-brand-color-active);
+}
+
+:deep(.canvas-toolbar .el-button--primary:not(.is-plain, .is-disabled)) {
+	color: var(--ctff-solid-text-color);
 	background: var(--ctff-brand-color);
 	border-color: var(--ctff-brand-color);
 	box-shadow: 0 4px 12px rgb(var(--ctff-brand-color-rgb) / 22%);
 }
 
-:deep(.canvas-toolbar .el-button--primary:not(.is-plain):hover),
-:deep(.canvas-toolbar .el-button--primary:not(.is-plain):focus-visible) {
-	color: #ffffff !important;
+:deep(.canvas-toolbar .el-button--primary:not(.is-plain, .is-disabled):hover),
+:deep(.canvas-toolbar .el-button--primary:not(.is-plain, .is-disabled):focus-visible) {
 	background: var(--ctff-brand-color-hover);
 	border-color: var(--ctff-brand-color-hover);
+}
+
+:deep(.canvas-toolbar .el-button--primary:not(.is-plain, .is-disabled):active) {
+	background: var(--ctff-brand-color-active);
+	border-color: var(--ctff-brand-color-active);
 }
 
 .drawer-header {
@@ -1001,6 +1199,15 @@ const PlaceholderTab = defineComponent({
 	align-items: center;
 	width: 100%;
 	margin-right: -24px;
+}
+
+:deep(.model-drawer .el-drawer__header) {
+	padding: 18px 24px 10px;
+	margin-bottom: 0;
+}
+
+:deep(.model-drawer .el-drawer__body) {
+	padding: 0 24px 20px;
 }
 
 .back-button {

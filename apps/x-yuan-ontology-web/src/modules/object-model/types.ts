@@ -8,7 +8,7 @@ export type CompositionKind = "Association" | "Aggregation" | "Composition";
 
 export type NullMeaning = "UNKNOWN" | "NOT_PROVIDED" | "NOT_APPLICABLE";
 
-export const DATA_TYPES: DataType[] = ["String", "Integer", "Decimal", "Boolean", "DateTime", "Reference", "Enumeration"];
+export const DATA_TYPES: DataType[] = ["String", "Decimal", "Boolean", "DateTime", "Reference", "Enumeration"];
 
 export const COMPOSITION_KINDS: CompositionKind[] = ["Association", "Aggregation", "Composition"];
 
@@ -23,7 +23,7 @@ export interface DomainDef {
 	domainId: string;
 	name: string;
 	description?: string | null;
-	ownerRole: string;
+	ownerRole?: string;
 	color?: string;
 	objectCount?: number;
 }
@@ -169,6 +169,15 @@ export function cardinalityText(cardinality: Cardinality | undefined): string {
 		return "";
 	}
 	return `${cardinality.min}..${cardinality.max}`;
+}
+
+export function cardinalityQuantity(cardinality: Cardinality | undefined): string {
+	if (!cardinality) return "数量未设置";
+	const { min, max } = cardinality;
+	if (min === max) return `${min} 个`;
+	if (max === "N") return min <= 1 ? `${min} 个或多个` : `至少 ${min} 个`;
+	if (min === 0) return `至多 ${max} 个`;
+	return `${min}～${max} 个`;
 }
 
 export function relationTargetIds(relation: GraphRelation | RelationDetail): string[] {

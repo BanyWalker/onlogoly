@@ -22,12 +22,12 @@
 		</div>
 		<ElFormItem label="基数" required>
 			<ElSelect v-model="cardinalityPreset" placeholder="请选择基数" class="cardinality-select">
-				<ElOption label="1:1（一对一）" value="1:1" />
-				<ElOption label="1:n（一对多）" value="1:n" />
-				<ElOption label="n:1（多对一）" value="n:1" />
-				<ElOption label="m:n（多对多）" value="m:n" />
+				<ElOption label="1..N（一对多）" value="1..N" />
+				<ElOption label="N..1（多对一）" value="N..1" />
+				<ElOption label="1..1（一对一）" value="1..1" />
+				<ElOption label="M..N（多对多）" value="M..N" />
 			</ElSelect>
-			<div class="field-hint">按“源对象 : 目标对象”表示数量关系。</div>
+			<div class="field-hint">按“源对象 → 目标对象”表示数量关系。</div>
 		</ElFormItem>
 		<ElFormItem label="关系类型">
 			<ElRadioGroup v-model="draft.compositionKind" class="relation-type-options" @change="compositionChanged">
@@ -48,18 +48,21 @@
 			</div>
 			<ElCheckbox v-model="wholePart.partIndependent">部分可独立存在</ElCheckbox>
 		</div>
-		<ElFormItem label="反向名称"><ElInput v-model="draft.inverse" /></ElFormItem>
+		<ElFormItem label="反向名称（暂不展示）"><ElInput v-model="draft.inverse" /></ElFormItem>
 	</ElForm>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import type { Cardinality, CompositionKind, GraphObject, RelationDetail } from "../../types";
 
 const props = defineProps<{ relation: Partial<RelationDetail>; objects: GraphObject[]; creating: boolean }>();
 const draft = props.relation;
 const validationError = ref("");
-type CardinalityPreset = "1:1" | "1:n" | "n:1" | "m:n";
+type CardinalityPreset = "1..N" | "N..1" | "1..1" | "M..N";
+watch(() => draft.id, () => {
+	validationError.value = "";
+});
 const relationKinds: { value: CompositionKind; label: string; description: string }[] = [
 	{ value: "Association", label: "关联", description: "对象之间存在业务联系，各自独立，没有整体与部分的从属关系。" },
 	{ value: "Aggregation", label: "聚合", description: "整体由部分构成，部分可以脱离整体独立存在。" },
@@ -70,18 +73,17 @@ const cardinalityPreset = computed<CardinalityPreset | undefined>({
 		const source = draft.sourceCardinality;
 		const target = draft.targetCardinality;
 		if (!validCardinality(source) || !validCardinality(target)) return undefined;
-		const sourceMany = source.max === "N" || source.max > 1;
-		const targetMany = target.max === "N" || target.max > 1;
-		if (!sourceMany && !targetMany) return "1:1";
-		if (!sourceMany && targetMany) return "1:n";
-		if (sourceMany && !targetMany) return "n:1";
-		if (sourceMany && targetMany) return "m:n";
-		return undefined;
+		const sourceMany = source.max === "N" || (typeof source.max === "number" && source.max > 1);
+		const targetMany = target.max === "N" || (typeof target.max === "number" && target.max > 1);
+		if (!sourceMany && !targetMany) return "1..1";
+		if (!sourceMany && targetMany) return "1..N";
+		if (sourceMany && !targetMany) return "N..1";
+		return "M..N";
 	},
 	set: value => {
 		if (!value) return;
-		const sourceMax = value === "n:1" || value === "m:n" ? "N" : 1;
-		const targetMax = value === "1:n" || value === "m:n" ? "N" : 1;
+		const sourceMax = value === "N..1" || value === "M..N" ? "N" : 1;
+		const targetMax = value === "1..N" || value === "M..N" ? "N" : 1;
 		draft.sourceCardinality = presetCardinality(draft.sourceCardinality, sourceMax);
 		draft.targetCardinality = presetCardinality(draft.targetCardinality, targetMax);
 		validationError.value = "";
@@ -117,20 +119,20 @@ function validCardinality(value: Cardinality | undefined): value is Cardinality 
 		(value.max === "N" || (Number.isInteger(value.max) && value.max >= value.min))
 	);
 }
+function compositionChanged(value: string) {
+	if (value !== "Association" && !draft.wholePart) draft.wholePart = { wholeEnd: "", partEnd: "", partIndependent: false };
+}
 function presetCardinality(current: Cardinality | undefined, max: Cardinality["max"]): Cardinality {
 	const min = validCardinality(current) ? current.min : 0;
 	return { min: max === "N" ? min : Math.min(min, max), max };
-}
-function compositionChanged(value: string) {
-	if (value !== "Association" && !draft.wholePart) draft.wholePart = { wholeEnd: "", partEnd: "", partIndependent: false };
 }
 function validate(): string | null {
 	validationError.value = "";
 	if (!draft.name?.trim()) return (validationError.value = "关系名称为必填项");
 	if (!draft.sourceType) return (validationError.value = "请选择源对象");
 	if (!targetId.value) return (validationError.value = "请选择目标对象");
-	if (!validCardinality(draft.sourceCardinality) || !validCardinality(draft.targetCardinality))
-		return (validationError.value = "请选择有效基数：1:1、1:n、n:1 或 m:n");
+	if (!cardinalityPreset.value || !validCardinality(draft.sourceCardinality) || !validCardinality(draft.targetCardinality))
+		return (validationError.value = "请选择固定基数：1..N、N..1、1..1 或 M..N");
 	if (draft.compositionKind !== "Association" && (!wholePart.value.wholeEnd.trim() || !wholePart.value.partEnd.trim()))
 		return (validationError.value = "聚合或组合关系需要填写整体端和部分端名称");
 	draft.crossDomainDeclared = crossDomainMismatch.value;

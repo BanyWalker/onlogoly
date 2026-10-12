@@ -1,16 +1,26 @@
 <template>
-	<ElSubMenu v-if="showChildren && item.children.length > 0" :index="item.name" :disabled="item.disabled">
+	<ElSubMenu v-if="props.showChildren && props.item.children.length > 0" :index="props.item.name" :disabled="props.item.disabled">
 		<template #title>
-			<ElIcon v-if="resolveAppIcon(item.icon)"><component :is="resolveAppIcon(item.icon)" /></ElIcon>
-			<span>{{ item.label }}</span>
-			<ElTag v-if="item.badge" size="small" type="info" effect="plain" class="ctff-nav-badge">{{ item.badge }}</ElTag>
+			<ElIcon v-if="resolveAppIcon(props.item.icon)"><component :is="resolveAppIcon(props.item.icon)" /></ElIcon>
+			<span>{{ props.item.label }}</span>
+			<ElTag v-if="props.showBadge && props.item.badge" size="small" type="info" effect="plain" class="ctff-nav-badge">{{
+				props.item.badge
+			}}</ElTag>
 		</template>
-		<AppNavigationItem v-for="child in item.children" :key="child.name" :item="child" :show-children="showChildren" />
+		<AppNavigationItem
+			v-for="child in props.item.children"
+			:key="child.name"
+			:item="child"
+			:show-children="props.showChildren"
+			:show-badge="props.showBadge"
+		/>
 	</ElSubMenu>
-	<ElMenuItem v-else :index="item.name" :disabled="item.disabled">
-		<ElIcon v-if="resolveAppIcon(item.icon)"><component :is="resolveAppIcon(item.icon)" /></ElIcon>
-		<span>{{ item.label }}</span>
-		<ElTag v-if="item.badge" size="small" type="info" effect="plain" class="ctff-nav-badge">{{ item.badge }}</ElTag>
+	<ElMenuItem v-else :index="props.item.name" :disabled="props.item.disabled">
+		<ElIcon v-if="resolveAppIcon(props.item.icon)"><component :is="resolveAppIcon(props.item.icon)" /></ElIcon>
+		<span>{{ props.item.label }}</span>
+		<ElTag v-if="props.showBadge && props.item.badge" size="small" type="info" effect="plain" class="ctff-nav-badge">{{
+			props.item.badge
+		}}</ElTag>
 	</ElMenuItem>
 </template>
 
@@ -18,10 +28,16 @@
 import { resolveAppIcon } from "@/navigation/icons";
 import type { AppNavigationItem } from "@/navigation/navigation";
 
-defineProps<{
-	item: AppNavigationItem;
-	showChildren: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		item: AppNavigationItem;
+		showChildren: boolean;
+		showBadge?: boolean;
+	}>(),
+	{
+		showBadge: true
+	}
+);
 </script>
 
 <style scoped>

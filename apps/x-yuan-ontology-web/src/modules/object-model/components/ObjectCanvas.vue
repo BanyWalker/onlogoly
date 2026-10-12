@@ -7,9 +7,10 @@ import { Graph } from "@antv/x6";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import { cardinalityText, relationTargetIds, type GraphObject, type GraphRelation } from "../types";
+import { searchTextParts } from "../search-text";
 
-const NODE_WIDTH = 232;
-const NODE_HEIGHT = 124;
+const NODE_WIDTH = 250;
+const NODE_HEIGHT = 112;
 const MIN_ROUTE_GAP = 24;
 const GRAPH_PADDING = { top: 56, right: 56, bottom: 56, left: 56 };
 
@@ -19,6 +20,7 @@ const props = defineProps<{
 	domainColorMap: Map<string, string>;
 	domainNameMap: Map<string, string>;
 	highlightedIds: Set<string>;
+	searchText?: string;
 	selectedObjectIds?: string[];
 	selectedObjectId?: string;
 	selectedRelationId?: string;
@@ -170,6 +172,22 @@ function hasFocus() {
 	return props.highlightedIds.size > 0 || selectedIds().size > 0 || !!props.selectedRelationId;
 }
 
+function searchAnnotations(text: string) {
+	return JSON.stringify(searchTextParts(text, props.searchText ?? "").filter(part => part.matched).map(part => ({
+		start: part.start,
+		end: part.start + part.text.length,
+		attrs: {
+			class: "search-text-match",
+			fill: "#b45309",
+			stroke: "#fef3c7",
+			"stroke-width": 3,
+			"stroke-linejoin": "round",
+			"paint-order": "stroke",
+			"font-weight": 700
+		}
+	})));
+}
+
 function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 	const color = domainColor(object.domainId);
 	const domainName = props.domainNameMap.get(object.domainId) ?? object.domainId;
@@ -178,23 +196,7 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 	const highlighted = selected || searchMatch || props.selectedObjectId === object.id;
 	const dimmed = hasFocus() && !nodeIsFocused(object.id);
 	const nodeOpacity = dimmed ? 0.24 : object.status === "deprecated" ? 0.45 : 1;
-	const identityText = object.identityAttrNames.length ? object.identityAttrNames.join(" · ") : object.id;
-	const statusColor = object.status === "deprecated" ? "#D97706" : "#22C0A8";
-	// 对象编码与名称分行，避免长名称压缩可读空间。
-	const codeText = object.id.toUpperCase();
-	// 关联计数：源端出现记 1 次，目标端（含多目标）各记 1 次
-	const relationCount = props.relations.reduce((count, relation) => {
-		if (relation.status === "deprecated") {
-			return count;
-		}
-		if (relation.sourceType === object.id) {
-			count += 1;
-		}
-		if (relationTargetIds(relation).includes(object.id)) {
-			count += 1;
-		}
-		return count;
-	}, 0);
+	const codeText = object.id;
 	return {
 		id: object.id,
 		shape: "object-node",
@@ -205,26 +207,15 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 		z: 10,
 		attrs: {
 			body: {
-				stroke: highlighted ? color : "#D9E7F5",
+				stroke: highlighted ? color : "#E5EAF2",
 				strokeWidth: highlighted ? 1.5 : 1,
 				opacity: nodeOpacity
 			},
-			// 头部染色区（44px，领域色 10%）+ 同色 22% 分隔线——迭代五节点结构
-			headerBg: { fill: rgba(color, 0.1), opacity: nodeOpacity },
-			divider: { fill: rgba(color, 0.22), opacity: nodeOpacity },
-			iconChip: { fill: rgba(color, 0.14), opacity: nodeOpacity },
-			objectIcon: { stroke: color, opacity: nodeOpacity },
-			identityIcon: { stroke: color, opacity: nodeOpacity },
+			domainChipBg: { fill: rgba(color, 0.1), opacity: dimmed ? 0.2 : 1 },
+			domainDot: { fill: color, opacity: dimmed ? 0.3 : 1 },
 			domainLabel: { text: domainName, fill: color, opacity: dimmed ? 0.3 : 1 },
-			statusDot: { fill: statusColor, opacity: dimmed ? 0.25 : 1 },
-			title: { text: object.name, opacity: dimmed ? 0.3 : 1 },
-			codeText: { text: codeText, opacity: dimmed ? 0.3 : 1 },
-			idChipBg: { fill: rgba(color, 0.1), opacity: dimmed ? 0.2 : 1 },
-			idChipText: { text: identityText, fill: color, opacity: dimmed ? 0.3 : 1 },
-			attrsChipText: { text: object.attributeCount == null ? "" : `${object.attributeCount} 属性`, opacity: dimmed ? 0.3 : 1 },
-			attrsChipBg: { fill: "#F0F6FC", opacity: object.attributeCount == null ? 0 : dimmed ? 0.2 : 1 },
-			relsChipBg: { fill: "#F0F6FC", opacity: dimmed ? 0.2 : 1 },
-			relsChipText: { text: `${relationCount} 关系`, opacity: dimmed ? 0.3 : 1 }
+			title: { text: object.name, annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
+			codeText: { text: codeText, annotations: searchAnnotations(codeText), opacity: dimmed ? 0.3 : 1 }
 		},
 		ports: {
 			groups: {
@@ -324,17 +315,6 @@ function connectionPorts(objectId: string, plans: ConnectionPlan[]) {
 	});
 }
 
-function cardinalityPosition(side: string, target = false) {
-	return {
-		distance: target ? -24 : 24,
-		offset: side === "p-top" || side === "p-bottom" ? { x: 12, y: 0 } : { x: 0, y: -12 }
-	};
-}
-
-function compactCardinality(cardinality: GraphRelation["sourceCardinality"]) {
-	return cardinalityText(cardinality).replace(/^(\d+)\.\.\1$/, "$1").replace("N", "n");
-}
-
 function buildEdges(plans: ConnectionPlan[]) {
 	const edges: Record<string, unknown>[] = [];
 	for (const { id, sourceType, targetType, group, ports } of plans) {
@@ -350,13 +330,9 @@ function buildEdges(plans: ConnectionPlan[]) {
 		const isBundle = group.length > 1;
 		const selfLoop = sourceType === targetType;
 		const relationName = isBundle ? `${first.name} +${group.length - 1}` : first.name;
-		const labelText = first.annotation?.showLabel === false ? "" : relationName;
-		// 基数极简：仅当 bundle 内基数一致时展示端点纯文字（近源端/近目标端各一枚，无容器）
-		const cardinalities = new Set(
-			group.map(relation => `${compactCardinality(relation.sourceCardinality)}\u0000${compactCardinality(relation.targetCardinality)}`)
-		);
-		const showCardinality = cardinalities.size === 1;
-		const [sourceCardText, targetCardText] = [...cardinalities][0]?.split("\u0000") ?? ["", ""];
+		const targetRanges = new Set(group.map(relation => cardinalityText(relation.targetCardinality)));
+		const rangeText = [...targetRanges].join(" / ");
+		const labelText = first.annotation?.showLabel === false ? "" : `${relationName} · ${rangeText}`;
 		const loopPorts = selfLoop ? connectionPorts(sourceType, plans) : [];
 		const loopVertices = selfLoop ? selfLoopVertices(
 			sourceType,
@@ -364,11 +340,11 @@ function buildEdges(plans: ConnectionPlan[]) {
 			loopPorts.find(port => port.id === `${id}:target`)!.args.x
 		) : [];
 		const glassLabels = [
-			// 关系名：毛玻璃胶囊（半透明白 + 顶光内描边），线从底下穿过
 			...(labelText
 				? [
 						{
 							markup: [
+								{ tagName: "title", textContent: labelText },
 								{
 									tagName: "foreignObject",
 									selector: "glass",
@@ -400,11 +376,13 @@ function buildEdges(plans: ConnectionPlan[]) {
 									refX: -10,
 									refY: -6,
 									filter: { name: "relationship-glass" },
-									pointerEvents: "none"
+									pointerEvents: "all",
+									cursor: "pointer"
 								},
 								label: {
 									text: labelText,
-									fontSize: 11,
+									fontSize: 12,
+									lineHeight: 16,
 									fontWeight: 600,
 									fill: selected ? "#183D5D" : "#2B5170",
 									textAnchor: "middle",
@@ -413,46 +391,6 @@ function buildEdges(plans: ConnectionPlan[]) {
 								}
 							},
 							position: 0.5
-						}
-					]
-				: []),
-			// 源端基数：纯文字贴线
-			...(showCardinality && sourceCardText
-				? [
-						{
-							markup: [{ tagName: "text", selector: "label" }],
-							attrs: {
-								label: {
-									text: sourceCardText,
-									fontSize: 10,
-									fontWeight: 500,
-									fill: selected ? "#647E98" : "#8FA3B8",
-									textAnchor: "middle",
-									textVerticalAnchor: "middle",
-									pointerEvents: "none"
-								}
-							},
-							position: cardinalityPosition(ports.source)
-						}
-					]
-				: []),
-			// 目标端基数：纯文字贴线
-			...(showCardinality && targetCardText
-				? [
-						{
-							markup: [{ tagName: "text", selector: "label" }],
-							attrs: {
-								label: {
-									text: targetCardText,
-									fontSize: 10,
-									fontWeight: 500,
-									fill: selected ? "#647E98" : "#8FA3B8",
-									textAnchor: "middle",
-									textVerticalAnchor: "middle",
-									pointerEvents: "none"
-								}
-							},
-							position: cardinalityPosition(ports.target, true)
 						}
 					]
 				: [])
@@ -649,10 +587,10 @@ function updateSelection() {
 			identityIcon: { opacity: nodeOpacity },
 			domainLabel: { opacity: dimmed ? 0.3 : 1 },
 			statusDot: { opacity: dimmed ? 0.25 : 1 },
-			title: { opacity: dimmed ? 0.3 : 1 },
-			codeText: { opacity: dimmed ? 0.3 : 1 },
+			title: { annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
+			codeText: { annotations: searchAnnotations(object.id.toUpperCase()), opacity: dimmed ? 0.3 : 1 },
 			idChipBg: { opacity: dimmed ? 0.2 : 1 },
-			idChipText: { opacity: dimmed ? 0.3 : 1 },
+			idChipText: { annotations: searchAnnotations(object.identityAttrNames.length ? object.identityAttrNames.join(" · ") : object.id), opacity: dimmed ? 0.3 : 1 },
 			attrsChipText: { opacity: dimmed ? 0.3 : 1 },
 			attrsChipBg: { opacity: object.attributeCount == null ? 0 : dimmed ? 0.2 : 1 },
 			relsChipBg: { opacity: dimmed ? 0.2 : 1 },
@@ -674,7 +612,7 @@ function updateSelection() {
 		edge.attr("line/strokeOpacity", dimmed ? 0.12 : 0.92);
 		edge.attr("line/strokeWidth", selected ? 2.8 : data.bundleSize && data.bundleSize > 1 ? 2.6 : 2);
 		edge.getLabels().forEach((label, index) => {
-			const fill = label.attrs?.label?.fontSize === 11
+			const fill = label.attrs?.label?.fontSize === 12
 				? selected ? "#183D5D" : dimmed ? "#9AAABC" : "#2B5170"
 				: selected ? "#647E98" : dimmed ? "#B7C3D0" : "#8FA3B8";
 			edge.prop(["labels", String(index), "attrs", "label", "fill"], fill);
@@ -888,14 +826,14 @@ onMounted(() => {
 		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
 		edge.attr("line/strokeWidth", data.selected ? 3.3 : data.bundleSize && data.bundleSize > 1 ? 3.1 : 2.5);
 		edge.getLabels().forEach((label, index) => {
-			if (label.attrs?.label?.fontSize === 11) edge.prop(["labels", String(index), "attrs", "label", "fill"], "#183D5D");
+			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], "#183D5D");
 		});
 	});
 	graph.on("edge:mouseleave", ({ edge }) => {
 		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
 		edge.attr("line/strokeWidth", data.selected ? 2.8 : data.bundleSize && data.bundleSize > 1 ? 2.6 : 2);
 		edge.getLabels().forEach((label, index) => {
-			if (label.attrs?.label?.fontSize === 11) edge.prop(["labels", String(index), "attrs", "label", "fill"], data.selected ? "#183D5D" : "#2B5170");
+			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], data.selected ? "#183D5D" : "#2B5170");
 		});
 	});
 	graph.on("blank:click", () => {
@@ -964,7 +902,7 @@ watch(
 
 // Selection and drawer changes update existing SVG attributes; they do not rebuild
 // the graph, which keeps blank-canvas clicks free of visible flicker.
-watch(() => [props.highlightedIds, props.selectedObjectIds, props.selectedObjectId, props.selectedRelationId], updateSelection, { deep: true });
+watch(() => [props.searchText, props.highlightedIds, props.selectedObjectIds, props.selectedObjectId, props.selectedRelationId], updateSelection, { deep: true });
 
 onBeforeUnmount(() => {
 	resizeObserver?.disconnect();

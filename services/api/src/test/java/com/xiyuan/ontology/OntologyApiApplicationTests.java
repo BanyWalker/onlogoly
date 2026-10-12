@@ -66,4 +66,25 @@ class OntologyApiApplicationTests {
 			.andExpect(jsonPath("$.details[0].field").value("definition"));
 	}
 
+	@Test
+	void domainCreationAcceptsNameWithoutOwnerRole() throws Exception {
+		mockMvc.perform(post("/api/v1/domains")
+				.contentType(APPLICATION_JSON)
+				.content("{\"name\":\"Inline domain\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.domainId").isString())
+			.andExpect(jsonPath("$.data.name").value("Inline domain"))
+			.andExpect(jsonPath("$.data.ownerRole").doesNotExist());
+	}
+
+	@Test
+	void domainCreationStillRequiresName() throws Exception {
+		mockMvc.perform(post("/api/v1/domains")
+				.contentType(APPLICATION_JSON)
+				.content("{\"name\":\"   \"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("DOMAIN_REQUIRED_MISSING"))
+			.andExpect(jsonPath("$.details[0].field").value("name"));
+	}
+
 }

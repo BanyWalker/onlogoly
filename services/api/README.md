@@ -1,5 +1,7 @@
 # 曦元本体平台 Java 后端基础工程
 
+当前对象建模使用可替换的存储接口与 JSON 适配器，实际数据位于后端平级的 [workspace-data](../workspace-data/README.md)。存储契约、配置、事务恢复和迁移步骤见 [STORAGE.md](./STORAGE.md)。
+
 此目录是从 [Spring Initializr](https://start.spring.io/) 下载并适配的 Java 后端工程，供后续术语、对象、规则和公共建模能力开发使用。当前只提供框架、配置和基础验证，尚无本体业务接口、业务表或审批流程。
 
 ## 技术基线

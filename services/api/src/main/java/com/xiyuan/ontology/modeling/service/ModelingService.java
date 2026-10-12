@@ -4,14 +4,22 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.xiyuan.ontology.modeling.api.ApiException;
 import com.xiyuan.ontology.modeling.api.ErrorDetail;
-import com.xiyuan.ontology.modeling.storage.WorkspaceStore;
+import com.xiyuan.ontology.modeling.codec.ModelJsonCodec;
+import com.xiyuan.ontology.modeling.model.AuditEvent;
+import com.xiyuan.ontology.modeling.model.LayoutState;
+import com.xiyuan.ontology.modeling.model.LayoutState.Position;
+import com.xiyuan.ontology.modeling.storage.ModelStorage;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
@@ -39,20 +47,25 @@ public class ModelingService {
 
 	private static final Set<String> NULL_MEANINGS = Set.of("UNKNOWN", "NOT_PROVIDED", "NOT_APPLICABLE");
 
-	private final WorkspaceStore store;
+	private final ModelStorage storage;
 
-	public ModelingService(WorkspaceStore store) {
-		this.store = store;
+	private final String workspaceId;
+
+	private final ModelJsonCodec codec = new ModelJsonCodec();
+
+	public ModelingService(ModelStorage storage, @Value("${xiyuan.workspace.id:ENV-OM-001}") String workspaceId) {
+		this.storage = storage;
+		this.workspaceId = workspaceId;
 	}
 
 	// ---------------------------------------------------------------- 画布与导出
 
 	public ObjectNode graph(String domainId) {
-		return this.store.read(doc -> {
+		return read(doc -> {
 			ObjectNode data = JsonNodeFactory.instance.objectNode();
-			data.put("layoutRevision", this.store.layoutRevision());
+			data.put("layoutRevision", doc.layoutRevision());
 			ArrayNode domains = data.putArray("domains");
-			ArrayNode domainArray = (ArrayNode) doc.path("domains");
+			List<JsonNode> domainArray = doc.domains();
 			for (int i = 0; i < domainArray.size(); i++) {
 				ObjectNode domain = (ObjectNode) domainArray.get(i);
 				ObjectNode item = domain.deepCopy();
@@ -61,7 +74,7 @@ public class ModelingService {
 				domains.add(item);
 			}
 			ArrayNode objects = data.putArray("objects");
-			for (JsonNode object : doc.path("objects")) {
+			for (JsonNode object : doc.objects()) {
 				if (domainId != null && !domainId.isBlank()
 						&& !domainId.equals(object.path("domainId").asString())) {
 					continue;
@@ -69,7 +82,7 @@ public class ModelingService {
 				objects.add(toGraphObject((ObjectNode) object));
 			}
 			ArrayNode relations = data.putArray("relations");
-			for (JsonNode relation : doc.path("relations")) {
+			for (JsonNode relation : doc.relations()) {
 				if (domainId != null && !domainId.isBlank()) {
 					String sourceDomain = domainOfObject(doc, relation.path("sourceType").asString());
 					String targetDomain = domainOfObject(doc, firstTarget(relation));
@@ -84,8 +97,8 @@ public class ModelingService {
 	}
 
 	public ObjectNode exportModel() {
-		return this.store.read(doc -> {
-			ObjectNode export = doc.deepCopy();
+		return read(doc -> {
+			ObjectNode export = doc.export();
 			ObjectNode meta = JsonNodeFactory.instance.objectNode();
 			meta.put("generatedAt", Instant.now().toString());
 			meta.put("generator", "xiyuan-modeling-api/1.0");
@@ -106,7 +119,7 @@ public class ModelingService {
 	// ---------------------------------------------------------------- 对象类型
 
 	public ObjectNode createObjectType(JsonNode body) {
-		ObjectNode created = this.store.mutate(doc -> {
+		ObjectNode created = mutate("OBJECT_TYPE_CREATED", null, doc -> {
 			String id = optionalText(body, "id");
 			if (id == null) {
 				id = generateId("OBJ");
@@ -150,21 +163,20 @@ public class ModelingService {
 					: JsonNodeFactory.instance.arrayNode());
 			stampCreated(object);
 
-			((ArrayNode) doc.path("objects")).add(object);
+			doc.addObject(object);
 			applyAttributes(doc, object, body);
 			if (body.path("identitySpec").isObject()) {
 				validateIdentitySpec(object, body.path("identitySpec"), id);
 				object.set("identitySpec", body.path("identitySpec").deepCopy());
 			}
-			appendRevision(id, "CREATE", object.path("changeReason").asString(), object);
+			appendRevision(doc, id, "CREATE", object.path("changeReason").asString(), object);
 			return object;
 		});
-		this.store.appendEvent(this.store.newEvent("OBJECT_TYPE_CREATED", created.path("id").asString()));
 		return created;
 	}
 
 	public ObjectNode getObjectType(String id) {
-		return this.store.read(doc -> {
+		return read(doc -> {
 			ObjectNode object = findObject(doc, id);
 			if (object == null) {
 				throw ApiException.notFound("OBJECT_TYPE_NOT_FOUND", "对象类型不存在: " + id);
@@ -174,7 +186,7 @@ public class ModelingService {
 	}
 
 	public ObjectNode updateObjectType(String id, JsonNode body, Integer ifMatch) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("OBJECT_TYPE_UPDATED", null, doc -> {
 			ObjectNode object = findObject(doc, id);
 			if (object == null) {
 				throw ApiException.notFound("OBJECT_TYPE_NOT_FOUND", "对象类型不存在: " + id);
@@ -224,27 +236,26 @@ public class ModelingService {
 
 			String finalId = object.path("id").asString();
 			bumpRevision(object, body);
-			appendRevision(finalId, "UPDATE", object.path("changeReason").asString(), object);
+			appendRevision(doc, finalId, "UPDATE", object.path("changeReason").asString(), object);
 			return object;
 		});
-		this.store.appendEvent(this.store.newEvent("OBJECT_TYPE_UPDATED", updated.path("id").asString()));
 		return updated;
 	}
 
 	public ObjectNode deprecateObjectType(String id, Integer ifMatch) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("OBJECT_TYPE_DEPRECATED", id, doc -> {
 			ObjectNode object = findObject(doc, id);
 			if (object == null) {
 				throw ApiException.notFound("OBJECT_TYPE_NOT_FOUND", "对象类型不存在: " + id);
 			}
 			assertRevision(object, ifMatch, id);
 			List<ErrorDetail> references = new ArrayList<>();
-			for (JsonNode relation : doc.path("relations")) {
+			for (JsonNode relation : doc.relations()) {
 				if (!"deprecated".equals(relation.path("status").asString()) && endpointsInclude(relation, id)) {
 					references.add(new ErrorDetail("relations", relation.path("id").asString(), id));
 				}
 			}
-			for (JsonNode other : doc.path("objects")) {
+			for (JsonNode other : doc.objects()) {
 				for (JsonNode attr : other.path("attributes")) {
 					for (JsonNode target : attr.path("referenceTarget")) {
 						if (id.equals(target.asString())) {
@@ -259,17 +270,16 @@ public class ModelingService {
 			object.put("status", "deprecated");
 			bumpRevision(object, null);
 			object.put("changeReason", "废弃");
-			appendRevision(id, "DEPRECATE", "废弃", object);
+			appendRevision(doc, id, "DEPRECATE", "废弃", object);
 			return object;
 		});
-		this.store.appendEvent(this.store.newEvent("OBJECT_TYPE_DEPRECATED", id));
 		return updated;
 	}
 
 	// ---------------------------------------------------------------- 属性
 
 	public ObjectNode createAttribute(String objectId, JsonNode body) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("ATTRIBUTE_CREATED", null, doc -> {
 			ObjectNode object = requireObject(doc, objectId);
 			String attrId = optionalText(body, "id");
 			if (attrId == null) {
@@ -279,15 +289,14 @@ public class ModelingService {
 			ObjectNode attribute = buildAttribute(doc, object, attrId, body, null);
 			((ArrayNode) object.path("attributes")).add(attribute);
 			bumpRevision(object, body);
-			appendRevision(objectId, "ATTRIBUTE_CREATED", object.path("changeReason").asString(), object);
+			appendRevision(doc, objectId, "ATTRIBUTE_CREATED", object.path("changeReason").asString(), object);
 			return attribute;
 		});
-		this.store.appendEvent(this.store.newEvent("ATTRIBUTE_CREATED", updated.path("id").asString()));
 		return updated;
 	}
 
 	public ObjectNode updateAttribute(String objectId, String attrId, JsonNode body) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("ATTRIBUTE_UPDATED", attrId, doc -> {
 			ObjectNode object = requireObject(doc, objectId);
 			ObjectNode attribute = findAttribute(object, attrId);
 			if (attribute == null) {
@@ -295,15 +304,14 @@ public class ModelingService {
 			}
 			buildAttribute(doc, object, attrId, body, attribute);
 			bumpRevision(object, body);
-			appendRevision(objectId, "ATTRIBUTE_UPDATED", object.path("changeReason").asString(), object);
+			appendRevision(doc, objectId, "ATTRIBUTE_UPDATED", object.path("changeReason").asString(), object);
 			return attribute;
 		});
-		this.store.appendEvent(this.store.newEvent("ATTRIBUTE_UPDATED", attrId));
 		return updated;
 	}
 
 	public ObjectNode deleteAttribute(String objectId, String attrId) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("ATTRIBUTE_DELETED", attrId, doc -> {
 			ObjectNode object = requireObject(doc, objectId);
 			for (JsonNode identityAttr : object.path("identitySpec").path("attributes")) {
 				if (attrId.equals(identityAttr.asString())) {
@@ -324,33 +332,31 @@ public class ModelingService {
 				throw ApiException.notFound("ATTRIBUTE_NOT_FOUND", "属性不存在: " + attrId);
 			}
 			bumpRevision(object, null);
-			appendRevision(objectId, "ATTRIBUTE_DELETED", "删除属性 " + attrId, object);
+			appendRevision(doc, objectId, "ATTRIBUTE_DELETED", "删除属性 " + attrId, object);
 			return object;
 		});
-		this.store.appendEvent(this.store.newEvent("ATTRIBUTE_DELETED", attrId));
 		return updated;
 	}
 
 	// ---------------------------------------------------------------- 关系
 
 	public ObjectNode createRelation(JsonNode body) {
-		ObjectNode created = this.store.mutate(doc -> {
+		ObjectNode created = mutate("RELATION_CREATED", null, doc -> {
 			String id = optionalText(body, "id");
 			if (id == null) {
 				id = generateId("REL");
 			}
 			assertGloballyUnique(doc, id, null);
 			ObjectNode relation = buildRelation(doc, id, body, null);
-			((ArrayNode) doc.path("relations")).add(relation);
-			appendRevision(id, "CREATE", relation.path("changeReason").asString(), relation);
+			doc.addRelation(relation);
+			appendRevision(doc, id, "CREATE", relation.path("changeReason").asString(), relation);
 			return relation;
 		});
-		this.store.appendEvent(this.store.newEvent("RELATION_CREATED", created.path("id").asString()));
 		return created;
 	}
 
 	public ObjectNode getRelation(String id) {
-		return this.store.read(doc -> {
+		return read(doc -> {
 			ObjectNode relation = findRelation(doc, id);
 			if (relation == null) throw ApiException.notFound("RELATION_NOT_FOUND", "关系不存在: " + id);
 			return relation.deepCopy();
@@ -358,7 +364,7 @@ public class ModelingService {
 	}
 
 	public ObjectNode updateRelation(String id, JsonNode body, Integer ifMatch) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("RELATION_UPDATED", id, doc -> {
 			ObjectNode relation = findRelation(doc, id);
 			if (relation == null) {
 				throw ApiException.notFound("RELATION_NOT_FOUND", "关系不存在: " + id);
@@ -366,21 +372,20 @@ public class ModelingService {
 			assertRevision(relation, ifMatch, id);
 			buildRelation(doc, id, body, relation);
 			bumpRevision(relation, body);
-			appendRevision(id, "UPDATE", relation.path("changeReason").asString(), relation);
+			appendRevision(doc, id, "UPDATE", relation.path("changeReason").asString(), relation);
 			return relation;
 		});
-		this.store.appendEvent(this.store.newEvent("RELATION_UPDATED", id));
 		return updated;
 	}
 
 	public ObjectNode deleteRelation(String id) {
-		ObjectNode removed = this.store.mutate(doc -> {
+		ObjectNode removed = mutate("RELATION_DELETED", id, doc -> {
 			ObjectNode relation = findRelation(doc, id);
 			if (relation == null) {
 				throw ApiException.notFound("RELATION_NOT_FOUND", "关系不存在: " + id);
 			}
 			List<ErrorDetail> references = new ArrayList<>();
-			for (JsonNode object : doc.path("objects")) {
+			for (JsonNode object : doc.objects()) {
 				for (JsonNode attr : object.path("attributes")) {
 					if (id.equals(attr.path("relationRef").asString(null))) {
 						references.add(new ErrorDetail("attributes", attr.path("id").asString(), id));
@@ -390,26 +395,20 @@ public class ModelingService {
 			if (!references.isEmpty()) {
 				throw ApiException.conflict("OBJ_DELETE_PROTECTED", "关系被引用型属性引用，删除被拒绝", references);
 			}
-			ArrayNode relations = (ArrayNode) doc.path("relations");
-			for (int i = 0; i < relations.size(); i++) {
-				if (id.equals(relations.get(i).path("id").asString())) {
-					relations.remove(i);
-					break;
-				}
-			}
-			appendRevision(id, "DELETE", "删除关系", relation);
+			doc.removeRelation(id);
+			bumpRevision(relation, null);
+			appendRevision(doc, id, "DELETE", "删除关系", relation);
 			return relation;
 		});
-		this.store.appendEvent(this.store.newEvent("RELATION_DELETED", id));
 		return removed;
 	}
 
 	// ---------------------------------------------------------------- 领域
 
 	public ArrayNode listDomains() {
-		return this.store.read(doc -> {
+		return read(doc -> {
 			ArrayNode result = JsonNodeFactory.instance.arrayNode();
-			for (JsonNode domain : doc.path("domains")) {
+			for (JsonNode domain : doc.domains()) {
 				ObjectNode item = ((ObjectNode) domain).deepCopy();
 				item.put("objectCount", countObjectsOfDomain(doc, domain.path("domainId").asString()));
 				result.add(item);
@@ -419,9 +418,8 @@ public class ModelingService {
 	}
 
 	public ObjectNode createDomain(JsonNode body) {
-		ObjectNode created = this.store.mutate(doc -> {
+		ObjectNode created = mutate("DOMAIN_CREATED", null, doc -> {
 			String name = requireText(body, "name", "DOMAIN_REQUIRED_MISSING", null);
-			String ownerRole = requireText(body, "ownerRole", "DOMAIN_REQUIRED_MISSING", null);
 			String domainId = optionalText(body, "domainId");
 			if (domainId == null) {
 				domainId = generateId("DOMAIN");
@@ -435,16 +433,16 @@ public class ModelingService {
 			domain.put("domainId", domainId);
 			domain.put("name", name);
 			putIfText(domain, "description", body);
-			domain.put("ownerRole", ownerRole);
-			((ArrayNode) doc.path("domains")).add(domain);
+			putIfText(domain, "ownerRole", body);
+			doc.addDomain(domain);
+			appendRevision(doc, domainId, "CREATE", "初始创建", domain);
 			return domain;
 		});
-		this.store.appendEvent(this.store.newEvent("DOMAIN_CREATED", created.path("domainId").asString()));
 		return created;
 	}
 
 	public ObjectNode updateDomain(String id, JsonNode body) {
-		ObjectNode updated = this.store.mutate(doc -> {
+		ObjectNode updated = mutate("DOMAIN_UPDATED", id, doc -> {
 			ObjectNode domain = findDomain(doc, id);
 			if (domain == null) {
 				throw ApiException.notFound("DOMAIN_NOT_FOUND", "领域不存在: " + id);
@@ -458,25 +456,26 @@ public class ModelingService {
 			if (body.has("ownerRole")) {
 				domain.put("ownerRole", requireText(body, "ownerRole", "DOMAIN_REQUIRED_MISSING", id));
 			}
+			bumpRevision(domain, body);
+			appendRevision(doc, id, "UPDATE", "更新领域", domain);
 			return domain;
 		});
-		this.store.appendEvent(this.store.newEvent("DOMAIN_UPDATED", id));
 		return updated;
 	}
 
 	public ObjectNode deleteDomain(String id) {
-		ObjectNode removed = this.store.mutate(doc -> {
+		ObjectNode removed = mutate("DOMAIN_DELETED", id, doc -> {
 			ObjectNode domain = findDomain(doc, id);
 			if (domain == null) {
 				throw ApiException.notFound("DOMAIN_NOT_FOUND", "领域不存在: " + id);
 			}
 			List<ErrorDetail> usage = new ArrayList<>();
-			for (JsonNode object : doc.path("objects")) {
+			for (JsonNode object : doc.objects()) {
 				if (id.equals(object.path("domainId").asString())) {
 					usage.add(new ErrorDetail("objects", object.path("id").asString(), id));
 				}
 			}
-			for (JsonNode relation : doc.path("relations")) {
+			for (JsonNode relation : doc.relations()) {
 				if (id.equals(relation.path("domainId").asString())) {
 					usage.add(new ErrorDetail("relations", relation.path("id").asString(), id));
 				}
@@ -484,16 +483,11 @@ public class ModelingService {
 			if (!usage.isEmpty()) {
 				throw ApiException.conflict("DOMAIN_IN_USE", "领域仍被对象或关系使用，删除被拒绝", usage);
 			}
-			ArrayNode domains = (ArrayNode) doc.path("domains");
-			for (int i = 0; i < domains.size(); i++) {
-				if (id.equals(domains.get(i).path("domainId").asString())) {
-					domains.remove(i);
-					break;
-				}
-			}
+			doc.removeDomain(id);
+			bumpRevision(domain, null);
+			appendRevision(doc, id, "DELETE", "删除领域", domain);
 			return domain;
 		});
-		this.store.appendEvent(this.store.newEvent("DOMAIN_DELETED", id));
 		return removed;
 	}
 
@@ -506,16 +500,57 @@ public class ModelingService {
 		if (positions == null || !positions.isObject()) {
 			throw ApiException.badRequest("LAYOUT_INVALID", "布局内容必须为 { 对象id: {x, y} } 结构");
 		}
-		int newRevision = this.store.saveLayout(ifMatch, (ObjectNode) positions);
+		int newRevision = this.storage.write(this.workspaceId, session -> {
+			LayoutState current = session.layout().get();
+			if (current.revision() != ifMatch) {
+				throw ApiException.revisionConflict("layout", ifMatch, current.revision());
+			}
+			Map<UUID, Position> merged = new LinkedHashMap<>(current.positions());
+			positions.properties().forEach(entry -> {
+				var object = session.objects().findById(entry.getKey());
+				JsonNode position = entry.getValue();
+				if (object.isEmpty() || !position.isObject() || !position.path("x").isNumber() || !position.path("y").isNumber()
+						|| !Double.isFinite(position.path("x").asDouble()) || !Double.isFinite(position.path("y").asDouble())) {
+					throw ApiException.badRequest("LAYOUT_INVALID", "布局坐标或对象标识无效: " + entry.getKey());
+				}
+				Map<String, Object> properties = this.codec.properties(position);
+				properties.remove("x");
+				properties.remove("y");
+				merged.put(object.orElseThrow().elementKey(), new Position(position.path("x").asDouble(), position.path("y").asDouble(), properties));
+			});
+			LayoutState next = new LayoutState(current.revision() + 1, merged, current.properties());
+			session.layout().save(next, current.revision());
+			session.audit().append(newEvent("LAYOUT_UPDATED", this.workspaceId));
+			return next.revision();
+		});
 		ObjectNode data = JsonNodeFactory.instance.objectNode();
 		data.put("layoutRevision", newRevision);
 		return data;
 	}
 
+	private <T> T read(Function<ModelDocument, T> action) {
+		return this.storage.read(this.workspaceId, session -> action.apply(new ModelDocument(session, this.codec)));
+	}
+
+	private ObjectNode mutate(String eventType, String eventElementId, Function<ModelDocument, ObjectNode> action) {
+		return this.storage.write(this.workspaceId, session -> {
+			ModelDocument document = new ModelDocument(session, this.codec);
+			ObjectNode result = action.apply(document);
+			document.flush();
+			String elementId = eventElementId == null ? result.path("id").asString(result.path("domainId").asString()) : eventElementId;
+			session.audit().append(newEvent(eventType, elementId));
+			return result.deepCopy();
+		});
+	}
+
+	private AuditEvent newEvent(String eventType, String elementId) {
+		return new AuditEvent("EVT-" + UUID.randomUUID(), eventType, elementId, Instant.now(), Map.of());
+	}
+
 	// ---------------------------------------------------------------- 内部构造与校验
 
 	/** 概要与属性共享对象草稿，整体验证并一次落盘，错误不产生部分对象更新。 */
-	private void applyAttributes(ObjectNode doc, ObjectNode object, JsonNode body) {
+	private void applyAttributes(ModelDocument doc, ObjectNode object, JsonNode body) {
 		if (!body.has("attributes")) return;
 		if (!body.path("attributes").isArray()) throw requiredMissing("attributes", object.path("id").asString());
 		ArrayNode attributes = JsonNodeFactory.instance.arrayNode();
@@ -524,7 +559,7 @@ public class ModelingService {
 			String id = requireText(attribute, "id", "OBJ_REQUIRED_MISSING", object.path("id").asString());
 			validateId(id);
 			if (!localIds.add(id)) throw ApiException.badRequest("OBJ_ID_NOT_UNIQUE", "属性标识重复: " + id);
-			for (JsonNode other : doc.path("objects")) {
+			for (JsonNode other : doc.objects()) {
 				if (other != object && findAttribute((ObjectNode) other, id) != null) {
 					throw ApiException.badRequest("OBJ_ID_NOT_UNIQUE", "属性标识重复: " + id);
 				}
@@ -537,7 +572,7 @@ public class ModelingService {
 		object.set("attributes", attributes);
 	}
 
-	private ObjectNode buildAttribute(ObjectNode doc, ObjectNode object, String attrId, JsonNode body,
+	private ObjectNode buildAttribute(ModelDocument doc, ObjectNode object, String attrId, JsonNode body,
 			ObjectNode existing) {
 		ObjectNode attribute = existing == null ? JsonNodeFactory.instance.objectNode() : existing;
 		attribute.put("id", attrId);
@@ -647,7 +682,7 @@ public class ModelingService {
 		return attribute;
 	}
 
-	private ObjectNode buildRelation(ObjectNode doc, String id, JsonNode body, ObjectNode existing) {
+	private ObjectNode buildRelation(ModelDocument doc, String id, JsonNode body, ObjectNode existing) {
 		ObjectNode relation = existing == null ? JsonNodeFactory.instance.objectNode() : existing;
 		relation.put("id", id);
 
@@ -828,7 +863,7 @@ public class ModelingService {
 
 	// ---------------------------------------------------------------- 工具方法
 
-	private void assertGloballyUnique(ObjectNode doc, String id, String selfId) {
+	private void assertGloballyUnique(ModelDocument doc, String id, String selfId) {
 		validateId(id);
 		if (id.equals(selfId)) {
 			return;
@@ -837,7 +872,7 @@ public class ModelingService {
 			throw ApiException.badRequest("OBJ_ID_NOT_UNIQUE", "稳定标识与现有元素重复: " + id,
 					List.of(new ErrorDetail("id", id, id)));
 		}
-		for (JsonNode object : doc.path("objects")) {
+		for (JsonNode object : doc.objects()) {
 			if (findAttribute((ObjectNode) object, id) != null) throw ApiException.badRequest("OBJ_ID_NOT_UNIQUE", "稳定标识与属性重复: " + id);
 		}
 	}
@@ -849,8 +884,8 @@ public class ModelingService {
 		}
 	}
 
-	private void assertAttributeIdUnique(ObjectNode doc, String attrId) {
-		for (JsonNode object : doc.path("objects")) {
+	private void assertAttributeIdUnique(ModelDocument doc, String attrId) {
+		for (JsonNode object : doc.objects()) {
 			if (findAttribute((ObjectNode) object, attrId) != null) {
 				throw ApiException.badRequest("OBJ_ID_NOT_UNIQUE", "属性标识与现有属性重复: " + attrId,
 						List.of(new ErrorDetail("id", attrId, attrId)));
@@ -858,9 +893,10 @@ public class ModelingService {
 		}
 	}
 
-	private void rewriteObjectIdReferences(ObjectNode doc, String oldId, String newId) {
-		for (JsonNode relation : doc.path("relations")) {
+	private void rewriteObjectIdReferences(ModelDocument doc, String oldId, String newId) {
+		for (JsonNode relation : doc.relations()) {
 			ObjectNode rel = (ObjectNode) relation;
+			ObjectNode before = rel.deepCopy();
 			if (oldId.equals(rel.path("sourceType").asString())) {
 				rel.put("sourceType", newId);
 			}
@@ -875,8 +911,14 @@ public class ModelingService {
 			else if (oldId.equals(targetType.asString())) {
 				rel.put("targetType", newId);
 			}
+			if (!before.equals(rel)) {
+				bumpRevision(rel, null);
+				rel.put("changeReason", "对象标识变更 " + oldId + " → " + newId);
+				appendRevision(doc, rel.path("id").asString(), "REFERENCE_UPDATED", rel.path("changeReason").asString(), rel);
+			}
 		}
-		for (JsonNode object : doc.path("objects")) {
+		for (JsonNode object : doc.objects()) {
+			ObjectNode before = ((ObjectNode) object).deepCopy();
 			for (JsonNode attr : object.path("attributes")) {
 				JsonNode targets = attr.path("referenceTarget");
 				if (targets.isArray()) {
@@ -886,6 +928,11 @@ public class ModelingService {
 					}
 					((ObjectNode) attr).set("referenceTarget", updated);
 				}
+			}
+			if (!oldId.equals(object.path("id").asString()) && !before.equals(object)) {
+				bumpRevision((ObjectNode) object, null);
+				((ObjectNode) object).put("changeReason", "对象标识变更 " + oldId + " → " + newId);
+				appendRevision(doc, object.path("id").asString(), "REFERENCE_UPDATED", object.path("changeReason").asString(), (ObjectNode) object);
 			}
 		}
 	}
@@ -916,25 +963,18 @@ public class ModelingService {
 		element.put("updatedAt", now);
 	}
 
-	private void appendRevision(String elementId, String changeType, String changeReason, ObjectNode snapshot) {
-		ObjectNode record = JsonNodeFactory.instance.objectNode();
-		record.put("revision", snapshot.path("revision").asInt(1));
-		record.put("changeType", changeType);
-		record.put("changeReason", changeReason == null ? "" : changeReason);
-		record.put("changedBy", ACTOR);
-		record.put("changedAt", Instant.now().toString());
-		record.set("snapshot", snapshot.deepCopy());
-		this.store.appendRevision(elementId, record);
+	private void appendRevision(ModelDocument doc, String elementId, String changeType, String changeReason, ObjectNode snapshot) {
+		doc.appendRevision(elementId, changeType, changeReason, ACTOR, snapshot);
 	}
 
-	private void assertDomainExists(ObjectNode doc, String domainId) {
+	private void assertDomainExists(ModelDocument doc, String domainId) {
 		if (findDomain(doc, domainId) == null) {
 			throw ApiException.badRequest("DOMAIN_NOT_FOUND", "归属领域不存在: " + domainId,
 					List.of(new ErrorDetail("domainId", domainId, null)));
 		}
 	}
 
-	private ObjectNode requireObject(ObjectNode doc, String objectId) {
+	private ObjectNode requireObject(ModelDocument doc, String objectId) {
 		ObjectNode object = findObject(doc, objectId);
 		if (object == null) {
 			throw ApiException.notFound("OBJECT_TYPE_NOT_FOUND", "对象类型不存在: " + objectId);
@@ -942,16 +982,16 @@ public class ModelingService {
 		return object;
 	}
 
-	private static ObjectNode findObject(ObjectNode doc, String id) {
-		return findById(doc.path("objects"), "id", id);
+	private static ObjectNode findObject(ModelDocument doc, String id) {
+		return doc.findObject(id);
 	}
 
-	private static ObjectNode findRelation(ObjectNode doc, String id) {
-		return findById(doc.path("relations"), "id", id);
+	private static ObjectNode findRelation(ModelDocument doc, String id) {
+		return doc.findRelation(id);
 	}
 
-	private static ObjectNode findDomain(ObjectNode doc, String id) {
-		return findById(doc.path("domains"), "domainId", id);
+	private static ObjectNode findDomain(ModelDocument doc, String id) {
+		return doc.findDomain(id);
 	}
 
 	private static ObjectNode findAttribute(ObjectNode object, String attrId) {
@@ -986,7 +1026,7 @@ public class ModelingService {
 		return objectId.equals(targetType.asString());
 	}
 
-	private static String domainOfObject(ObjectNode doc, String objectId) {
+	private static String domainOfObject(ModelDocument doc, String objectId) {
 		ObjectNode object = findObject(doc, objectId);
 		return object == null ? null : object.path("domainId").asString(null);
 	}
@@ -999,9 +1039,9 @@ public class ModelingService {
 		return targetType.asString(null);
 	}
 
-	private static int countObjectsOfDomain(ObjectNode doc, String domainId) {
+	private static int countObjectsOfDomain(ModelDocument doc, String domainId) {
 		int count = 0;
-		for (JsonNode object : doc.path("objects")) {
+		for (JsonNode object : doc.objects()) {
 			if (domainId.equals(object.path("domainId").asString())) {
 				count++;
 			}

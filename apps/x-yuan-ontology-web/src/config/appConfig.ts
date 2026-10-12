@@ -13,12 +13,12 @@ export interface AppConfig {
 }
 
 /**
- * TDD-OM-002 §2.4：统一顶部主导航菜单框架，一次成型；
+ * TDD-OM-002 §2.4：统一顶栏与左侧二级导航菜单框架，一次成型；
  * 首期仅"对象建模"启用（默认选中），其余功能线为禁用占位，后续原位启用、不重构外壳。
  */
 export const appConfig: AppConfig = {
 	brandName: "曦元本体平台",
 	homeRouteName: "object-model",
-	navigationMode: "top",
+	navigationMode: "top-side",
 	showRouteTabs: false
 };

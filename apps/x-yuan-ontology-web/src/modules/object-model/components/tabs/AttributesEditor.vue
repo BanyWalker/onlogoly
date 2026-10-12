@@ -5,23 +5,17 @@
 				<strong>属性清单 · {{ object.attributes.length }}</strong>
 				<ElButton size="small" type="primary" plain @click="addAttribute">新增属性</ElButton>
 			</div>
-			<p class="hint">这里预览对象类型的全部属性；点击任意一行进入配置。修改先保留在对象草稿中，点击底部“保存”统一提交。</p>
+			<p class="hint">点击属性配置，修改后点击底部“保存”生效。</p>
 			<ElAlert v-if="feedback" class="editor-feedback" :title="feedback" type="success" :closable="true" show-icon @close="feedback = ''" />
 			<ElEmpty v-if="object.attributes.length === 0" description="暂无属性，点击“新增属性”开始定义" :image-size="70" />
 			<div v-else class="attribute-list">
-				<div v-for="row in object.attributes" :key="row.id" class="attribute-card" @click="openEditor(row.id)">
-					<div class="attribute-card-head">
+				<div v-for="row in object.attributes" :key="row.id" class="attribute-card" :title="attributeSummary(row)" @click="openEditor(row.id)">
+					<div class="attribute-content">
 						<span class="attribute-name">{{ row.name || '未命名属性' }}</span>
-						<ElTag :type="row.required ? 'danger' : 'info'" size="small" effect="plain">{{ row.required ? '必填' : '可选' }}</ElTag>
-						<span class="attribute-type">{{ typeLabel(row.dataType) }}</span>
+						<span class="attribute-meta">{{ row.id || '未设置标识' }}</span>
 					</div>
-					<div class="attribute-meta">
-						<span>{{ row.id || '未设置标识' }}</span>
-						<span v-if="row.dataType === 'Enumeration'">枚举 {{ (row.allowedValues || []).length }} 项</span>
-						<span v-else-if="row.dataType === 'Reference'">引用 {{ referenceSummary(row) }}</span>
-						<span v-else-if="row.unit">单位 {{ row.unit }}</span>
-						<span v-if="row.nullable">空值：{{ nullMeaningLabel(row.nullMeaning) }}</span>
-					</div>
+					<span class="attribute-type">{{ typeLabel(row.dataType) }}</span>
+					<ElTag v-if="row.required" type="danger" size="small" effect="plain">必填</ElTag>
 					<div class="attribute-actions">
 						<ElButton size="small" text type="primary" @click.stop="openEditor(row.id)">编辑</ElButton>
 						<ElPopconfirm title="移除后需点击保存才会提交，确认移除？" confirm-button-text="移除" cancel-button-text="取消" @confirm="removeAttribute(row.id)">
@@ -45,8 +39,8 @@
 				</ElFormItem>
 				<ElFormItem label="属性名" required><ElInput v-model="editingAttribute.name" placeholder="如 serviceCode" /></ElFormItem>
 				<ElFormItem label="数据类型" required>
-					<ElSelect class="full-width" :model-value="editingAttribute.dataType" @update:model-value="changeType">
-						<ElOption v-for="type in DATA_TYPES" :key="type" :label="typeOptionLabel(type)" :value="type" />
+					<ElSelect class="full-width" :model-value="selectedDataType" @update:model-value="changeType">
+						<ElOption v-for="type in DATA_TYPES" :key="type" :label="typeLabel(type)" :value="type" />
 					</ElSelect>
 					<div class="field-hint">{{ typeDescription(editingAttribute.dataType) }}</div>
 				</ElFormItem>
@@ -133,8 +127,8 @@ const feedback = ref("");
 
 const TYPE_META: Record<DataType, { label: string; description: string }> = {
 	String: { label: "文本", description: "字符串类型：自由文本或受格式约束的业务编码。" },
-	Integer: { label: "整数", description: "不含小数的数值，可声明计量单位与取值区间。" },
-	Decimal: { label: "小数", description: "带精度的数值，可声明计量单位与取值区间。" },
+	Integer: { label: "数值", description: "支持整数和小数，可配置计量单位。" },
+	Decimal: { label: "数值", description: "支持整数和小数，可配置计量单位。" },
 	Boolean: { label: "布尔", description: "仅取真或假，不参与枚举与引用配置。" },
 	DateTime: { label: "日期时间", description: "时间点，需声明时区与精度，默认值按 ISO 8601 文本记录。" },
 	Reference: { label: "引用", description: "取值指向其他对象类型的实例，必须声明目标类型；可复用已有业务关系。" },
@@ -143,6 +137,7 @@ const TYPE_META: Record<DataType, { label: string; description: string }> = {
 const NULL_LABELS: Record<NullMeaning, string> = { UNKNOWN: "未知", NOT_PROVIDED: "未提供", NOT_APPLICABLE: "不适用" };
 
 const editingAttribute = computed(() => props.object.attributes.find(row => row.id === editingId.value));
+const selectedDataType = computed(() => (editingAttribute.value?.dataType === "Integer" ? "Decimal" : editingAttribute.value?.dataType));
 const outboundRelations = computed(() => props.relations.filter(row => row.sourceType === props.object.id));
 const referenceCandidates = computed(() => props.objects);
 const enumValues = computed<AllowedValue[]>(() => editingAttribute.value?.allowedValues ?? []);
@@ -253,9 +248,6 @@ watch(editingAttribute, () => {
 function typeLabel(type: DataType) {
 	return TYPE_META[type]?.label ?? type;
 }
-function typeOptionLabel(type: DataType) {
-	return typeLabel(type) + "（" + type + "）";
-}
 function typeDescription(type: DataType | undefined) {
 	return type ? TYPE_META[type]?.description ?? "" : "";
 }
@@ -276,6 +268,14 @@ function referenceSummary(row: AttributeDef) {
 	const targets = row.referenceTarget ?? [];
 	if (!targets.length) return "未声明目标";
 	return targets.map(id => props.objects.find(item => item.id === id)?.name ?? id).join("、");
+}
+function attributeSummary(row: AttributeDef) {
+	const details = [row.name || "未命名属性", "标识：" + (row.id || "未设置"), typeLabel(row.dataType), row.required ? "必填" : "可选"];
+	if (row.dataType === "Enumeration") details.push("枚举 " + (row.allowedValues ?? []).length + " 项");
+	else if (row.dataType === "Reference") details.push("引用：" + referenceSummary(row));
+	else if (row.unit) details.push("单位：" + row.unit);
+	if (row.nullable) details.push("空值：" + nullMeaningLabel(row.nullMeaning));
+	return details.join(" · ");
 }
 function ensureTypeConfig(row: AttributeDef) {
 	if (row.dataType === "Enumeration") row.allowedValues ??= [];
@@ -331,7 +331,7 @@ function setAttributeId(value: string) {
 }
 function changeType(next: DataType) {
 	const row = editingAttribute.value;
-	if (!row || row.dataType === next) return;
+	if (!row || selectedDataType.value === next) return;
 	const previous = row.dataType;
 	row.dataType = next;
 	delete row.defaultValue;
@@ -386,7 +386,8 @@ function setDefault(value: string) {
 	}
 	try {
 		const parsed = JSON.parse(value) as unknown;
-		if (defaultKind.value === "number" && typeof parsed !== "number") throw new Error("not a number");
+		if (defaultKind.value === "number" && (typeof parsed !== "number" || !Number.isFinite(parsed))) throw new Error("not a finite number");
+		if (row.dataType === "Integer" && !Number.isInteger(parsed)) row.dataType = "Decimal";
 		row.defaultValue = parsed;
 	}
 	catch {
@@ -451,14 +452,80 @@ defineExpose({ validate });
 .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .hint { margin: 0 0 12px; color: var(--ctff-text-color-tertiary); font-size: 12px; line-height: 1.6; }
 .editor-feedback { margin-bottom: 14px; }
-.attribute-list { display: flex; flex-direction: column; gap: 10px; }
-.attribute-card { padding: 12px; cursor: pointer; border: 1px solid var(--ctff-border-color-grid); border-radius: 8px; background: var(--ctff-brand-color-background); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-.attribute-card:hover { border-color: var(--ctff-brand-color); box-shadow: 0 2px 8px rgb(56 166 242 / 12%); }
-.attribute-card-head { display: flex; align-items: center; gap: 8px; }
-.attribute-name { font-weight: 600; color: var(--ctff-text-color-primary); }
-.attribute-type { font-size: 12px; color: var(--ctff-text-color-secondary); }
-.attribute-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 12px; color: var(--ctff-text-color-tertiary); }
-.attribute-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px; }
+
+.attribute-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.attribute-card {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 6px 10px;
+	cursor: pointer;
+	background: var(--ctff-bg-color-container);
+	border: 1px solid var(--ctff-border-color-grid);
+	border-radius: 6px;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.attribute-card:hover {
+	background: var(--ctff-brand-color-background);
+	border-color: var(--ctff-brand-color);
+}
+
+.attribute-content {
+	display: flex;
+	flex: 1;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+}
+
+.attribute-name {
+	min-width: 0;
+	max-width: 60%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: 600;
+	color: var(--ctff-text-color-primary);
+	white-space: nowrap;
+}
+
+.attribute-type {
+	flex-shrink: 0;
+	font-size: 12px;
+	color: var(--ctff-text-color-secondary);
+}
+
+.attribute-meta {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 12px;
+	color: var(--ctff-text-color-tertiary);
+	white-space: nowrap;
+}
+
+.attribute-card :deep(.el-tag) {
+	flex-shrink: 0;
+}
+
+.attribute-actions {
+	display: flex;
+	flex-shrink: 0;
+	gap: 2px;
+	align-items: center;
+}
+
+.attribute-actions :deep(.el-button) {
+	padding: 4px 6px;
+	margin-left: 0;
+}
+
 .editor-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .editor-title { font-weight: 600; color: var(--ctff-text-color-primary); }
 .attribute-form { padding-bottom: 4px; }

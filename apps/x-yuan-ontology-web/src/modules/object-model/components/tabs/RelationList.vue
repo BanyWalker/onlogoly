@@ -1,10 +1,11 @@
 <template>
-	<div class="relation-list"><div class="section-bar"><strong>关联关系</strong><ElTag size="small" effect="plain">{{ rows.length }}</ElTag></div><ElEmpty v-if="rows.length === 0" description="暂无关系" /><div v-for="row in rows" :key="row.id" class="relation-row" @click="$emit('open', row.id)"><span class="relation-name">{{ row.name }}</span><span>{{ row.sourceType }} → {{ Array.isArray(row.targetType) ? row.targetType.join(', ') : row.targetType }}</span><ElTag size="small" effect="plain">{{ row.compositionKind }}</ElTag></div></div>
+	<div class="relation-list"><div class="section-bar"><strong>关联关系</strong><ElTag size="small" effect="plain">{{ rows.length }}</ElTag></div><ElEmpty v-if="rows.length === 0" description="暂无关系" /><div v-for="row in rows" :key="row.id" class="relation-row" @click="$emit('open', row.id)"><span class="relation-name">{{ row.name }}</span><span>{{ row.sourceType }} → {{ Array.isArray(row.targetType) ? row.targetType.join(', ') : row.targetType }}</span><ElTag size="small" effect="plain">{{ compositionLabels[row.compositionKind] }}</ElTag></div></div>
 </template>
 <script setup lang="ts">
-import type { GraphRelation } from "../../types";
+import type { CompositionKind, GraphRelation } from "../../types";
 const props = defineProps<{ objectId: string; relations: GraphRelation[] }>();
 defineEmits<{ (e: "open", id: string): void }>();
+const compositionLabels: Record<CompositionKind, string> = { Association: "关联", Aggregation: "聚合", Composition: "组合" };
 const rows = props.relations.filter(row => row.sourceType === props.objectId || (Array.isArray(row.targetType) ? row.targetType.includes(props.objectId) : row.targetType === props.objectId));
 </script>
 <style scoped>
