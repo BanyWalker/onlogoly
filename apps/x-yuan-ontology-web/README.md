@@ -85,7 +85,7 @@ src
 - `top`：上下导航，完整菜单位于顶部。
 - `top-side`：T 型导航，顶栏横跨全宽，完整菜单位于顶栏下方左侧。
 
-当前默认采用 `top-side`：顶部保留品牌和用户操作，左侧按“分类 → 实际菜单”展示两级导航。“本体建模”分类包含对象建模、术语管理、规则建模和检查报告；对象建模默认选中，其余菜单保留禁用及“后续版本”提示。侧栏支持收起与展开，原有页面 URL 保持不变。
+当前默认采用 `top-side`：顶部保留品牌和用户操作，左侧按“分类 → 实际菜单”展示两级导航。“本体建模”分类包含对象建模、术语管理、规则建模和检查报告，其后是“服务接入”分类，包含 API服务、MCP服务和函数服务。对象建模、API服务和 MCP服务已接入正式页面，术语管理、规则建模、检查报告和函数服务保留禁用及“后续版本”提示。侧栏支持收起与展开，原有页面 URL 保持不变。
 
 修改 `appConfig.navigationMode` 后由 Vite HMR 直接生效，不需要维护环境变量或测试专用导航配置。生产包使用构建时选定的导航常量，不提供运行时导航切换。
 
@@ -110,6 +110,7 @@ src
 | 浏览器和应用根基线      | `src/assets/css/reset.css`            |
 | 应用壳层样式            | `src/assets/css/ctff-app.css`         |
 | 页面和业务模式          | `src/assets/css/ctff-modules.css`     |
+| API、MCP 页面共享样式   | `src/modules/service-integration/service-integration.css` |
 | 应用全局样式入口        | `src/assets/css/index.scss`           |
 | Element Plus 运行配置   | `src/config/ctffElementPlusConfig.ts` |
 

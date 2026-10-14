@@ -1,4 +1,19 @@
-import { Bell, Collection, Connection, DataAnalysis, Document, DocumentCopy, EditPen, Files, Grid, Odometer, SetUp } from "@element-plus/icons-vue";
+import {
+	Bell,
+	Collection,
+	Connection,
+	Cpu,
+	DataAnalysis,
+	Document,
+	DocumentCopy,
+	EditPen,
+	Files,
+	Grid,
+	Link,
+	Odometer,
+	Operation,
+	SetUp
+} from "@element-plus/icons-vue";
 import { markRaw, type Component } from "vue";
 
 export const appIconRegistry = {
@@ -10,6 +25,10 @@ export const appIconRegistry = {
 	audit: markRaw(Document),
 	ticket: markRaw(Bell),
 	objectModel: markRaw(Connection),
+	serviceAccess: markRaw(Link),
+	apiService: markRaw(Link),
+	mcpService: markRaw(Cpu),
+	functionService: markRaw(Operation),
 	terminology: markRaw(Collection),
 	ruleModel: markRaw(SetUp),
 	inspectionReport: markRaw(DataAnalysis)

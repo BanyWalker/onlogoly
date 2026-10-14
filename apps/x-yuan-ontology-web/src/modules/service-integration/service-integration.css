@@ -1,0 +1,1400 @@
+/* Service pages consume the existing CTFF semantic theme in both color modes. */
+.integration-page {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+	font-family: var(--ctff-font-family-system);
+	font-size: var(--ctff-font-size-body);
+	line-height: var(--ctff-line-height-body);
+	color: var(--ctff-text-color-primary);
+}
+
+.integration-page :is(.service-page-header, .page-header) {
+	display: flex;
+	gap: var(--ctff-space-16);
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--ctff-space-16);
+}
+
+/* Keep the page title as the entry point on both service pages. */
+.integration-page :is(.service-page-header, .page-header) .eyebrow {
+	display: none;
+}
+
+.integration-page h1 {
+	margin: var(--ctff-space-4) 0;
+	font-size: var(--ctff-font-size-title);
+	font-weight: var(--ctff-font-weight-medium);
+	line-height: var(--ctff-line-height-26);
+}
+
+.integration-page :is(.eyebrow, .detail-id) {
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page :is(.service-page-header, .page-header, .detail-titlebar, .detail-heading, .config-card, .debug-summary) p {
+	margin: 0;
+	font-size: var(--ctff-font-size-12);
+	line-height: var(--ctff-line-height-22);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page :is(.header-actions, .detail-actions) {
+	display: flex;
+	flex-shrink: 1;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.integration-page .el-button + .el-button,
+.integration-dialog .el-button + .el-button {
+	margin-left: 0;
+}
+
+.integration-page .page-alert {
+	margin-bottom: var(--ctff-space-16);
+}
+
+.integration-page :is(.service-layout, .workspace) {
+	display: grid;
+	flex: 1 1 auto;
+	grid-template-rows: minmax(0, 1fr);
+	grid-template-columns: 256px minmax(0, 1fr);
+	gap: var(--ctff-space-16);
+	align-items: stretch;
+	min-height: 0;
+}
+
+.integration-page :is(.service-directory, .directory, .service-detail, .detail, .detail-empty) {
+	min-width: 0;
+	background: var(--ctff-bg-color-container);
+	border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	border-radius: var(--ctff-radius-large);
+}
+
+.integration-page :is(.service-directory, .directory) {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+	padding: var(--ctff-space-16);
+	overflow: hidden;
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) {
+	display: flex;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: var(--ctff-space-12);
+	margin-bottom: var(--ctff-space-16);
+	border-bottom: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) strong {
+	font-size: var(--ctff-font-size-14);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .directory-filters {
+	margin-top: var(--ctff-space-8);
+}
+
+.integration-page .directory-filters .el-select {
+	width: 100%;
+}
+
+.integration-page :is(.service-list, .server-list) {
+	display: grid;
+	flex: 1 1 auto;
+	gap: var(--ctff-space-8);
+	align-content: start;
+	min-height: 0;
+	padding-right: var(--ctff-space-2);
+	margin-top: var(--ctff-space-16);
+	overflow-y: auto;
+}
+
+.integration-page :is(.service-list-item, .server-item) {
+	display: flex;
+	gap: var(--ctff-space-12);
+	align-items: flex-start;
+	width: 100%;
+	padding: var(--ctff-space-12);
+	font: inherit;
+	color: var(--ctff-text-color-primary);
+	text-align: left;
+	cursor: pointer;
+	background: var(--ctff-bg-color-container);
+	border: var(--ctff-line-width) solid transparent;
+	border-radius: var(--ctff-radius-default);
+	transition:
+		background var(--ctff-motion-duration-fast),
+		border-color var(--ctff-motion-duration-fast);
+}
+
+.integration-page :is(.service-list-item, .server-item):hover {
+	background: var(--ctff-bg-color-component);
+}
+
+.integration-page :is(.service-list-item, .server-item).active {
+	background: var(--ctff-brand-color-background);
+	border-color: var(--ctff-brand-color);
+}
+
+.integration-page :is(.service-list-item, .server-item):focus-visible {
+	outline: var(--ctff-control-outline-width) solid var(--ctff-brand-color);
+	outline-offset: var(--ctff-space-2);
+}
+
+.integration-page :is(.service-list-icon, .server-icon) {
+	display: grid;
+	flex: 0 0 var(--ctff-control-height-default);
+	place-items: center;
+	width: var(--ctff-control-height-default);
+	height: var(--ctff-control-height-default);
+	color: var(--ctff-brand-color);
+	background: var(--ctff-brand-color-background);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page :is(.service-list-main, .server-main) {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--ctff-space-4);
+	min-width: 0;
+}
+
+.integration-page :is(.service-list-main, .server-main) strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: var(--ctff-font-weight-medium);
+	white-space: nowrap;
+}
+
+.integration-page :is(.service-list-main, .server-main) > small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-family: var(--ctff-font-family-code);
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+	white-space: nowrap;
+}
+
+.integration-page .service-list-state {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	justify-content: space-between;
+}
+
+.integration-page .service-list-state small,
+.integration-page .muted {
+	font-size: var(--ctff-font-size-12);
+	font-weight: var(--ctff-font-weight-regular);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page :is(.service-detail, .detail) {
+	min-height: 0;
+	padding: var(--ctff-space-24);
+	overflow-y: auto;
+}
+
+.integration-page :is(.detail-titlebar, .detail-header) {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-16);
+	align-items: flex-start;
+	justify-content: space-between;
+}
+
+.integration-page :is(.detail-titlebar, .detail-header) > div:first-child {
+	flex: 1 1 240px;
+	min-width: 0;
+}
+
+.integration-page h2 {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	margin: var(--ctff-space-4) 0 var(--ctff-space-8);
+	font-size: var(--ctff-font-size-18);
+	font-weight: var(--ctff-font-weight-medium);
+	line-height: var(--ctff-line-height-26);
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ctff-space-16);
+	padding: var(--ctff-space-16);
+	margin: var(--ctff-space-16) 0;
+	background: var(--ctff-bg-color-component);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) > div {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ctff-space-4);
+	min-width: 0;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
+	flex-direction: row;
+	grid-column: 1 / -1;
+	gap: var(--ctff-space-12);
+	align-items: baseline;
+	padding-bottom: var(--ctff-space-12);
+	border-bottom: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) span {
+	flex-shrink: 0;
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) strong {
+	min-width: 0;
+	font-weight: var(--ctff-font-weight-regular);
+	overflow-wrap: anywhere;
+}
+
+.integration-page .mono {
+	font-family: var(--ctff-font-family-code);
+}
+
+.integration-page :is(.service-tabs, .detail-tabs) > .el-tabs__header {
+	margin-bottom: var(--ctff-space-16);
+}
+
+.integration-page .el-tabs__item {
+	gap: var(--ctff-space-8);
+}
+
+.integration-page .tab-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-12);
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--ctff-space-16);
+}
+
+.integration-page .tab-toolbar > div:first-child {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ctff-space-4);
+}
+
+.integration-page .service-tabs .tab-toolbar > div:first-child {
+	flex-direction: row;
+	gap: var(--ctff-space-8);
+	align-items: baseline;
+}
+
+.integration-page .tab-toolbar strong,
+.integration-page h3 {
+	font-size: var(--ctff-font-size-16);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .tab-toolbar > div:last-child:not(:first-child) {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-8);
+}
+
+.integration-page .el-table .cell > strong {
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .el-table .cell > .el-button {
+	position: relative;
+	padding-inline: var(--ctff-space-8);
+}
+
+.integration-page .el-table .cell > .el-button:not(:last-child)::after {
+	position: absolute;
+	top: 50%;
+	right: 0;
+	width: var(--ctff-line-width);
+	height: 14px;
+	content: "";
+	background: var(--ctff-border-color-component);
+	transform: translateY(-50%);
+}
+
+.integration-page .el-button.is-text.el-button--danger {
+	color: var(--ctff-error-color);
+}
+
+.integration-page .el-button.is-text.el-button--danger:not(:disabled):hover {
+	color: var(--ctff-error-color-hover);
+	background: var(--ctff-error-color-background);
+}
+
+/* Keep short labels readable even inside tabs and flex directory items. */
+.integration-page .el-tag,
+.integration-dialog .el-tag {
+	flex-shrink: 0;
+	width: max-content;
+	max-width: none;
+	padding-inline: var(--ctff-space-8);
+	white-space: nowrap;
+}
+
+.integration-page .el-tag__content {
+	white-space: nowrap;
+}
+
+.integration-page .el-tag.el-tag--info {
+	color: var(--ctff-text-color-tertiary);
+	background: var(--ctff-bg-color-component);
+	border-color: var(--ctff-border-color-grid);
+}
+
+:is(.integration-page, .integration-dialog) .el-tag.el-tag--success:not(.el-tag--dark, .el-tag--plain) {
+	color: var(--ctff-success-color-active);
+	background: var(--ctff-success-color-background);
+	border-color: var(--ctff-success-color-disabled-border);
+}
+
+:is(.integration-page, .integration-dialog) .el-tag.el-tag--warning:not(.el-tag--dark, .el-tag--plain) {
+	color: var(--ctff-text-color-secondary);
+	background: var(--ctff-warning-color-background);
+	border-color: var(--ctff-warning-color-disabled-border);
+}
+
+:is(.integration-page, .integration-dialog) .el-tag.el-tag--danger:not(.el-tag--dark, .el-tag--plain) {
+	color: var(--ctff-error-color-active);
+	background: var(--ctff-error-color-background);
+	border-color: var(--ctff-error-color-disabled-border);
+}
+
+.integration-page .method-pill {
+	display: inline-flex;
+	justify-content: center;
+	min-width: 48px;
+	padding: 0 var(--ctff-space-8);
+	font-family: var(--ctff-font-family-code);
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-brand-color-active);
+	background: var(--ctff-brand-color-background);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page .method-pill:is(.post, .put, .patch, .delete) {
+	color: var(--ctff-orange-alarm-color-active);
+	background: var(--ctff-orange-alarm-color-background);
+}
+
+.integration-page .path-text {
+	display: block;
+	font-size: var(--ctff-font-size-12);
+	overflow-wrap: anywhere;
+}
+
+.integration-page :is(.test-success, .test-failed) {
+	font-size: var(--ctff-font-size-12);
+}
+
+.integration-page .test-success {
+	color: var(--ctff-success-color);
+}
+
+.integration-page .test-failed {
+	color: var(--ctff-error-color);
+}
+
+.integration-page :is(.overview-card, .config-card) {
+	padding: var(--ctff-space-20) 0;
+}
+
+.integration-page :is(.overview-card, .config-card) h3 {
+	margin: 0 0 var(--ctff-space-4);
+}
+
+.integration-page .config-head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-16);
+	align-items: center;
+	justify-content: space-between;
+}
+
+.integration-page :is(.overview-card, .config-card) dl {
+	display: grid;
+	grid-template-columns: 120px minmax(0, 1fr);
+	gap: var(--ctff-space-16);
+	margin: var(--ctff-space-20) 0 0;
+}
+
+.integration-page :is(.overview-card, .config-card) dt {
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page :is(.overview-card, .config-card) dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.integration-page .detail-empty {
+	min-height: 0;
+}
+
+.integration-dialog.el-dialog {
+	display: flex;
+	flex-direction: column;
+	max-width: calc(100vw - var(--ctff-space-32));
+	max-height: calc(100dvh - var(--ctff-space-32));
+}
+
+.integration-dialog .el-dialog__body {
+	min-height: 0;
+	overflow: auto;
+}
+
+.integration-dialog :is(.el-dialog__header, .el-dialog__footer) {
+	flex-shrink: 0;
+}
+
+.integration-dialog .el-dialog__footer {
+	display: flex;
+	gap: var(--ctff-space-8);
+	justify-content: flex-end;
+}
+
+.integration-dialog .form-two-col {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0 var(--ctff-space-24);
+}
+
+.integration-dialog .registration-form {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: var(--ctff-space-24);
+}
+
+.integration-dialog .registration-form .form-two-col {
+	display: contents;
+}
+
+.integration-dialog .registration-form > .el-alert,
+.integration-dialog .registration-form .form-span-full,
+.integration-dialog .registration-form > .el-form-item:has(.el-textarea),
+.integration-dialog .registration-form > .el-form-item:has(input[placeholder^="https://"]),
+.integration-dialog .registration-form > .el-form-item:has(input[type="password"]) {
+	grid-column: 1 / -1;
+}
+
+.integration-dialog .el-form-item {
+	margin-bottom: var(--ctff-space-20);
+}
+
+.integration-dialog :is(.el-select, .el-input-number) {
+	width: 100%;
+}
+
+.integration-dialog .import-form {
+	margin-top: var(--ctff-space-20);
+}
+
+.integration-dialog :is(.contract-input, .debug-input, .openapi-input) textarea {
+	font-family: var(--ctff-font-family-code);
+}
+
+.integration-dialog .debug-summary {
+	display: flex;
+	gap: var(--ctff-space-16);
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: var(--ctff-space-20);
+}
+
+.integration-dialog .debug-summary strong {
+	font-size: var(--ctff-font-size-16);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-dialog .debug-summary p {
+	margin: var(--ctff-space-4) 0 0;
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-dialog .invoke-alert {
+	margin-top: var(--ctff-space-16);
+}
+
+.integration-dialog .external-content-note {
+	display: flex;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	margin-top: var(--ctff-space-12);
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-dialog .response-view {
+	max-height: 240px;
+	padding: var(--ctff-space-16);
+	overflow: auto;
+	font: var(--ctff-font-size-12) / var(--ctff-line-height-22) var(--ctff-font-family-code);
+	color: var(--ctff-text-color-primary);
+	background: var(--ctff-bg-color-component);
+	border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	border-radius: var(--ctff-radius-default);
+}
+
+/* ===== 清新活泼视觉基线（仅亮色主题；暗色主题沿用上方中性样式）===== */
+
+/* 区域边界：白卡 + 浅蓝描边 + 柔和远投影 */
+html[data-ctff-theme="light"] .integration-page :is(.service-directory, .directory, .service-detail, .detail, .detail-empty) {
+	background: #fff;
+	border: 1px solid #e3ecf7;
+	border-radius: 14px;
+	box-shadow: 0 8px 24px rgb(47 123 232 / 6%);
+}
+
+/* 详情卡顶部 4px 蓝→青渐变条，呼应画布 V3 选中态 */
+html[data-ctff-theme="light"] .integration-page :is(.service-detail, .detail) {
+	position: relative;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-detail, .detail)::before {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	height: 4px;
+	content: "";
+	background: linear-gradient(90deg, #2f7be8, #17c3a2);
+}
+
+/* 目录标题前加渐变引导条 */
+html[data-ctff-theme="light"] .integration-page :is(.directory-toolbar, .directory-title) strong::before {
+	display: inline-block;
+	width: 4px;
+	height: 14px;
+	margin-right: var(--ctff-space-8);
+	vertical-align: -2px;
+	content: "";
+	background: linear-gradient(180deg, #2f7be8, #17c3a2);
+	border-radius: 2px;
+}
+
+/* 服务图标：蓝→青渐变底 + 白图标 */
+html[data-ctff-theme="light"] .integration-page :is(.service-list-icon, .server-icon) {
+	color: #fff;
+	background: linear-gradient(135deg, #2f7be8, #17c3a2);
+	box-shadow: 0 4px 10px rgb(47 123 232 / 24%);
+}
+
+/* 列表项：悬停浅蓝、选中渐变底 + 描边 + 轻投影 */
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item):hover {
+	background: #f5f9fe;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item).active {
+	background: linear-gradient(90deg, rgb(47 123 232 / 10%), rgb(23 195 162 / 8%));
+	border-color: rgb(47 123 232 / 35%);
+	box-shadow: 0 4px 12px rgb(47 123 232 / 10%);
+}
+
+/* 标题区与元信息区之间加分隔线，强化区域划分 */
+html[data-ctff-theme="light"] .integration-page :is(.detail-titlebar, .detail-header) {
+	padding-bottom: var(--ctff-space-16);
+	border-bottom: 1px solid #e3ecf7;
+}
+
+/* 元信息区：浅蓝→浅青渐变底 + 描边，取代脏灰块 */
+html[data-ctff-theme="light"] .integration-page :is(.service-meta-grid, .meta-grid) {
+	background: linear-gradient(135deg, rgb(47 123 232 / 6%), rgb(23 195 162 / 5%));
+	border: 1px solid #e3ecf7;
+	border-radius: 12px;
+}
+
+/* 主按钮：蓝→青渐变 + 投影（页面与弹窗一致） */
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-button--primary:not(.is-link, .is-text, .is-disabled) {
+	background: linear-gradient(135deg, #2f7be8, #17c3a2);
+	border-color: transparent;
+	box-shadow: 0 4px 12px rgb(47 123 232 / 24%);
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-button--primary:not(.is-link, .is-text, .is-disabled):hover {
+	background: linear-gradient(135deg, #4a8cf0, #2fd1b4);
+	border-color: transparent;
+}
+
+/* 状态标签改为圆角胶囊，更轻快 */
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag {
+	border-radius: 999px;
+}
+
+/* GET 等只读方法用薄荷青，写操作保留橙色 */
+html[data-ctff-theme="light"] .integration-page .method-pill:not(.post, .put, .patch, .delete) {
+	color: #0d9d84;
+	background: rgb(23 195 162 / 12%);
+}
+
+/* 表格：表头浅蓝底、条纹行极浅蓝，去掉灰底 */
+html[data-ctff-theme="light"] .integration-page .el-table {
+	--el-table-header-bg-color: #f5f9fe;
+	--el-table-header-text-color: rgb(10 21 52 / 64%);
+	--el-fill-color-lighter: #f7fafe;
+}
+
+/* 面包屑用薄荷青点缀 */
+html[data-ctff-theme="light"] .integration-page .eyebrow {
+	font-weight: var(--ctff-font-weight-medium);
+	color: #0d9d84;
+	letter-spacing: 0.02em;
+}
+
+@media (width <= 1100px) {
+	.integration-page :is(.service-layout, .workspace) {
+		grid-template-columns: 224px minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-page-header, .page-header) {
+		flex-wrap: wrap;
+	}
+
+	.integration-page :is(.service-detail, .detail) {
+		padding: var(--ctff-space-16);
+	}
+}
+
+@media (width <= 800px) {
+	.integration-page {
+		height: auto;
+		min-height: 100%;
+		overflow: visible;
+	}
+
+	.integration-page :is(.service-layout, .workspace) {
+		flex: 0 1 auto;
+	}
+
+	.integration-page :is(.service-layout, .workspace) {
+		grid-template-rows: none;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-list, .server-list) {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+	}
+
+	.integration-page :is(.service-directory, .directory) {
+		height: auto;
+	}
+
+	.integration-page :is(.service-detail, .detail) {
+		overflow: visible;
+	}
+
+	.integration-page :is(.service-meta-grid, .meta-grid) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
+		flex-direction: column;
+		gap: var(--ctff-space-4);
+	}
+
+	/* Narrow tables scroll as a whole so the action column cannot cover the data. */
+	.integration-page .el-table .el-table__cell.el-table-fixed-column--right {
+		/* Element Plus declares sticky positioning with !important. */
+		position: static !important;
+	}
+
+	.integration-page .el-table .el-table__cell.el-table-fixed-column--right::before {
+		display: none;
+	}
+}
+
+@media (width <= 560px) {
+	.integration-dialog .form-two-col,
+	.integration-dialog .registration-form {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Compact service directory: two information rows, no decorative tile chrome. */
+.integration-page :is(.service-directory, .directory) {
+	padding: var(--ctff-space-12);
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) {
+	padding-bottom: var(--ctff-space-8);
+	margin-bottom: var(--ctff-space-12);
+}
+
+.integration-page :is(.service-list, .server-list) {
+	gap: var(--ctff-space-4);
+	margin-top: var(--ctff-space-12);
+}
+
+.integration-page :is(.service-list-item, .server-item) {
+	position: relative;
+	box-sizing: border-box;
+	min-height: 56px;
+	padding: var(--ctff-space-8) var(--ctff-space-12);
+	border-radius: var(--ctff-radius-small);
+}
+
+.integration-page :is(.service-list-icon, .server-icon) {
+	display: none;
+}
+
+.integration-page :is(.service-list-main, .server-main) {
+	display: grid;
+	grid-template-rows: 20px 18px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 2px var(--ctff-space-8);
+	align-items: center;
+	width: 100%;
+}
+
+.integration-page :is(.service-list-main, .server-main) > strong {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+.integration-page :is(.service-list-main, .server-main) > small {
+	grid-row: 2;
+	grid-column: 1;
+}
+
+.integration-page .service-list-state {
+	display: contents;
+}
+
+.integration-page .service-list-state > .el-tag {
+	grid-row: 1;
+	grid-column: 2;
+	height: 20px;
+	padding-inline: var(--ctff-space-4);
+	line-height: 18px;
+}
+
+.integration-page .service-list-state > small {
+	grid-row: 2;
+	grid-column: 2;
+	justify-self: end;
+	line-height: 18px;
+	white-space: nowrap;
+}
+
+.integration-page :is(.service-list-item, .server-item).active {
+	border-color: transparent;
+	box-shadow: none;
+}
+
+.integration-page :is(.service-list-item, .server-item).active::before {
+	position: absolute;
+	top: var(--ctff-space-8);
+	bottom: var(--ctff-space-8);
+	left: 0;
+	width: 2px;
+	content: "";
+	background: var(--ctff-brand-color);
+	border-radius: var(--ctff-radius-small);
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item).active {
+	background: rgb(47 123 232 / 8%);
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item):hover {
+	background: #f5f7fa;
+}
+
+/* ===== API / MCP 服务页品牌规范 ===== */
+.ctff-app-shell:has(.integration-page) {
+	--ctff-shell-sidebar-width: 232px;
+	--ctff-brand-color: #2f7be8;
+	--ctff-brand-color-rgb: 47, 123, 232;
+	--ctff-brand-color-hover: #4a8cf0;
+	--ctff-brand-color-active: #2368c8;
+	--ctff-brand-color-background: #eaf3ff;
+	--ctff-bg-color-page: #f5f7fa;
+	--ctff-page-background-image: #f5f7fa;
+	--ctff-bg-color-component: #f7f8fa;
+	--ctff-text-color-primary: #1d2129;
+	--ctff-text-color-secondary: #4e5969;
+	--ctff-text-color-tertiary: #86909c;
+	--ctff-text-color-quaternary: #c9cdd4;
+	--ctff-border-color-basic: #c9cdd4;
+	--ctff-border-color-component: #e5e6eb;
+	--ctff-border-color-grid: #e5e6eb;
+	--ctff-shell-sidebar-shadow: none;
+	--ctff-shell-topbar-shadow: none;
+}
+
+.ctff-app-shell:has(.integration-page) .ctff-shell-topbar,
+.ctff-app-shell:has(.integration-page) .ctff-shell-sidebar {
+	border-color: #e5e6eb;
+	box-shadow: none;
+}
+
+.ctff-app-shell:has(.integration-page) .ctff-shell-topbar {
+	border-bottom: 1px solid #e5e6eb;
+}
+
+.ctff-app-shell:has(.integration-page) .ctff-shell-sidebar {
+	border-right: 1px solid #e5e6eb;
+}
+
+.ctff-app-shell:has(.integration-page) .ctff-workspace {
+	background: #f5f7fa;
+}
+
+.integration-page {
+	box-sizing: border-box;
+	width: calc(100% + var(--ctff-page-padding-inline) * 2);
+	height: calc(100% + var(--ctff-page-padding-block) * 2);
+	padding: var(--ctff-page-padding-block) var(--ctff-page-padding-inline);
+	margin: calc(var(--ctff-page-padding-block) * -1) calc(var(--ctff-page-padding-inline) * -1);
+	color: #1d2129;
+	background: #f5f7fa;
+
+	--el-color-primary: #2f7be8;
+	--el-color-primary-light-3: #6aa3f0;
+	--el-color-primary-light-5: #9bc2f5;
+	--el-color-primary-light-7: #c5dcfa;
+	--el-color-primary-light-9: #eaf3ff;
+	--el-color-primary-dark-2: #2368c8;
+	--el-text-color-primary: #1d2129;
+	--el-text-color-regular: #4e5969;
+	--el-text-color-secondary: #86909c;
+	--el-border-color: #c9cdd4;
+	--el-border-color-light: #e5e6eb;
+	--el-border-color-lighter: #f2f3f5;
+	--el-fill-color-light: #f7f8fa;
+	--el-fill-color-lighter: #fafbfc;
+	--el-bg-color-page: #f5f7fa;
+}
+
+.integration-page :is(.service-page-header, .page-header) {
+	margin-bottom: 24px;
+}
+
+.integration-page h1 {
+	margin: 0 0 4px;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 40px;
+	color: #1d2129;
+}
+
+.integration-page :is(.service-page-header, .page-header) p {
+	font-size: 14px;
+	line-height: 22px;
+	color: #86909c;
+}
+
+.integration-page :is(.service-layout, .workspace) {
+	grid-template-columns: 320px minmax(0, 1fr);
+	gap: 24px;
+}
+
+.integration-page :is(.service-directory, .directory, .service-detail, .detail, .detail-empty) {
+	background: #fff;
+	border: 1px solid #e5e6eb;
+	border-radius: 10px;
+	box-shadow: none;
+}
+
+.integration-page :is(.service-directory, .directory) {
+	padding: 20px;
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) {
+	padding-bottom: 0;
+	margin-bottom: 16px;
+	border-bottom: 0;
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) strong {
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.integration-page :is(.directory-toolbar, .directory-title) strong::before {
+	display: none;
+}
+
+.integration-page :is(.service-directory, .directory) .el-input__wrapper,
+.integration-page :is(.service-directory, .directory) .el-select__wrapper {
+	min-height: 40px;
+	background: #f7f8fa;
+	border-radius: 8px;
+	box-shadow: inset 0 0 0 1px #e5e6eb;
+}
+
+.integration-page .directory-filters {
+	margin-top: 12px;
+}
+
+.integration-page :is(.service-list, .server-list) {
+	gap: 12px;
+	margin-top: 16px;
+}
+
+.integration-page :is(.service-list-item, .server-item) {
+		display: flex;
+		gap: 12px;
+		align-items: flex-start;
+		min-height: 96px;
+		padding: 16px;
+		background: #fff;
+		border: 1px solid #e5e6eb;
+		border-radius: 10px;
+	}
+
+.integration-page :is(.service-list-item, .server-item):hover {
+	background: #f7faff;
+	border-color: #b8d3f7;
+}
+
+.integration-page :is(.service-list-item, .server-item).active {
+	background: #eaf3ff;
+	border-color: #2f7be8;
+	box-shadow: none;
+}
+
+.integration-page :is(.service-list-item, .server-item).active::before {
+	display: none;
+}
+
+.integration-page :is(.service-list-icon, .server-icon) {
+	display: grid;
+	flex: 0 0 40px;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	color: #2f7be8;
+	background: #eaf3ff;
+	border-radius: 8px;
+	box-shadow: none;
+}
+
+.integration-page :is(.service-list-main, .server-main) {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.integration-page :is(.service-list-main, .server-main) strong {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2129;
+}
+
+.integration-page :is(.service-list-main, .server-main) > small,
+.integration-page .service-list-state small,
+.integration-page .muted {
+	font-size: 13px;
+	color: #86909c;
+}
+
+.integration-page .service-list-state {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: auto;
+}
+
+.integration-page :is(.service-list-state > .el-tag) {
+	order: 2;
+}
+
+.integration-page :is(.service-detail, .detail) {
+	padding: 32px;
+	background: #fff;
+}
+
+.integration-page :is(.detail-titlebar, .detail-header) {
+	padding-bottom: 20px;
+	border-bottom: 1px solid #e5e6eb;
+}
+
+.integration-page :is(.detail-titlebar, .detail-header)::before,
+.integration-page :is(.service-detail, .detail)::before {
+	display: none;
+}
+
+.integration-page :is(.detail-id, .eyebrow) {
+	font-size: 13px;
+	color: #86909c;
+}
+
+.integration-page h2 {
+	margin: 8px 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 32px;
+}
+
+.integration-page :is(.detail-titlebar, .detail-header) p {
+	font-size: 14px;
+	color: #86909c;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	padding: 20px 0;
+	margin: 0 0 20px;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid #e5e6eb;
+	border-radius: 0;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
+	padding-bottom: 16px;
+	border-bottom: 1px solid #e5e6eb;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) span,
+.integration-page :is(.overview-card, .config-card) dt {
+	font-size: 13px;
+	color: #86909c;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) strong,
+.integration-page :is(.overview-card, .config-card) dd {
+	font-size: 14px;
+	color: #1d2129;
+}
+
+.integration-page .el-tabs__header {
+	margin-bottom: 24px;
+	border-bottom: 1px solid #e5e6eb;
+}
+
+.integration-page .el-tabs__item {
+	color: #4e5969;
+}
+
+.integration-page .el-tabs__item.is-active {
+	color: #2f7be8;
+}
+
+.integration-page .el-tabs__active-bar {
+	background-color: #2f7be8;
+}
+
+.integration-page .tab-toolbar {
+	margin-bottom: 16px;
+}
+
+.integration-page .tab-toolbar strong,
+.integration-page h3 {
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2129;
+}
+
+.integration-page .el-table {
+	overflow: hidden;
+	border: 1px solid #e5e6eb;
+
+	--el-table-border-color: #e5e6eb;
+	--el-table-header-bg-color: #f7f8fa;
+	--el-table-header-text-color: #86909c;
+	--el-table-text-color: #1d2129;
+	--el-fill-color-lighter: #fafbfc;
+
+	border-radius: 10px;
+}
+
+.integration-page .el-table th.el-table__cell {
+	font-weight: 500;
+}
+
+.integration-page .el-table .cell {
+	font-size: 13px;
+}
+
+.integration-page .el-button {
+	border-radius: 8px;
+}
+
+.integration-page .el-button--primary:not(.is-text, .is-link, .is-disabled),
+.integration-dialog .el-button--primary:not(.is-text, .is-link, .is-disabled) {
+	color: #fff;
+	background: #2f7be8;
+	border-color: #2f7be8;
+	box-shadow: none;
+}
+
+.integration-page .el-button--primary:not(.is-text, .is-link, .is-disabled):hover,
+.integration-dialog .el-button--primary:not(.is-text, .is-link, .is-disabled):hover {
+	background: #4a8cf0;
+	border-color: #4a8cf0;
+}
+
+.integration-page .el-tag,
+.integration-dialog .el-tag {
+	border-radius: 4px;
+}
+
+.integration-page .el-tag.el-tag--info,
+.integration-page .el-tag.el-tag--info:not(.is-dark),
+.integration-dialog .el-tag.el-tag--info {
+	color: #4e5969;
+	background: #f2f3f5;
+	border-color: #e5e6eb;
+}
+
+.integration-page .el-tag.el-tag--warning,
+.integration-dialog .el-tag.el-tag--warning {
+	color: #d46b08;
+	background: #fff7e8;
+	border-color: #ffd591;
+}
+
+.integration-page .el-tag.el-tag--success,
+.integration-dialog .el-tag.el-tag--success {
+	color: #00a870;
+	background: #e8ffea;
+	border-color: #b7ebc0;
+}
+
+.integration-page .el-tag.el-tag--danger,
+.integration-dialog .el-tag.el-tag--danger {
+	color: #f53f3f;
+	background: #ffece8;
+	border-color: #ffbcb5;
+}
+
+.integration-page .method-pill {
+	color: #2f7be8;
+	background: #eaf3ff;
+	border-radius: 4px;
+}
+
+.integration-page .method-pill:is(.post, .put, .patch, .delete) {
+	color: #4e5969;
+	background: #f2f3f5;
+}
+
+.integration-page .test-success {
+	color: #00a870;
+}
+
+.integration-page .test-failed {
+	color: #f53f3f;
+}
+
+.integration-dialog.el-dialog {
+	border: 1px solid #e5e6eb;
+	border-radius: 10px;
+	box-shadow: none;
+}
+
+@media (width <= 1100px) {
+	.integration-page :is(.service-layout, .workspace) {
+		grid-template-columns: 280px minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-detail, .detail) {
+		padding: 24px;
+	}
+}
+
+/* Raise specificity above the legacy light-theme aliases retained by the shared stylesheet. */
+html[data-ctff-theme="light"] .integration-page :is(.service-directory, .directory, .service-detail, .detail, .detail-empty) {
+	background: #fff;
+	border: 1px solid #e5e6eb;
+	border-radius: 10px;
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item) {
+	background: #fff;
+	border: 1px solid #e5e6eb;
+	border-radius: 10px;
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item):hover {
+	background: #f7faff;
+	border-color: #b8d3f7;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item).active {
+	background: #eaf3ff;
+	border-color: #2f7be8;
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-icon, .server-icon) {
+	color: #2f7be8;
+	background: #eaf3ff;
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-detail, .detail)::before {
+	display: none;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-meta-grid, .meta-grid) {
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid #e5e6eb;
+	border-radius: 0;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
+	border-bottom-color: #e5e6eb;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-button--primary:not(.is-link, .is-text, .is-disabled) {
+	background: #2f7be8;
+	border-color: #2f7be8;
+	box-shadow: none;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-button--primary:not(.is-link, .is-text, .is-disabled):hover {
+	background: #4a8cf0;
+	border-color: #4a8cf0;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag {
+	border-radius: 4px;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag.el-tag--info:not(.el-tag--dark, .el-tag--plain) {
+	color: #4e5969;
+	background: #f2f3f5;
+	border-color: #e5e6eb;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag.el-tag--warning:not(.el-tag--dark, .el-tag--plain) {
+	color: #d46b08;
+	background: #fff7e8;
+	border-color: #ffd591;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag.el-tag--success:not(.el-tag--dark, .el-tag--plain) {
+	color: #00a870;
+	background: #e8ffea;
+	border-color: #b7ebc0;
+}
+
+html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-tag.el-tag--danger:not(.el-tag--dark, .el-tag--plain) {
+	color: #f53f3f;
+	background: #ffece8;
+	border-color: #ffbcb5;
+}
+
+.ctff-app-shell:has(.integration-page) {
+	--ctff-app-text-color: #1d2129;
+	--ctff-shell-muted-text-color: #86909c;
+	--ctff-menu-active-bg: #eaf3ff;
+}
+
+html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item).active :is(.service-list-icon, .server-icon) {
+	background: #d8eaff;
+}
+
+/* Final alignment pass: neutralize legacy compact-directory declarations. */
+html[data-ctff-theme="light"] .integration-page :is(.directory-toolbar, .directory-title) strong::before {
+	display: none;
+	content: none;
+}
+
+.integration-page :is(.service-list-main, .server-main) {
+	align-items: stretch;
+	width: 100%;
+	min-width: 0;
+	text-align: left;
+}
+
+.integration-page :is(.service-list-main, .server-main) > :is(strong, small),
+.integration-page .service-list-state {
+	width: 100%;
+}
+
+.integration-page :is(.service-meta-grid, .meta-grid) {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.integration-page .endpoint-value {
+	display: inline-flex;
+	width: fit-content;
+	max-width: 100%;
+	padding: 4px 8px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	background: #f7f8fa;
+	border-radius: 4px;
+}
+
+@media (width <= 1100px) {
+	.integration-page :is(.service-meta-grid, .meta-grid) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.ctff-app-shell:has(.integration-page) .ctff-nav-menu .el-menu-item,
+.ctff-app-shell:has(.integration-page) .ctff-nav-menu .el-sub-menu__title {
+	height: 36px;
+	line-height: 36px;
+}
+
+@media (width <= 800px) {
+	.integration-page {
+		height: auto;
+		min-height: 100%;
+		overflow: visible;
+	}
+
+	.integration-page :is(.service-layout, .workspace) {
+		flex: 0 1 auto;
+		grid-template-rows: none;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-directory, .directory) {
+		height: auto;
+	}
+
+	.integration-page :is(.service-detail, .detail) {
+		padding: 20px;
+		overflow: visible;
+	}
+
+	.integration-page :is(.service-meta-grid, .meta-grid) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
+		flex-direction: column;
+		gap: 4px;
+	}
+}

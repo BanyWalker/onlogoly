@@ -148,6 +148,8 @@ public class ModelingService {
 			identitySpec.putNull("missingMeaning");
 			object.set("attributes", JsonNodeFactory.instance.arrayNode());
 			object.set("staticConstraints", JsonNodeFactory.instance.arrayNode());
+			object.set("actions", body.path("actions").isArray() ? body.path("actions").deepCopy()
+					: JsonNodeFactory.instance.arrayNode());
 			object.set("termRefs", body.path("termRefs").isArray() ? body.path("termRefs").deepCopy()
 					: JsonNodeFactory.instance.arrayNode());
 			ObjectNode graph = object.putObject("graph");
@@ -226,6 +228,9 @@ public class ModelingService {
 			validateIdentitySpec(object, object.path("identitySpec"), id);
 			if (body.has("termRefs") && body.path("termRefs").isArray()) {
 				object.set("termRefs", body.path("termRefs").deepCopy());
+			}
+			if (body.has("actions") && body.path("actions").isArray()) {
+				object.set("actions", body.path("actions").deepCopy());
 			}
 			if (body.has("completeness")) {
 				String completeness = optionalText(body, "completeness");

@@ -43,7 +43,9 @@ sh mvnw spring-boot:run
 curl.exe --fail http://127.0.0.1:8080/actuator/health
 ```
 
-预期返回 `{"status":"UP"}`。默认仅放行健康检查，其他请求被拒绝；没有默认账号密码或匿名开放的业务 API。前端位于 `../../apps/x-yuan-ontology-web/`，后续联调可在 Vite 配置中把 `/api` 代理至 `http://127.0.0.1:8080`。当前未修改前端代理或页面。
+预期返回 `{"status":"UP"}`。当前 MVP 默认放行健康检查和 `/api/**`，无需登录；显式启用 `oidc` profile 后，业务 API 需要有效 JWT。前端位于 `../../apps/x-yuan-ontology-web/`，Vite 默认把 `/api` 代理至 `http://127.0.0.1:8080`。
+
+API 服务和 MCP 服务的列表接口分别是 `/api/v1/integrations/api-services` 和 `/api/v1/integrations/mcp-servers`。当前未配置 Java 热更新；新增或修改后端代码后，需停止并重新执行 `spring-boot:run`，否则原进程不会加载新接口。未知 API 路径应返回 404，内部错误分派保留原始错误状态。
 
 ## 配置与启用方式
 
@@ -87,7 +89,7 @@ api/
 java -jar .\target\ontology-api-0.0.1-SNAPSHOT.jar
 ```
 
-基础验证检查无数据库模式的健康状态、未启用身份平台时的 API 拒绝行为，以及 Spring Modulith 模块边界。数据库连通性、真实 OIDC 集成、业务授权和业务场景验收应在后续环境与需求就绪后单独验证。
+基础验证检查无数据库模式的健康状态、MVP API 的匿名访问、未知 API 路径的 404 响应、非公开路径的拒绝行为，以及 Spring Modulith 模块边界。服务接入访问回归可单独运行 `./mvnw.cmd -B -ntp -Dtest=IntegrationAccessTests test`。数据库连通性、真实 OIDC 集成、业务授权和业务场景验收应在后续环境与需求就绪后单独验证。
 
 2026-10-09 已完成当前工程的离线 `verify` 和可执行 JAR 的真实 HTTP 启动检查，详见 [验证记录](../../tools/backend-bootstrap/verification.md)。
 

@@ -1,5 +1,7 @@
 package com.xiyuan.ontology.configuration;
 
+import jakarta.servlet.DispatcherType;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -20,6 +22,8 @@ class BootstrapSecurityConfiguration {
 		// （用户确认：非功能与安全需求后置，见 TDD-OM-002 §13.1 MVP 范围）。
 		return http
 			.authorizeHttpRequests(requests -> requests
+				// 保留原始错误状态，避免 /api/** 的 404/500 在 /error 分派时被改成 401。
+				.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 				.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 				.requestMatchers("/api/**").permitAll()
 				.anyRequest().denyAll())

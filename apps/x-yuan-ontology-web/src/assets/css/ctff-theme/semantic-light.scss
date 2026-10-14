@@ -59,9 +59,9 @@ html[data-ctff-theme="light"] .ctff-element-plus-theme {
 	--ctff-text-color-secondary: rgb(10 21 52 / 88%);
 	--ctff-text-color-tertiary: rgb(10 21 52 / 64%);
 	--ctff-text-color-quaternary: rgb(10 21 52 / 24%);
-	--ctff-bg-color-page: rgb(10 21 52 / 4%);
+	--ctff-bg-color-page: #f3f7fc;
 	--ctff-bg-color-container: #fff;
-	--ctff-bg-color-component: rgb(10 21 52 / 4%);
+	--ctff-bg-color-component: rgb(47 123 232 / 5%);
 	--ctff-bg-color-pop: rgb(255 255 255 / 95%);
 	--ctff-bg-color-disable: rgb(10 21 52 / 4%);
 	--ctff-bg-color-element01: rgb(255 255 255 / 32%);
@@ -70,7 +70,9 @@ html[data-ctff-theme="light"] .ctff-element-plus-theme {
 	--ctff-bg-color-covering: rgb(10 21 52 / 46%);
 	--ctff-bg-color-data: rgb(10 21 52 / 46%);
 	--ctff-page-background-image:
-		linear-gradient(0deg, var(--ctff-bg-color-page) 0%, var(--ctff-bg-color-page) 100%), var(--ctff-bg-color-container);
+		radial-gradient(560px 380px at 88% -8%, rgb(23 195 162 / 10%), transparent 70%),
+		radial-gradient(640px 420px at -8% 108%, rgb(47 123 232 / 8%), transparent 70%),
+		linear-gradient(0deg, var(--ctff-bg-color-page) 0%, var(--ctff-bg-color-page) 100%);
 	--ctff-border-color-basic: rgb(10 21 52 / 24%);
 	--ctff-border-color-hover: var(--ctff-border-color-basic);
 	--ctff-border-color-component: rgb(10 21 52 / 14%);

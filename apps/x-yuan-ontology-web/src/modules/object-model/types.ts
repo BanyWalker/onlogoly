@@ -62,6 +62,26 @@ export interface IdentitySpec {
 	missingMeaning?: string | null;
 }
 
+export type ActionServiceType = "API" | "MCP" | "FUNCTION";
+
+export interface ActionServiceOption {
+	id: string;
+	name: string;
+	type: ActionServiceType;
+	description?: string;
+	detail?: string;
+}
+
+export interface ObjectAction {
+	id: string;
+	name: string;
+	serviceType: ActionServiceType;
+	serviceId: string;
+	serviceName: string;
+	description?: string;
+	detail?: string;
+}
+
 export interface StaticConstraint {
 	id: string;
 	constraintType: "Static" | "RuleReference";
@@ -79,6 +99,7 @@ export interface ObjectTypeDetail {
 	boundary?: { includes?: string | null; excludes?: string | null } | null;
 	domainId: string;
 	identitySpec: IdentitySpec;
+	actions?: ObjectAction[];
 	attributes: AttributeDef[];
 	staticConstraints: StaticConstraint[];
 	termRefs: string[];

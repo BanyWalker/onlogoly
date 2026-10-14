@@ -191,7 +191,14 @@
 					<ElTabPane label="关系" name="object-relations" :disabled="store.drawerMode === 'create-object'">
 						<RelationList v-if="store.currentObject" :object-id="store.currentObject.id" :relations="store.relations" @open="openRelationFromObject" />
 					</ElTabPane>
-					<ElTabPane label="动作" name="actions" disabled><PlaceholderTab text="待行为建模需求。" /></ElTabPane>
+					<ElTabPane label="动作" name="actions" :disabled="store.drawerMode === 'create-object'">
+						<ActionsEditor
+							v-if="objectDetailDraft"
+							v-model="objectActions"
+							:services="actionServices"
+							:loading="actionServicesLoading"
+						/>
+					</ElTabPane>
 				</ElTabs>
 			</template>
 			<RelationEditor v-else ref="relationEditorRef" :relation="relationDraft" :objects="store.objects" :creating="store.drawerMode === 'create-relation'" />
@@ -234,13 +241,18 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
 import { objectModelApi } from "./api";
 import { alignedPositions, layeredLayout, type AlignAction, type Positions } from "./canvas-layout";
 import AttributesEditor from "./components/tabs/AttributesEditor.vue";
+import ActionsEditor from "./components/tabs/ActionsEditor.vue";
 import ObjectCanvas from "./components/ObjectCanvas.vue";
 import OverviewTab, { type OverviewDraft } from "./components/tabs/OverviewTab.vue";
 import RelationEditor from "./components/tabs/RelationEditor.vue";
 import RelationList from "./components/tabs/RelationList.vue";
 import { useObjectModelStore } from "./store";
 import SearchHighlight from "./components/SearchHighlight.vue";
-import type { DomainDef, ObjectTypeDetail, RelationDetail } from "./types";
+import { apiServiceApi } from "../service-integration/api";
+import { mcpApi } from "../service-integration/mcp-api";
+import type { ApiService } from "../service-integration/types";
+import type { McpServer } from "../service-integration/mcp-types";
+import type { ActionServiceOption, ActionServiceType, DomainDef, ObjectAction, ObjectTypeDetail, RelationDetail } from "./types";
 
 const store = useObjectModelStore();
 const canvasRef = ref<InstanceType<typeof ObjectCanvas>>();
@@ -252,12 +264,21 @@ const activeTab = ref("overview");
 const objectDraft = reactive<OverviewDraft>({ id: "", name: "", definition: "", domainId: "" });
 const relationDraft = reactive<Partial<RelationDetail>>({});
 const objectDetailDraft = ref<ObjectTypeDetail | null>(null);
+const actionServices = ref<Record<ActionServiceType, ActionServiceOption[]>>({ API: [], MCP: [], FUNCTION: [] });
+const actionServicesLoading = ref(false);
 const selectedObjectIds = ref<string[]>([]);
 const zoomPercent = ref(100);
 const zoomInput = ref("100");
 const zoomPresets = [50, 75, 100, 125, 150, 200];
 const isFullscreen = ref(false);
 const searchCursor = ref(0);
+
+const objectActions = computed<ObjectAction[]>({
+	get: () => objectDetailDraft.value?.actions ?? [],
+	set: value => {
+		if (objectDetailDraft.value) objectDetailDraft.value.actions = value;
+	}
+});
 
 const searchResults = computed(() => {
 	const keyword = store.searchText.trim().toLowerCase();
@@ -312,7 +333,8 @@ const drawerDirty = computed(() => {
 		return stable({
 			overview: objectDraft,
 			attributes: objectDetailDraft.value.attributes,
-			identitySpec: objectDetailDraft.value.identitySpec
+			identitySpec: objectDetailDraft.value.identitySpec,
+			actions: objectDetailDraft.value.actions ?? []
 		}) !== stable({
 			overview: {
 				id: store.currentObject.id,
@@ -321,7 +343,8 @@ const drawerDirty = computed(() => {
 				domainId: store.currentObject.domainId
 			},
 			attributes: store.currentObject.attributes,
-			identitySpec: store.currentObject.identitySpec
+			identitySpec: store.currentObject.identitySpec,
+			actions: store.currentObject.actions ?? []
 		});
 	}
 	if (store.drawerMode === "relation" && store.currentRelation) {
@@ -376,9 +399,43 @@ watch(
 
 onMounted(() => {
 	void store.loadGraph();
+	void loadActionServices();
 	window.addEventListener("keydown", handleKeydown);
 	document.addEventListener("fullscreenchange", handleFullscreenChange);
 });
+
+async function loadActionServices() {
+	actionServicesLoading.value = true;
+	const [apiResult, mcpResult] = await Promise.allSettled([apiServiceApi.list(), mcpApi.list()]);
+	const apiServices = apiResult.status === "fulfilled" ? apiResult.value : [];
+	const mcpServices = mcpResult.status === "fulfilled" ? mcpResult.value : [];
+	actionServices.value = {
+		API: apiServices.map(toApiActionService),
+		MCP: mcpServices.map(toMcpActionService),
+		FUNCTION: []
+	};
+	actionServicesLoading.value = false;
+}
+
+function toApiActionService(service: ApiService): ActionServiceOption {
+	return {
+		id: service.id,
+		name: service.name,
+		type: "API",
+		description: service.definition,
+		detail: service.baseUrl
+	};
+}
+
+function toMcpActionService(service: McpServer): ActionServiceOption {
+	return {
+		id: service.id,
+		name: service.name,
+		type: "MCP",
+		description: service.definition,
+		detail: service.endpointUrl
+	};
+}
 
 onBeforeUnmount(() => {
 	window.removeEventListener("keydown", handleKeydown);
@@ -572,7 +629,11 @@ async function saveDrawer() {
 			await store.saveObject({
 				...objectDraft,
 				...(objectDetailDraft.value
-					? { attributes: objectDetailDraft.value.attributes, identitySpec: objectDetailDraft.value.identitySpec }
+					? {
+						attributes: objectDetailDraft.value.attributes,
+						identitySpec: objectDetailDraft.value.identitySpec,
+						actions: objectDetailDraft.value.actions ?? []
+					}
 					: {})
 			});
 		}
@@ -609,14 +670,6 @@ async function exportModel() {
 		ElMessage.error("导出失败");
 	}
 }
-</script>
-
-<script lang="ts">
-import { defineComponent, h } from "vue";
-const PlaceholderTab = defineComponent({
-	props: { text: { type: String, required: true } },
-	setup: props => () => h("div", { class: "placeholder-tab" }, props.text)
-});
 </script>
 
 <style scoped>
@@ -842,10 +895,10 @@ const PlaceholderTab = defineComponent({
 	box-sizing: border-box;
 	max-width: 100%;
 	padding: 7px 12px;
-	border: 1px solid rgba(219, 229, 239, 0.8);
+	border: 1px solid rgb(219 229 239 / 54%);
 	border-radius: 10px;
-	background: rgba(255, 255, 255, 0.94);
-	box-shadow: 0 4px 18px rgba(43, 76, 107, 0.06);
+	background: rgb(251 252 254 / 94%);
+	box-shadow: 0 4px 16px rgb(43 76 107 / 3%);
 	backdrop-filter: blur(8px);
 	pointer-events: auto;
 }
@@ -875,7 +928,7 @@ const PlaceholderTab = defineComponent({
 }
 
 .domain-filter-button.is-active {
-	background: rgba(88, 113, 139, 0.04);
+	background: rgb(244 248 252 / 76%);
 }
 
 .domain-filter-button:not(.is-active) {
@@ -887,7 +940,7 @@ const PlaceholderTab = defineComponent({
 }
 
 .domain-filter-button:hover {
-	background: rgba(88, 113, 139, 0.08);
+	background: rgb(239 245 250 / 84%);
 }
 
 .domain-filter-button:focus-visible {
@@ -941,9 +994,9 @@ const PlaceholderTab = defineComponent({
 .legend-deprecated {
 	width: 20px;
 	height: 16px;
-	border: 1px dashed #d5deeb;
+	border: 1px dashed #d8e3ed;
 	border-radius: 5px;
-	background: #f7f9fc;
+	background: rgb(251 252 254 / 78%);
 }
 
 .canvas-bottom-right {
@@ -964,10 +1017,15 @@ const PlaceholderTab = defineComponent({
 	.canvas-status-bar {
 		grid-column: 1;
 		width: fit-content;
-		justify-self: center;
+		max-width: calc(100% - 248px);
+		justify-self: start;
 	}
 
 	.canvas-bottom-right {
+		/* 小屏时脱离状态栏的网格排布，始终贴着画布右下角。 */
+		position: absolute;
+		right: 0;
+		bottom: 0;
 		grid-column: 2;
 	}
 }
@@ -1263,9 +1321,4 @@ const PlaceholderTab = defineComponent({
 	min-height: 520px;
 }
 
-:deep(.placeholder-tab) {
-	padding: 40px 10px;
-	color: var(--ctff-text-color-tertiary);
-	text-align: center;
-}
 </style>
