@@ -43,6 +43,7 @@ public class McpServiceStorage {
 	private final JsonMapper mapper = JsonMapper.builder().findAndAddModules().build();
 	private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 	private final java.util.concurrent.ConcurrentMap<String, String> runtimeAuthSecrets = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentMap<String, String> runtimeSessionIds = new java.util.concurrent.ConcurrentHashMap<>();
 	private ObjectNode document;
 
 	public McpServiceStorage(@Value("${xiyuan.workspace.dir}") String workspaceDir) {
@@ -136,13 +137,15 @@ public class McpServiceStorage {
 		server.put("enabled", false); return touch(server);
 	}
 
-	public synchronized ObjectNode delete(String id) {
+	public synchronized ObjectNode delete(String id, ObjectNode body) {
 		ObjectNode server = findServer(id);
+		checkRevision(server, body);
 		if (!"DRAFT".equals(server.path("status").asText())) throw IntegrationStorageException.conflict("SI_DELETE_REQUIRES_DRAFT", "已发布服务请先下架再删除");
 		List<ObjectNode> refs = mappingsForServer(id);
 		if (!refs.isEmpty()) throw IntegrationStorageException.conflict("SI_DELETE_PROTECTED", "MCP 服务存在未处理映射引用: " + refs.stream().map(item -> item.path("id").asText()).toList());
 		for (int index = 0; index < servers().size(); index++) if (servers().get(index) == server) { servers().remove(index); break; }
 		runtimeAuthSecrets.remove(id);
+		runtimeSessionIds.remove(id);
 		persist();
 		return server.deepCopy();
 	}
@@ -165,20 +168,24 @@ public class McpServiceStorage {
 		ObjectNode server = findServer(id);
 		ObjectNode result = handshake(server);
 		if (!result.path("outcome").asText().equals("SUCCESS")) {
+			appendRefreshRecord(server, result, null, null);
 			server.set("lastTest", result.deepCopy());
+			server.put("updatedAt", Instant.now().toString());
 			persist();
 			return result;
 		}
 		ArrayNode oldTools = server.withArray("tools");
 		ArrayNode incoming = (ArrayNode) result.path("tools");
 		ObjectNode diff = diff(oldTools, incoming);
-		applyToolDiff(server, incoming);
-		appendSnapshot(server, incoming);
-		server.set("lastTest", result.deepCopy());
 		server.put("protocolVersion", result.path("protocolVersion").asText(PROTOCOL_VERSION));
+		applyToolDiff(server, incoming);
+		int snapshotId = appendSnapshot(server, incoming);
+		server.set("lastTest", result.deepCopy());
 		server.put("revision", server.path("revision").asInt(1) + 1);
 		server.put("updatedAt", Instant.now().toString());
 		result.set("diff", diff);
+		result.put("snapshotId", snapshotId);
+		appendRefreshRecord(server, result, snapshotId, diff);
 		persist();
 		return result;
 	}
@@ -289,27 +296,48 @@ public class McpServiceStorage {
 		params.putObject("capabilities");
 		params.putObject("clientInfo").put("name", "xiyuan-ontology-platform").put("version", "0.1.0");
 		ObjectNode response = send(server, request);
-		if (response.has("normalizedError")) return response;
-		String negotiated = response.path("result").path("protocolVersion").asText(PROTOCOL_VERSION);
+		ObjectNode responseFailure = validateRemoteResponse(response, "initialize", started);
+		if (responseFailure != null) return responseFailure;
+		JsonNode initializeResult = response.path("result");
+		if (!initializeResult.isObject()) return failure("MCP_PROTOCOL_ERROR", "initialize 响应缺少 result 对象", started);
+		String negotiated = initializeResult.path("protocolVersion").asText("");
+		if (negotiated.isBlank()) return failure("MCP_PROTOCOL_ERROR", "initialize 响应缺少 protocolVersion", started);
 		if (!PROTOCOL_VERSION.equals(negotiated) && !negotiated.startsWith("2025-")) return failure("MCP_PROTOCOL_INCOMPATIBLE", "对端协议版本不兼容: " + negotiated, started);
+		ObjectNode initialized = JsonNodeFactory.instance.objectNode().put("jsonrpc", "2.0").put("method", "notifications/initialized");
+		ObjectNode notificationFailure = sendNotification(server, initialized, negotiated);
+		if (notificationFailure != null) return notificationFailure;
 		ObjectNode listRequest = JsonNodeFactory.instance.objectNode().put("jsonrpc", "2.0").put("id", UUID.randomUUID().toString()).put("method", "tools/list");
-		ObjectNode toolsResponse = send(server, listRequest);
-		if (toolsResponse.has("normalizedError")) return toolsResponse;
-		ArrayNode tools = toolsResponse.path("result").path("tools").isArray() ? (ArrayNode) toolsResponse.path("result").path("tools") : JsonNodeFactory.instance.arrayNode();
+		ObjectNode toolsResponse = send(server, listRequest, negotiated);
+		responseFailure = validateRemoteResponse(toolsResponse, "tools/list", started);
+		if (responseFailure != null) return responseFailure;
+		JsonNode toolsNode = toolsResponse.path("result").path("tools");
+		if (!toolsResponse.path("result").isObject() || !toolsNode.isArray()) return failure("MCP_PROTOCOL_ERROR", "tools/list 响应缺少 tools 数组", started);
+		ArrayNode tools = (ArrayNode) toolsNode;
 		ObjectNode result = JsonNodeFactory.instance.objectNode().put("outcome", "SUCCESS").put("protocolVersion", negotiated).put("latencyMs", (System.nanoTime() - started) / 1_000_000);
 		result.set("tools", normalizeTools(tools));
 		return result;
 	}
 
+	private ObjectNode validateRemoteResponse(ObjectNode response, String operation, long started) {
+		if (response.has("normalizedError")) return response;
+		if (!response.has("error")) return null;
+		JsonNode remoteError = response.path("error");
+		String message = remoteError.path("message").asText("远端返回 JSON-RPC 错误");
+		return failure("MCP_PROTOCOL_ERROR", "MCP " + operation + " 失败: " + message, started);
+	}
+
 	private ObjectNode send(ObjectNode server, ObjectNode request) {
+		return send(server, request, null);
+	}
+
+	private ObjectNode send(ObjectNode server, ObjectNode request, String protocolVersion) {
 		long timeout = Math.min(60000, Math.max(1000, server.path("timeoutMs").asLong(10000)));
 		try {
-			HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(server.path("endpointUrl").asText())).timeout(Duration.ofMillis(timeout)).header("Content-Type", "application/json").header("Accept", "application/json, text/event-stream");
-			JsonNode auth = server.path("auth");
-			String secret = runtimeAuthSecrets.get(server.path("id").asText());
-			if (auth.path("authType").asText().equals("BEARER") && auth.path("configured").asBoolean(false) && secret != null && !secret.isBlank()) builder.header("Authorization", "Bearer " + secret);
-			if (auth.path("authType").asText().equals("CUSTOM_HEADER") && auth.path("configured").asBoolean(false) && secret != null && !secret.isBlank()) builder.header(auth.path("headerName").asText("X-MCP-Token"), secret);
+			HttpRequest.Builder builder = requestBuilder(server, request, protocolVersion, timeout);
 			HttpResponse<String> response = httpClient.send(builder.POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request))).build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+			if ("initialize".equals(request.path("method").asText())) {
+				response.headers().firstValue("Mcp-Session-Id").ifPresentOrElse(sessionId -> runtimeSessionIds.put(server.path("id").asText(), sessionId), () -> runtimeSessionIds.remove(server.path("id").asText()));
+			}
 			if (response.statusCode() == 401 || response.statusCode() == 403) return failure("AUTH_FAILED", "对端拒绝认证", System.nanoTime());
 			if (response.statusCode() >= 400) return failure(response.statusCode() >= 500 ? "SERVER_ERROR" : "CLIENT_ERROR", "对端返回 HTTP " + response.statusCode(), System.nanoTime());
 			JsonNode payload = parseRemotePayload(response.body());
@@ -318,6 +346,36 @@ public class McpServiceStorage {
 		catch (java.net.http.HttpTimeoutException exception) { return failure("TIMEOUT", "MCP 请求超时", System.nanoTime()); }
 		catch (java.net.UnknownHostException exception) { return failure("DNS_FAILURE", "域名解析失败", System.nanoTime()); }
 		catch (Exception exception) { return failure("NETWORK_UNREACHABLE", "无法连接 MCP 服务", System.nanoTime()); }
+	}
+
+	private ObjectNode sendNotification(ObjectNode server, ObjectNode request, String protocolVersion) {
+		long timeout = Math.min(60000, Math.max(1000, server.path("timeoutMs").asLong(10000)));
+		try {
+			HttpRequest.Builder builder = requestBuilder(server, request, protocolVersion, timeout);
+			HttpResponse<String> response = httpClient.send(builder.POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request))).build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+			if (response.statusCode() == 401 || response.statusCode() == 403) return failure("AUTH_FAILED", "对端拒绝认证", System.nanoTime());
+			if (response.statusCode() >= 400) return failure(response.statusCode() >= 500 ? "SERVER_ERROR" : "CLIENT_ERROR", "对端返回 HTTP " + response.statusCode(), System.nanoTime());
+			return null;
+		}
+		catch (java.net.http.HttpTimeoutException exception) { return failure("TIMEOUT", "MCP 请求超时", System.nanoTime()); }
+		catch (java.net.UnknownHostException exception) { return failure("DNS_FAILURE", "域名解析失败", System.nanoTime()); }
+		catch (Exception exception) { return failure("NETWORK_UNREACHABLE", "无法连接 MCP 服务", System.nanoTime()); }
+	}
+
+	private HttpRequest.Builder requestBuilder(ObjectNode server, ObjectNode request, String protocolVersion, long timeout) {
+		HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(server.path("endpointUrl").asText())).timeout(Duration.ofMillis(timeout)).header("Content-Type", "application/json").header("Accept", "application/json, text/event-stream");
+		String method = request.path("method").asText();
+		if (!"initialize".equals(method)) {
+			String negotiated = protocolVersion == null || protocolVersion.isBlank() ? server.path("protocolVersion").asText("") : protocolVersion;
+			if (!negotiated.isBlank()) builder.header("MCP-Protocol-Version", negotiated);
+			String sessionId = runtimeSessionIds.get(server.path("id").asText());
+			if (sessionId != null && !sessionId.isBlank()) builder.header("Mcp-Session-Id", sessionId);
+		}
+		JsonNode auth = server.path("auth");
+		String secret = runtimeAuthSecrets.get(server.path("id").asText());
+		if (auth.path("authType").asText().equals("BEARER") && auth.path("configured").asBoolean(false) && secret != null && !secret.isBlank()) builder.header("Authorization", "Bearer " + secret);
+		if (auth.path("authType").asText().equals("CUSTOM_HEADER") && auth.path("configured").asBoolean(false) && secret != null && !secret.isBlank()) builder.header(auth.path("headerName").asText("X-MCP-Token"), secret);
+		return builder;
 	}
 
 	private JsonNode parseRemotePayload(String body) throws IOException {
@@ -383,7 +441,18 @@ public class McpServiceStorage {
 		for (JsonNode current : existing) if (findToolByName(incoming, current.path("name").asText()) == null) { ((ObjectNode) current).put("changeStatus", "REMOVED"); ((ObjectNode) current).put("enabled", false); }
 	}
 
-	private void appendSnapshot(ObjectNode server, JsonNode tools) { ObjectNode snapshot = JsonNodeFactory.instance.objectNode().put("snapshotId", server.withArray("snapshots").size() + 1).put("discoveredAt", Instant.now().toString()).put("protocolVersion", server.path("protocolVersion").asText(PROTOCOL_VERSION)); snapshot.set("tools", tools.deepCopy()); server.withArray("snapshots").add(snapshot); server.put("currentSnapshotId", snapshot.path("snapshotId").asInt()); }
+	private int appendSnapshot(ObjectNode server, JsonNode tools) { ObjectNode snapshot = JsonNodeFactory.instance.objectNode().put("snapshotId", server.withArray("snapshots").size() + 1).put("discoveredAt", Instant.now().toString()).put("protocolVersion", server.path("protocolVersion").asText(PROTOCOL_VERSION)); snapshot.set("tools", tools.deepCopy()); server.withArray("snapshots").add(snapshot); server.put("currentSnapshotId", snapshot.path("snapshotId").asInt()); return snapshot.path("snapshotId").asInt(); }
+
+	private void appendRefreshRecord(ObjectNode server, ObjectNode result, Integer snapshotId, ObjectNode diff) {
+		ObjectNode record = JsonNodeFactory.instance.objectNode()
+			.put("recordId", "REFRESH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT))
+			.put("occurredAt", Instant.now().toString())
+			.put("outcome", result.path("outcome").asText("FAILED"));
+		for (String field : List.of("normalizedError", "message", "protocolVersion", "latencyMs")) if (result.has(field)) record.set(field, result.path(field).deepCopy());
+		if (snapshotId != null) record.put("snapshotId", snapshotId);
+		if (diff != null) record.set("diff", diff.deepCopy());
+		server.withArray("refreshRecords").add(record);
+	}
 
 	private void appendCallLog(ObjectNode server, ObjectNode tool, ObjectNode result, JsonNode arguments) { ObjectNode log = result.deepCopy(); log.put("callId", "CALL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT)); log.put("serverId", server.path("id").asText()); log.put("toolKey", tool.path("toolKey").asText()); log.put("occurredAt", Instant.now().toString()); log.set("paramsDigest", redact(arguments)); logs().add(log); }
 
@@ -400,7 +469,7 @@ public class McpServiceStorage {
 			ObjectNode root = JsonNodeFactory.instance.objectNode().put("schemaVersion", "1.0").put("kind", "mcp-service-integration").put("workspace", "ENV-OM-001");
 			root.putObject("meta").put("generatedAt", Instant.now().toString());
 			ObjectNode server = root.putArray("mcpServers").addObject().put("id", "MCP-CMDB").put("name", "CMDB 查询服务").put("definition", "提供主机信息查询能力").put("domainId", "DOMAIN-OPS").put("owner", "CMDB 接入责任方").put("endpointUrl", "https://cmdb.example.invalid/mcp").put("transport", "HTTP").put("protocolVersion", PROTOCOL_VERSION).put("timeoutMs", 10000).put("status", "DRAFT").put("revision", 1);
-			server.set("auth", JsonNodeFactory.instance.objectNode().put("authType", "CUSTOM_HEADER").put("configured", false).put("masked", "未配置")); server.putArray("tools"); server.putArray("snapshots");
+			server.set("auth", JsonNodeFactory.instance.objectNode().put("authType", "CUSTOM_HEADER").put("configured", false).put("masked", "未配置")); server.putArray("tools"); server.putArray("snapshots"); server.putArray("refreshRecords");
 			root.putArray("mappings"); root.putArray("callLog"); persistDocument(root); return root;
 		}
 		catch (IOException exception) { throw new IllegalStateException("无法读取 MCP 服务 JSON 文件", exception); }
@@ -433,9 +502,9 @@ public class McpServiceStorage {
 	private static void validateServerDraft(ObjectNode body) { if (!List.of("DRAFT", "PUBLISHED").contains(body.path("status").asText("DRAFT"))) throw IntegrationStorageException.badRequest("SI_INVALID_STATUS", "状态只能是草稿或已发布"); if (!body.path("endpointUrl").asText().isBlank()) validateServerUrl(body); }
 	private static void validateServerComplete(ObjectNode body) { for (String field : List.of("name", "definition", "endpointUrl", "domainId", "owner")) if (body.path(field).asText().isBlank()) throw IntegrationStorageException.badRequest("SI_REQUIRED_MISSING", "服务发布前缺少必填字段: " + field); validateServerUrl(body); }
 	private static void validateServerUrl(ObjectNode body) { if (!"HTTP".equals(body.path("transport").asText("HTTP"))) throw IntegrationStorageException.badRequest("SI_TRANSPORT_UNSUPPORTED", "MCP 仅支持远程 HTTP 传输"); try { URI endpoint = URI.create(body.path("endpointUrl").asText()); if (!List.of("http", "https").contains(endpoint.getScheme())) throw new IllegalArgumentException(); } catch (IllegalArgumentException exception) { throw IntegrationStorageException.badRequest("SI_INVALID_URL", "MCP Endpoint 必须使用 HTTP/HTTPS"); } }
-	private static void setDefaults(ObjectNode server, String id) { server.put("id", id); server.putIfAbsent("transport", JsonNodeFactory.instance.textNode("HTTP")); server.putIfAbsent("timeoutMs", JsonNodeFactory.instance.numberNode(10000)); server.putIfAbsent("status", JsonNodeFactory.instance.textNode("DRAFT")); server.putIfAbsent("revision", JsonNodeFactory.instance.numberNode(1)); server.putIfAbsent("enabled", JsonNodeFactory.instance.booleanNode(false)); server.putIfAbsent("tools", JsonNodeFactory.instance.arrayNode()); server.putIfAbsent("snapshots", JsonNodeFactory.instance.arrayNode()); server.putIfAbsent("auth", JsonNodeFactory.instance.objectNode().put("authType", "NONE").put("configured", false).put("masked", "未配置")); server.put("createdAt", Instant.now().toString()); }
+	private static void setDefaults(ObjectNode server, String id) { server.put("id", id); server.putIfAbsent("transport", JsonNodeFactory.instance.textNode("HTTP")); server.putIfAbsent("timeoutMs", JsonNodeFactory.instance.numberNode(10000)); server.putIfAbsent("status", JsonNodeFactory.instance.textNode("DRAFT")); server.putIfAbsent("revision", JsonNodeFactory.instance.numberNode(1)); server.putIfAbsent("enabled", JsonNodeFactory.instance.booleanNode(false)); server.putIfAbsent("tools", JsonNodeFactory.instance.arrayNode()); server.putIfAbsent("snapshots", JsonNodeFactory.instance.arrayNode()); server.putIfAbsent("refreshRecords", JsonNodeFactory.instance.arrayNode()); server.putIfAbsent("auth", JsonNodeFactory.instance.objectNode().put("authType", "NONE").put("configured", false).put("masked", "未配置")); server.put("createdAt", Instant.now().toString()); }
 	private void captureRuntimeAuth(ObjectNode server) { JsonNode authNode = server.path("auth"); if (!authNode.isObject()) return; ObjectNode auth = (ObjectNode) authNode; JsonNode secretNode = auth.get("secret"); if (secretNode != null && secretNode.isTextual() && !secretNode.asText().isBlank()) runtimeAuthSecrets.put(server.path("id").asText(), secretNode.asText()); auth.remove("secret"); if (secretNode != null && secretNode.isTextual() && !secretNode.asText().isBlank()) auth.put("configured", true); if (auth.path("configured").asBoolean(false) && auth.path("masked").asText().isBlank()) auth.put("masked", "已配置"); }
-	private static ObjectNode summary(ObjectNode server) { ObjectNode result = server.deepCopy(); result.put("toolCount", server.withArray("tools").size()); result.put("enabledToolCount", (int) server.withArray("tools").valueStream().filter(node -> node.path("enabled").asBoolean(false) && !"REMOVED".equals(node.path("changeStatus").asText())).count()); result.put("pendingReviewCount", (int) server.withArray("tools").valueStream().filter(node -> node.path("pendingReview").asBoolean(false)).count()); result.remove("tools"); result.remove("snapshots"); return result; }
+	private static ObjectNode summary(ObjectNode server) { ObjectNode result = server.deepCopy(); result.put("toolCount", server.withArray("tools").size()); result.put("enabledToolCount", (int) server.withArray("tools").valueStream().filter(node -> node.path("enabled").asBoolean(false) && !"REMOVED".equals(node.path("changeStatus").asText())).count()); result.put("pendingReviewCount", (int) server.withArray("tools").valueStream().filter(node -> node.path("pendingReview").asBoolean(false)).count()); result.remove("tools"); result.remove("snapshots"); result.remove("refreshRecords"); return result; }
 	private static void validateRequestedState(ObjectNode current, ObjectNode body) {
 		if (body.has("status") && !List.of("DRAFT", "PUBLISHED").contains(body.path("status").asText())) throw IntegrationStorageException.badRequest("SI_INVALID_STATUS", "状态只能是草稿或已发布");
 		String oldStatus = current.path("status").asText("DRAFT"); String newStatus = body.has("status") ? body.path("status").asText() : oldStatus;
@@ -455,6 +524,7 @@ public class McpServiceStorage {
 			boolean enabled = "ENABLED".equals(old) || ("PUBLISHED".equals(normalized) && server.path("enabled").asBoolean(false));
 			if (!normalized.equals(old)) { server.put("status", normalized); changed = true; }
 			if (server.path("enabled").asBoolean(false) != enabled) { server.put("enabled", enabled); changed = true; }
+			if (!server.path("refreshRecords").isArray()) { server.putArray("refreshRecords"); changed = true; }
 			for (JsonNode tool : server.withArray("tools")) if (!tool.has("enabled")) { ((ObjectNode) tool).put("enabled", false); changed = true; }
 		}
 		return changed;

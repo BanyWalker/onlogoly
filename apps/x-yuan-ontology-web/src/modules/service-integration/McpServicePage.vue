@@ -7,7 +7,6 @@
 				<p>接入远程 MCP Server，自动发现工具，按需启用并调试调用。</p>
 			</div>
 			<div class="header-actions">
-				<ElButton :icon="Refresh" :loading="loading" @click="loadServers">刷新</ElButton>
 				<ElButton type="primary" :icon="Plus" @click="openCreate">登记 MCP 服务</ElButton>
 			</div>
 		</header>
@@ -24,7 +23,7 @@
 				<div v-loading="loading" class="server-list">
 					<button v-for="item in filteredServers" :key="item.id" type="button" class="server-item" :class="{ active: item.id === selectedId }" :aria-pressed="item.id === selectedId" :title="`${item.name} · ${item.id}`" @click="selectServer(item.id)">
 						<span class="server-icon" aria-hidden="true"><ElIcon><Cpu /></ElIcon></span>
-						<span class="server-main"><strong>{{ item.name || "未命名服务" }}</strong><small>{{ item.id }}</small><span class="service-list-state"><small>{{ item.toolCount ?? 0 }} 个工具</small><ElTag size="small" :type="statusType(item.status, item.enabled)" effect="light">{{ statusLabel(item.status, item.enabled) }}</ElTag></span></span>
+						<span class="server-main"><strong>{{ item.name || "未命名服务" }}</strong><small>{{ item.id }}</small><span class="service-list-state"><small>{{ item.toolCount ?? item.tools?.length ?? 0 }} 个工具</small><ElTag size="small" :type="statusType(item.status, item.enabled)" effect="light">{{ statusLabel(item.status, item.enabled) }}</ElTag></span></span>
 					</button>
 					<ElEmpty v-if="!filteredServers.length && !loading" description="暂无 MCP 服务" :image-size="64" />
 				</div>
@@ -33,13 +32,13 @@
 			<main v-if="selectedServer" class="detail">
 				<div class="detail-header">
 					<div class="detail-heading"><div class="detail-id">{{ selectedServer.id }} · 修订 r{{ selectedServer.revision }}</div><h2>{{ selectedServer.name || "未命名服务" }} <ElTag :type="statusType(selectedServer.status, selectedServer.enabled)" effect="light">{{ statusLabel(selectedServer.status, selectedServer.enabled) }}</ElTag></h2><p>{{ selectedServer.definition || "尚未填写服务定义" }}</p></div>
-					<div class="detail-actions"><ElButton :loading="testing" @click="testConnection">连接测试</ElButton><ElButton v-if="selectedServer.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedServer.enabled ? disableService() : enableService">{{ selectedServer.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text @click="openEdit">编辑配置</ElButton><ElButton v-if="selectedServer.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
+					<div class="detail-actions"><ElButton v-if="selectedServer.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedServer.enabled ? disableService() : enableService">{{ selectedServer.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text @click="openEdit">编辑</ElButton><ElButton v-if="selectedServer.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
 				</div>
 				<div class="meta-grid"><div><span>Endpoint</span><strong class="mono endpoint-value" :title="selectedServer.endpointUrl">{{ selectedServer.endpointUrl }}</strong></div><div><span>所属领域</span><strong>{{ selectedServer.domainId }}</strong></div><div><span>责任方</span><strong>{{ selectedServer.owner }}</strong></div><div><span>传输 / 协议</span><strong>{{ selectedServer.transport }} · {{ selectedServer.protocolVersion || "待发现" }}</strong></div><div><span>更新时间</span><strong>{{ formatUpdatedAt(selectedServer.updatedAt) }}</strong></div><div><span>认证方式</span><ElTag v-if="!selectedServer.auth?.configured" size="small" type="warning">待配置</ElTag><strong v-else>{{ selectedServer.auth.authType }} · {{ selectedServer.auth.masked || "已配置" }}</strong></div><div><span>默认超时</span><strong>{{ selectedServer.timeoutMs }} ms</strong></div><div><span>最后测试</span><strong v-if="selectedServer.lastTest" :class="selectedServer.lastTest.outcome === 'SUCCESS' ? 'test-success' : 'test-failed'">{{ selectedServer.lastTest.outcome === "SUCCESS" ? "连接成功" : `失败 · ${selectedServer.lastTest.normalizedError || "未知错误"}` }}</strong><strong v-else class="muted">尚未测试</strong></div></div>
 
 				<ElTabs v-model="activeTab" class="detail-tabs">
 					<ElTabPane name="tools"><template #label>工具列表 <ElTag size="small" effect="plain">{{ tools.length }}</ElTag></template>
-						<div class="tab-toolbar"><div><strong>工具列表</strong><span class="muted">首次发现默认关闭，启用后才允许调用</span></div><div><ElButton :loading="refreshing" @click="refreshTools">刷新工具</ElButton><ElButton type="primary" @click="openCreateMappingFromTool">创建映射</ElButton></div></div>
+						<div class="tab-toolbar"><div><strong>工具列表</strong><span class="muted">首次发现默认关闭，启用后才允许调用</span></div><div><ElButton :loading="testing" @click="testConnection">连接测试</ElButton><ElButton :loading="refreshing" @click="refreshTools">刷新工具</ElButton><ElButton type="primary" @click="openCreateMappingFromTool">创建映射</ElButton></div></div>
 						<ElTable :data="tools" stripe empty-text="尚未发现工具">
 							<ElTableColumn prop="name" label="工具" min-width="220"><template #default="scope"><strong>{{ scope.row.name }}</strong><div class="muted">{{ scope.row.description || "无描述" }}</div></template></ElTableColumn>
 							<ElTableColumn label="操作性质" width="110"><template #default="scope"><ElTag size="small" :type="scope.row.operationNature === 'WRITE' ? 'warning' : 'info'">{{ scope.row.operationNature === "WRITE" ? "写操作" : "只读" }}</ElTag></template></ElTableColumn>
@@ -55,6 +54,16 @@
 
 					<ElTabPane name="mappings"><template #label>本体映射 <ElTag size="small" effect="plain">{{ mappings.length }}</ElTag></template><div class="tab-toolbar"><div><strong>工具与本体映射</strong><span class="muted">调用结果可映射到对象模型元素，目标引用需先存在。</span></div><ElButton type="primary" @click="openCreateMapping">新增映射</ElButton></div><ElTable :data="mappings" stripe empty-text="暂无映射"><ElTableColumn prop="toolKey" label="工具" min-width="180" /><ElTableColumn prop="targetRef" label="目标引用" min-width="180"><template #default="scope"><span class="mono">{{ scope.row.targetRef }}</span></template></ElTableColumn><ElTableColumn prop="mappingKind" label="映射类型" width="140" /><ElTableColumn prop="description" label="说明" min-width="180" /><ElTableColumn label="操作" width="90"><template #default="scope"><ElButton text type="danger" size="small" @click="removeMapping(scope.row)">删除</ElButton></template></ElTableColumn></ElTable></ElTabPane>
 				</ElTabs>
+				<section v-if="activeTab === 'snapshots'" class="refresh-records">
+					<div class="refresh-records-heading"><strong>刷新记录</strong><span class="muted">失败只记录结果，不会覆盖当前工具或生成新版本。</span></div>
+					<ElTable :data="refreshRecords" stripe empty-text="暂无刷新记录">
+						<ElTableColumn prop="occurredAt" label="时间" min-width="180" />
+						<ElTableColumn label="结果" width="100"><template #default="scope"><ElTag size="small" :type="scope.row.outcome === 'SUCCESS' ? 'success' : 'danger'">{{ scope.row.outcome === "SUCCESS" ? "成功" : "失败" }}</ElTag></template></ElTableColumn>
+						<ElTableColumn label="版本" width="100"><template #default="scope">{{ scope.row.snapshotId ? `v${scope.row.snapshotId}` : "未生成" }}</template></ElTableColumn>
+						<ElTableColumn prop="normalizedError" label="错误" min-width="180" />
+						<ElTableColumn prop="message" label="说明" min-width="260" />
+					</ElTable>
+				</section>
 			</main>
 			<ElEmpty v-else class="detail-empty" description="请选择或登记一个 MCP 服务" />
 		</section>
@@ -70,10 +79,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Cpu, Plus, Refresh, Search } from "@element-plus/icons-vue";
+import { Cpu, Plus, Search } from "@element-plus/icons-vue";
 
 import { mcpApi } from "./mcp-api";
-import type { McpApiError, McpCallLog, McpInvokeResult, McpMapping, McpServer, McpSnapshot, McpTool } from "./mcp-types";
+import type { McpApiError, McpCallLog, McpInvokeResult, McpMapping, McpRefreshRecord, McpServer, McpSnapshot, McpTool } from "./mcp-types";
 
 const servers = ref<McpServer[]>([]);
 const selectedId = ref("");
@@ -88,6 +97,7 @@ const error = ref<McpApiError | null>(null);
 const activeTab = ref("tools");
 const tools = ref<McpTool[]>([]);
 const snapshots = ref<McpSnapshot[]>([]);
+const refreshRecords = ref<McpRefreshRecord[]>([]);
 const logs = ref<McpCallLog[]>([]);
 const mappings = ref<McpMapping[]>([]);
 const serviceDialogVisible = ref(false);
@@ -102,16 +112,33 @@ const mappingForm = reactive({ toolKey: "", targetRef: "", mappingKind: "RESULT"
 
 const selectedServer = computed(() => servers.value.find(item => item.id === selectedId.value) || null);
 const filteredServers = computed(() => servers.value.filter(item => (!statusFilter.value || item.status === statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
-const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已启用" : "已停用") : "草稿";
+const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已发布 · 启用" : "已发布 · 禁用") : "草稿";
 const statusType = (status?: string, enabled?: boolean) => status === "PUBLISHED" && enabled ? "success" : "info";
 const formatUpdatedAt = (value?: string) => value ? value.replace("T", " ").slice(0, 16) : "—";
 const changeLabel = (change?: string) => ({ ADDED: "新增", REMOVED: "已移除", SCHEMA_CHANGED: "输入已变更" })[change || ""] || change;
 
 function upsertServer(server: McpServer) { const index = servers.value.findIndex(item => item.id === server.id); if (index >= 0) servers.value.splice(index, 1, server); else servers.value.push(server); }
 async function loadServers() { loading.value = true; error.value = null; try { const items = await mcpApi.list(); servers.value = items; if (!selectedId.value || !items.some(item => item.id === selectedId.value)) selectedId.value = items[0]?.id || ""; if (selectedId.value) await selectServer(selectedId.value); } catch (cause) { error.value = cause as McpApiError; } finally { loading.value = false; } }
-async function selectServer(id: string) { selectedId.value = id; try { const [server, snapshotItems, logItems, mappingItems] = await Promise.all([mcpApi.get(id), mcpApi.snapshots(id), mcpApi.logs(id), mcpApi.mappings(id)]); upsertServer(server); tools.value = server.tools || []; snapshots.value = snapshotItems; logs.value = logItems; mappings.value = mappingItems; } catch (cause) { error.value = cause as McpApiError; } }
+async function selectServer(id: string) { selectedId.value = id; try { const [server, snapshotItems, logItems, mappingItems] = await Promise.all([mcpApi.get(id), mcpApi.snapshots(id), mcpApi.logs(id), mcpApi.mappings(id)]); upsertServer(server); tools.value = server.tools || []; snapshots.value = snapshotItems; refreshRecords.value = server.refreshRecords || []; logs.value = logItems; mappings.value = mappingItems; } catch (cause) { error.value = cause as McpApiError; } }
 async function testConnection() { if (!selectedServer.value) return; testing.value = true; try { const result = await mcpApi.discover(selectedServer.value.id); await selectServer(selectedServer.value.id); ElMessage[result.outcome === "SUCCESS" ? "success" : "warning"](result.outcome === "SUCCESS" ? `连接成功，发现 ${result.tools?.length || 0} 个工具` : `${result.normalizedError || "连接失败"}：${result.message || "请检查 Endpoint"}`); } catch (cause) { ElMessage.error((cause as McpApiError).message || "连接测试失败"); } finally { testing.value = false; } }
-async function refreshTools() { if (!selectedServer.value) return; refreshing.value = true; try { const result = await mcpApi.refresh(selectedServer.value.id); await selectServer(selectedServer.value.id); const diff = result.diff; ElMessage.success(diff ? `刷新完成：新增 ${diff.added}，移除 ${diff.removed}，输入变更 ${diff.schemaChanged}` : "刷新完成"); } catch (cause) { ElMessage.error((cause as McpApiError).message || "刷新失败"); } finally { refreshing.value = false; } }
+async function refreshTools() {
+	if (!selectedServer.value) return;
+	refreshing.value = true;
+	try {
+		const result = await mcpApi.refresh(selectedServer.value.id);
+		await selectServer(selectedServer.value.id);
+		if (result.outcome !== "SUCCESS") {
+			ElMessage.error(`${result.normalizedError || "刷新失败"}：${result.message || "无法从远端 MCP 服务获取工具"}`);
+			return;
+		}
+		const diff = result.diff;
+		ElMessage.success(diff ? `刷新完成：新增 ${diff.added}，移除 ${diff.removed}，输入变更 ${diff.schemaChanged}` : "刷新完成");
+	} catch (cause) {
+		ElMessage.error((cause as McpApiError).message || "刷新失败");
+	} finally {
+		refreshing.value = false;
+	}
+}
 async function publishService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.publish(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已发布"); }
 async function unpublishService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.unpublish(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已下架"); }
 async function enableService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.enable(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已启用"); }
@@ -122,7 +149,7 @@ async function reviewTool(tool: McpTool) { if (!selectedServer.value) return; tr
 function openCreate() { editingServer.value = null; Object.assign(serviceForm, { id: `MCP-${Date.now().toString().slice(-6)}`, name: "", definition: "", domainId: "DOMAIN-OPS", owner: "", endpointUrl: "", authType: "NONE", secret: "", timeoutMs: 10000 }); serviceDialogVisible.value = true; }
 function openEdit() { if (!selectedServer.value) return; editingServer.value = selectedServer.value; Object.assign(serviceForm, { id: selectedServer.value.id, name: selectedServer.value.name, definition: selectedServer.value.definition, domainId: selectedServer.value.domainId, owner: selectedServer.value.owner, endpointUrl: selectedServer.value.endpointUrl, authType: selectedServer.value.auth?.authType || "NONE", secret: "", timeoutMs: selectedServer.value.timeoutMs }); serviceDialogVisible.value = true; }
 async function saveService() { if (!serviceForm.id) { ElMessage.warning("请填写服务标识"); return; } saving.value = true; try { const body = { id: serviceForm.id, name: serviceForm.name, definition: serviceForm.definition, domainId: serviceForm.domainId, owner: serviceForm.owner, endpointUrl: serviceForm.endpointUrl, transport: "HTTP" as const, timeoutMs: serviceForm.timeoutMs, auth: { authType: serviceForm.authType, configured: Boolean(serviceForm.secret), masked: serviceForm.secret ? "已配置" : "未配置", secret: serviceForm.secret } }; const result = editingServer.value ? await mcpApi.update(editingServer.value.id, { ...body, revision: editingServer.value.revision }) : await mcpApi.create(body); upsertServer(result); selectedId.value = result.id; serviceDialogVisible.value = false; await selectServer(result.id); ElMessage.success("MCP 服务草稿已保存"); } catch (cause) { ElMessage.error((cause as McpApiError).message || "保存失败"); } finally { saving.value = false; } }
-async function deleteService() { if (!selectedServer.value) return; try { await ElMessageBox.confirm(`确认删除草稿服务“${selectedServer.value.name || selectedServer.value.id}”？存在映射时无法删除。`, "请确认", { type: "warning" }); await mcpApi.remove(selectedServer.value.id); await loadServers(); ElMessage.success("MCP 服务已删除"); } catch (cause) { if (cause !== "cancel") ElMessage.error((cause as McpApiError).message || "删除失败"); } }
+async function deleteService() { if (!selectedServer.value) return; try { await ElMessageBox.confirm(`确认删除草稿服务“${selectedServer.value.name || selectedServer.value.id}”？存在映射时无法删除。`, "请确认", { type: "warning" }); await mcpApi.remove(selectedServer.value.id, selectedServer.value.revision); await loadServers(); ElMessage.success("MCP 服务已删除"); } catch (cause) { if (cause !== "cancel") ElMessage.error((cause as McpApiError).message || "删除失败"); } }
 function schemaPlaceholder(schema: Record<string, unknown>) { return JSON.stringify(schema?.properties || {}, null, 2); }
 function openDebugger(tool: McpTool) { selectedTool.value = tool; debugArguments.value = "{}"; invokeResult.value = null; debugVisible.value = true; }
 async function invokeTool() { if (!selectedServer.value || !selectedTool.value) return; let args: Record<string, unknown>; try { const parsed: unknown = JSON.parse(debugArguments.value || "{}"); if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(); args = parsed as Record<string, unknown>; } catch { ElMessage.error("输入参数必须是 JSON 对象"); return; } if (selectedTool.value.operationNature === "WRITE") { try { await ElMessageBox.confirm("这是写操作，将调用远程 MCP 服务。确认继续？", "确认调用", { type: "warning", confirmButtonText: "继续调用" }); } catch { return; } } invoking.value = true; try { invokeResult.value = await mcpApi.invoke(selectedServer.value.id, selectedTool.value.toolKey, { arguments: args, confirm: selectedTool.value.operationNature === "WRITE" }); await loadLogs(); } catch (cause) { ElMessage.error((cause as McpApiError).message || "调用失败"); } finally { invoking.value = false; } }

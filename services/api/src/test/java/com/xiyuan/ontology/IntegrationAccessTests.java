@@ -82,6 +82,23 @@ class IntegrationAccessTests {
 	}
 
 	@Test
+	void mcpRefreshReportsRemoteFailureInsteadOfReportingSuccess() throws Exception {
+		var before = mapper.readTree(get("/api/v1/integrations/mcp-servers/MCP-CMDB").body()).path("data");
+		var response = post("/api/v1/integrations/mcp-servers/MCP-CMDB/refresh", "{}");
+		assertEquals(200, response.statusCode(), response.body());
+		var result = mapper.readTree(response.body()).path("data");
+		assertEquals("FAILED", result.path("outcome").asText());
+		assertTrue(result.path("normalizedError").isTextual(), response.body());
+		var after = mapper.readTree(get("/api/v1/integrations/mcp-servers/MCP-CMDB").body()).path("data");
+		assertEquals(before.path("revision").asInt(), after.path("revision").asInt());
+		assertEquals(before.path("tools"), after.path("tools"));
+		assertEquals(before.path("snapshots"), after.path("snapshots"));
+		assertEquals(before.path("currentSnapshotId"), after.path("currentSnapshotId"));
+		assertTrue(after.path("refreshRecords").size() > before.path("refreshRecords").size());
+		assertEquals("FAILED", after.path("refreshRecords").get(after.path("refreshRecords").size() - 1).path("outcome").asText());
+	}
+
+	@Test
 	void draftsMayBeSavedIncompleteButFollowThePublishLifecycle() throws Exception {
 		String apiId = "API-DRAFT-" + UUID.randomUUID().toString().substring(0, 8);
 		var apiCreate = post("/api/v1/integrations/api-services", "{\"id\":\"" + apiId + "\"}");
@@ -97,6 +114,25 @@ class IntegrationAccessTests {
 		assertEquals("DRAFT", mapper.readTree(mcpCreate.body()).path("data").path("status").asText());
 		assertEquals(400, post("/api/v1/integrations/mcp-servers/" + mcpId + "/publish", "{}").statusCode());
 		assertEquals(409, post("/api/v1/integrations/mcp-servers/" + mcpId + "/enable", "{}").statusCode());
+		assertEquals(200, delete("/api/v1/integrations/mcp-servers/" + mcpId).statusCode());
+	}
+
+	@Test
+	void publishedServicesMustBeUnpublishedBeforeDeletion() throws Exception {
+		String apiId = "API-ROUNDTRIP-" + UUID.randomUUID().toString().substring(0, 8);
+		String apiBody = "{\"id\":\"" + apiId + "\",\"name\":\"Round trip API\",\"definition\":\"Lifecycle test\",\"baseUrl\":\"https://example.invalid\",\"version\":\"v1\",\"environment\":\"test\",\"domainId\":\"DOMAIN-OPS\",\"owner\":\"integration-test\"}";
+		assertEquals(200, post("/api/v1/integrations/api-services", apiBody).statusCode());
+		assertEquals(200, post("/api/v1/integrations/api-services/" + apiId + "/publish", "{}").statusCode());
+		assertEquals(409, delete("/api/v1/integrations/api-services/" + apiId).statusCode());
+		assertEquals(200, post("/api/v1/integrations/api-services/" + apiId + "/unpublish", "{}").statusCode());
+		assertEquals(200, delete("/api/v1/integrations/api-services/" + apiId).statusCode());
+
+		String mcpId = "MCP-ROUNDTRIP-" + UUID.randomUUID().toString().substring(0, 8);
+		String mcpBody = "{\"id\":\"" + mcpId + "\",\"name\":\"Round trip MCP\",\"definition\":\"Lifecycle test\",\"endpointUrl\":\"https://example.invalid/mcp\",\"transport\":\"HTTP\",\"domainId\":\"DOMAIN-OPS\",\"owner\":\"integration-test\"}";
+		assertEquals(200, post("/api/v1/integrations/mcp-servers", mcpBody).statusCode());
+		assertEquals(200, post("/api/v1/integrations/mcp-servers/" + mcpId + "/publish", "{}").statusCode());
+		assertEquals(409, delete("/api/v1/integrations/mcp-servers/" + mcpId).statusCode());
+		assertEquals(200, post("/api/v1/integrations/mcp-servers/" + mcpId + "/unpublish", "{}").statusCode());
 		assertEquals(200, delete("/api/v1/integrations/mcp-servers/" + mcpId).statusCode());
 	}
 

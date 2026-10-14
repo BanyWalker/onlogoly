@@ -218,13 +218,13 @@ export const useObjectModelStore = defineStore("objectModel", {
 			this.pendingRelationTarget = null;
 		},
 
-		async saveObject(draft: Partial<ObjectTypeDetail>) {
+		async saveObject(draft: Partial<ObjectTypeDetail>, successMessage = "保存成功") {
 			this.saving = true;
 			this.saveError = null;
 			try {
 				if (this.drawerMode === "create-object") {
 					const created = await objectModelApi.createObjectType(draft);
-					ElMessage.success(`对象 ${created.name} 已创建（修订 1）`);
+					ElMessage.success(`对象 ${created.name} 已创建`);
 					this.currentObject = created;
 					this.drawerMode = "object";
 				}
@@ -234,7 +234,7 @@ export const useObjectModelStore = defineStore("objectModel", {
 						draft,
 						this.currentObject.revision
 					);
-					ElMessage.success(`已保存（修订 ${updated.revision}）`);
+					ElMessage.success(successMessage);
 					this.currentObject = updated;
 				}
 				await this.loadGraph();
@@ -284,7 +284,7 @@ export const useObjectModelStore = defineStore("objectModel", {
 						draft,
 						this.currentRelation.revision
 					);
-					ElMessage.success(`关系已保存（修订 ${updated.revision}）`);
+					ElMessage.success("关系保存成功");
 					this.currentRelation = updated;
 				}
 				await this.loadGraph();

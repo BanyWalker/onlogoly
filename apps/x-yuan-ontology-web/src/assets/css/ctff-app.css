@@ -94,6 +94,9 @@ html[data-ctff-theme="dark"] .ctff-element-plus-theme {
 	background: var(--ctff-shell-sidebar-bg);
 	border-right: var(--ctff-line-width) solid var(--ctff-shell-border-color);
 	box-shadow: var(--ctff-shell-sidebar-shadow);
+
+	--ctff-menu-active-bg: #eaf3ff;
+
 	transition:
 		width 160ms ease,
 		flex-basis 160ms ease;
@@ -174,13 +177,29 @@ html[data-ctff-theme="dark"] .ctff-element-plus-theme {
 	box-shadow: none;
 }
 
+/* Keep every sidebar route aligned with the service integration navigation. */
+.ctff-shell-sidebar .ctff-nav-menu .el-menu-item,
+.ctff-shell-sidebar .ctff-nav-menu .el-sub-menu__title {
+	height: 36px;
+	line-height: 36px;
+}
+
+.ctff-shell-sidebar .ctff-nav-menu :is(.el-menu-item.is-active, .el-sub-menu.is-active > .el-sub-menu__title) {
+	color: #2f7be8;
+	background: #eaf3ff;
+}
+
+.ctff-shell-sidebar .ctff-nav-menu :is(.el-menu-item.is-active, .el-sub-menu.is-active > .el-sub-menu__title) .el-icon {
+	color: #2f7be8;
+}
+
 .ctff-nav-menu.is-static-categories .ctff-nav-category {
 	padding: 8px 16px 6px;
 	margin: 0 0 4px;
-	color: var(--ctff-shell-muted-text-color);
 	font-size: var(--ctff-font-size-12);
 	font-weight: 600;
 	line-height: 20px;
+	color: var(--ctff-shell-muted-text-color);
 	letter-spacing: 0.04em;
 }
 

@@ -188,9 +188,6 @@ public class ApiServiceStorage {
 		if (!List.of("DRAFT", "PUBLISHED").contains(requestedStatus)) throw IntegrationStorageException.badRequest("SI_INVALID_STATUS", "endpoint status must be DRAFT or PUBLISHED");
 		boolean requestedEnabled = body.has("enabled") ? body.path("enabled").asBoolean(false) : endpoint.path("enabled").asBoolean(false);
 		if ("DRAFT".equals(requestedStatus) && requestedEnabled) throw IntegrationStorageException.conflict("SI_INVALID_TRANSITION", "draft endpoint cannot be enabled");
-		if ("ENABLED".equals(body.path("status").asText()) && !"SUCCESS".equals(endpoint.path("lastTest").path("outcome").asText())) {
-			throw IntegrationStorageException.badRequest("SI_TARGET_NOT_VERIFIED", "端点通过连通性测试后才能启用");
-		}
 		for (String field : body.propertyNames()) {
 			if (!List.of("id", "createdAt", "createdBy").contains(field)) {
 				endpoint.set(field, body.path(field).deepCopy());

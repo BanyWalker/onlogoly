@@ -31,6 +31,18 @@ export interface McpSnapshot {
 	tools: McpTool[];
 }
 
+export interface McpRefreshRecord {
+	recordId: string;
+	occurredAt: string;
+	outcome: "SUCCESS" | "FAILED";
+	normalizedError?: string | null;
+	message?: string;
+	protocolVersion?: string;
+	latencyMs?: number;
+	snapshotId?: number;
+	diff?: { added: number; removed: number; schemaChanged: number };
+}
+
 export interface McpServer {
 	id: string;
 	name: string;
@@ -47,6 +59,7 @@ export interface McpServer {
 	auth?: { authType: string; configured: boolean; masked?: string };
 	tools: McpTool[];
 	snapshots: McpSnapshot[];
+	refreshRecords?: McpRefreshRecord[];
 	lastTest?: McpTestResult | null;
 	currentSnapshotId?: number;
 	toolCount?: number;

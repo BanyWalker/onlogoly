@@ -50,8 +50,8 @@ export const mcpApi = {
 	disable(id: string, revision?: number) {
 		return request<McpServer>(() => http.post(`/mcp-servers/${path(id)}/disable`, { revision }));
 	},
-	remove(id: string) {
-		return request<McpServer>(() => http.delete(`/mcp-servers/${path(id)}`));
+	remove(id: string, revision?: number) {
+		return request<McpServer>(() => http.delete(`/mcp-servers/${path(id)}`, { data: { revision } }));
 	},
 	discover(id: string) {
 		return request<McpTestResult>(() => http.post(`/mcp-servers/${path(id)}/discover`));

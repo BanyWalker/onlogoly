@@ -635,7 +635,7 @@ async function saveDrawer() {
 						actions: objectDetailDraft.value.actions ?? []
 					}
 					: {})
-			});
+			}, activeTab.value === "actions" ? "动作关联成功" : "保存成功");
 		}
 		else {
 			const error = relationEditorRef.value?.validate();

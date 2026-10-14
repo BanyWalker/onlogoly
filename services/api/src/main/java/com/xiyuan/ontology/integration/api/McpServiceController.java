@@ -61,8 +61,8 @@ public class McpServiceController {
 	public Map<String, Object> disable(@PathVariable String id, @RequestBody(required = false) ObjectNode body) { return IntegrationResponses.ok(storage.disable(id, body)); }
 
 	@DeleteMapping("/mcp-servers/{id}")
-	public Map<String, Object> delete(@PathVariable String id) {
-		return IntegrationResponses.ok(storage.delete(id));
+	public Map<String, Object> delete(@PathVariable String id, @RequestBody(required = false) ObjectNode body) {
+		return IntegrationResponses.ok(storage.delete(id, body));
 	}
 
 	@PostMapping("/mcp-servers/{id}/discover")

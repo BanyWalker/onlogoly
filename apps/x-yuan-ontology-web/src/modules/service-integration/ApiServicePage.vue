@@ -4,10 +4,9 @@
 			<div>
 				<div class="eyebrow">服务接入 / API 服务</div>
 				<h1>API 服务</h1>
-				<p>登记外部 HTTP 能力，维护 API 契约，并在启用前完成连通性验证。</p>
+				<p>登记外部 HTTP 能力，维护 API 契约，发布后按需启用。</p>
 			</div>
 			<div class="header-actions">
-				<ElButton :icon="Refresh" :loading="loading" @click="loadServices">刷新</ElButton>
 				<ElButton @click="importDialogVisible = true">从 OpenAPI 导入</ElButton>
 				<ElButton type="primary" :icon="Plus" @click="openCreateService">登记 API 服务</ElButton>
 			</div>
@@ -39,7 +38,7 @@
 			<main v-if="selectedService" class="service-detail">
 				<div class="detail-titlebar">
 					<div><div class="detail-id">{{ selectedService.id }} · {{ selectedService.version || "未填写版本" }}</div><h2>{{ selectedService.name || "未命名服务" }} <ElTag :type="statusType(selectedService.status, selectedService.enabled)" effect="light">{{ statusLabel(selectedService.status, selectedService.enabled) }}</ElTag></h2><p>{{ selectedService.definition || "尚未填写业务说明" }}</p></div>
-					<div class="detail-actions"><ElButton v-if="selectedService.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedService.enabled ? disableService() : enableService">{{ selectedService.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text :icon="Edit" @click="openEditService">编辑服务</ElButton><ElButton v-if="selectedService.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
+					<div class="detail-actions"><ElButton v-if="selectedService.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedService.enabled ? disableService() : enableService">{{ selectedService.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text :icon="Edit" @click="openEditService">编辑</ElButton><ElButton v-if="selectedService.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
 				</div>
 				<div class="service-meta-grid"><div><span>基础地址</span><strong class="mono endpoint-value" :title="selectedService.baseUrl">{{ selectedService.baseUrl }}</strong></div><div><span>所属领域</span><strong>{{ selectedService.domainId }}</strong></div><div><span>责任方</span><strong>{{ selectedService.owner }}</strong></div><div><span>认证方式</span><ElTag v-if="!selectedService.auth?.configured" size="small" type="warning">待配置</ElTag><strong v-else>{{ selectedService.auth.masked }}</strong></div><div><span>更新时间</span><strong>{{ formatUpdatedAt(selectedService.updatedAt) }}</strong></div><div><span>依据来源</span><strong>{{ selectedService.source || "未填写" }}</strong></div><div><span>默认超时</span><strong>{{ selectedService.timeoutMs }} ms</strong></div><div><span>修订</span><strong>r{{ selectedService.revision }}</strong></div></div>
 
@@ -59,7 +58,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Bell, ChromeFilled, Coin, DataLine, Document, Edit, Plus, Refresh, Search, SetUp } from "@element-plus/icons-vue";
+import { Bell, ChromeFilled, Coin, DataLine, Document, Edit, Plus, Search, SetUp } from "@element-plus/icons-vue";
 
 import { apiServiceApi } from "./api";
 import type { ApiContract, ApiDefinition, ApiError, ApiService } from "./types";
@@ -87,7 +86,7 @@ const methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
 const filteredServices = computed(() => services.value.filter(item => (!statusFilter.value || item.status === statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
 const selectedService = computed(() => services.value.find(item => item.id === selectedId.value));
-const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已启用" : "已停用") : "草稿";
+const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已发布 · 启用" : "已发布 · 禁用") : "草稿";
 const statusType = (status?: string, enabled?: boolean) => status === "PUBLISHED" && enabled ? "success" : "info";
 const serviceIcon = (id: string) => id.includes("CMDB") ? Coin : id.includes("METRIC") || id.includes("OBS") ? DataLine : id.includes("ALERT") ? Bell : id.includes("LOG") ? Document : id.includes("CHANGE") || id.includes("RELEASE") ? SetUp : ChromeFilled;
 const formatUpdatedAt = (value?: string) => value ? value.replace("T", " ").slice(0, 16) : "—";

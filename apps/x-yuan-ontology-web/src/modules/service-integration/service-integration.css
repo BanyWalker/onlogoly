@@ -319,6 +319,22 @@
 	gap: var(--ctff-space-8);
 }
 
+.integration-page .refresh-records {
+	margin-top: var(--ctff-space-24);
+}
+
+.integration-page .refresh-records-heading {
+	display: flex;
+	gap: var(--ctff-space-8);
+	align-items: baseline;
+	margin-bottom: var(--ctff-space-12);
+}
+
+.integration-page .refresh-records-heading strong {
+	font-size: var(--ctff-font-size-16);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
 .integration-page .el-table .cell > strong {
 	font-weight: var(--ctff-font-weight-medium);
 }
@@ -961,7 +977,7 @@ html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-
 .integration-page :is(.service-list-item, .server-item) {
 		display: flex;
 		gap: 12px;
-		align-items: flex-start;
+		align-items: center;
 		min-height: 96px;
 		padding: 16px;
 		background: #fff;
@@ -988,6 +1004,7 @@ html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-
 	display: grid;
 	flex: 0 0 40px;
 	place-items: center;
+	align-self: center;
 	width: 40px;
 	height: 40px;
 	color: #2f7be8;
@@ -1314,7 +1331,6 @@ html[data-ctff-theme="light"] :is(.integration-page, .integration-dialog) .el-ta
 .ctff-app-shell:has(.integration-page) {
 	--ctff-app-text-color: #1d2129;
 	--ctff-shell-muted-text-color: #86909c;
-	--ctff-menu-active-bg: #eaf3ff;
 }
 
 html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-item).active :is(.service-list-icon, .server-icon) {
@@ -1359,12 +1375,6 @@ html[data-ctff-theme="light"] .integration-page :is(.directory-toolbar, .directo
 	.integration-page :is(.service-meta-grid, .meta-grid) {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
-}
-
-.ctff-app-shell:has(.integration-page) .ctff-nav-menu .el-menu-item,
-.ctff-app-shell:has(.integration-page) .ctff-nav-menu .el-sub-menu__title {
-	height: 36px;
-	line-height: 36px;
 }
 
 @media (width <= 800px) {
