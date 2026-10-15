@@ -493,6 +493,19 @@
 	box-shadow: var(--ctff-shadow-1);
 }
 
+/* Keep global errors compact while giving them a distinct visual treatment. */
+.el-message.el-message--error {
+	--el-message-bg-color: var(--ctff-error-color-background);
+	--el-message-border-color: var(--ctff-error-color-disabled-border);
+	--el-message-text-color: var(--ctff-error-color-active);
+	--el-message-close-icon-color: var(--ctff-error-color);
+	--el-message-close-hover-color: var(--ctff-error-color-active);
+
+	border-left-color: var(--ctff-error-color);
+	border-left-width: 4px;
+	box-shadow: 0 8px 20px rgb(var(--ctff-error-color-rgb) / 14%);
+}
+
 .ctff-element-plus-theme .el-descriptions__label:not(.is-bordered-label) {
 	margin-right: var(--ctff-description-label-gap);
 	font-weight: var(--ctff-font-weight-regular);

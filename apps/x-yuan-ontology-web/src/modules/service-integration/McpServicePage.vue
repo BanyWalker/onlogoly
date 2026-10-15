@@ -68,7 +68,24 @@
 			<ElEmpty v-else class="detail-empty" description="请选择或登记一个 MCP 服务" />
 		</section>
 
-		<ElDialog v-model="serviceDialogVisible" class="integration-dialog" :title="editingServer ? '编辑 MCP 服务' : '登记 MCP 服务'" width="800px" destroy-on-close align-center><ElForm class="registration-form" :model="serviceForm" label-position="top"><ElFormItem label="服务标识" required><ElInput v-model="serviceForm.id" :disabled="!!editingServer" placeholder="例如 MCP-CMDB" /></ElFormItem><ElFormItem label="服务名称"><ElInput v-model="serviceForm.name" placeholder="草稿可暂不填写" /></ElFormItem><ElFormItem label="服务定义"><ElInput v-model="serviceForm.definition" type="textarea" :rows="2" placeholder="草稿可暂不填写" /></ElFormItem><div class="form-two-col"><ElFormItem label="领域"><ElInput v-model="serviceForm.domainId" placeholder="草稿可暂不填写" /></ElFormItem><ElFormItem label="责任方"><ElInput v-model="serviceForm.owner" placeholder="草稿可暂不填写" /></ElFormItem></div><ElFormItem class="form-span-full" label="MCP Endpoint"><ElInput v-model="serviceForm.endpointUrl" placeholder="草稿可暂不填写" /></ElFormItem><div class="form-two-col"><ElFormItem label="认证方式"><ElSelect v-model="serviceForm.authType" style="width:100%"><ElOption label="无需认证" value="NONE" /><ElOption label="Bearer Token" value="BEARER" /><ElOption label="自定义 Header" value="CUSTOM_HEADER" /></ElSelect></ElFormItem><ElFormItem label="超时(ms)"><ElInputNumber v-model="serviceForm.timeoutMs" :min="1000" :max="60000" /></ElFormItem></div><ElFormItem v-if="serviceForm.authType !== 'NONE'" label="认证密钥"><ElInput v-model="serviceForm.secret" type="password" show-password placeholder="仅用于本次运行期连接，不写入文件" /></ElFormItem><ElAlert title="草稿允许暂缺必填项；发布时会一次性提示缺失项。" type="info" :closable="false" /></ElForm><template #footer><ElButton @click="serviceDialogVisible = false">取消</ElButton><ElButton type="primary" :loading="saving" @click="saveService">保存草稿</ElButton></template></ElDialog>
+		<ElDialog v-model="serviceDialogVisible" class="integration-dialog" :title="editingServer ? '编辑 MCP 服务' : '登记 MCP 服务'" width="800px" destroy-on-close align-center>
+			<ElForm class="registration-form" :model="serviceForm" label-position="top">
+				<ElFormItem label="服务标识" required><ElInput v-model="serviceForm.id" :disabled="!!editingServer" placeholder="例如 MCP-CMDB" /></ElFormItem>
+				<ElFormItem label="服务名称" required><ElInput v-model="serviceForm.name" placeholder="例如 CMDB 查询服务" /></ElFormItem>
+				<ElFormItem label="服务定义" required><ElInput v-model="serviceForm.definition" type="textarea" :rows="2" placeholder="说明服务提供的能力" /></ElFormItem>
+				<div class="form-two-col">
+					<ElFormItem label="领域" required><ElInput v-model="serviceForm.domainId" placeholder="例如 DOMAIN-OPS" /></ElFormItem>
+					<ElFormItem label="责任方" required><ElInput v-model="serviceForm.owner" placeholder="例如 运维平台团队" /></ElFormItem>
+				</div>
+				<ElFormItem class="form-span-full" label="MCP Endpoint" required><ElInput v-model="serviceForm.endpointUrl" placeholder="https://mcp.example.com" /></ElFormItem>
+				<div class="form-two-col">
+					<ElFormItem label="认证方式"><ElSelect v-model="serviceForm.authType" style="width:100%"><ElOption label="无需认证" value="NONE" /><ElOption label="Bearer Token" value="BEARER" /><ElOption label="自定义 Header" value="CUSTOM_HEADER" /></ElSelect></ElFormItem>
+					<ElFormItem label="超时(ms)"><ElInputNumber v-model="serviceForm.timeoutMs" :min="1000" :max="60000" /></ElFormItem>
+				</div>
+				<ElFormItem v-if="serviceForm.authType !== 'NONE'" label="认证密钥"><ElInput v-model="serviceForm.secret" type="password" show-password placeholder="仅用于本次运行期连接，不写入文件" /></ElFormItem>
+			</ElForm>
+			<template #footer><ElButton @click="serviceDialogVisible = false">取消</ElButton><ElButton type="primary" :loading="saving" @click="saveService">保存草稿</ElButton></template>
+		</ElDialog>
 
 		<ElDialog v-model="debugVisible" class="integration-dialog" title="调试调用" width="700px" destroy-on-close align-center><template v-if="selectedTool"><div class="debug-summary"><div><strong>{{ selectedTool.name }}</strong><p>{{ selectedTool.description || "无描述" }}</p></div><ElTag :type="selectedTool.operationNature === 'WRITE' ? 'warning' : 'info'">{{ selectedTool.operationNature === "WRITE" ? "写操作" : "只读" }}</ElTag></div><ElForm label-position="top"><ElFormItem label="输入参数"><ElInput v-model="debugArguments" class="debug-input" type="textarea" :rows="10" :placeholder="schemaPlaceholder(selectedTool.inputSchema)" /></ElFormItem></ElForm><ElAlert v-if="selectedTool.operationNature === 'WRITE'" title="写操作会调用远程服务，请确认参数和业务影响。" type="warning" show-icon :closable="false" /><ElAlert v-if="invokeResult" :title="invokeResult.resultStatus === 'SUCCESS' ? '调用成功' : `调用未完成：${invokeResult.normalizedError || '未知错误'}`" :type="invokeResult.resultStatus === 'SUCCESS' ? 'success' : 'error'" show-icon :closable="false" class="invoke-alert" /><div v-if="invokeResult?.externalContent" class="external-content-note"><ElTag size="small" type="warning">远端内容</ElTag><span>结果来自外部 MCP 服务，使用前请校验内容。</span></div><pre v-if="invokeResult" class="response-view">{{ pretty(invokeResult.response) }}</pre></template><template #footer><ElButton @click="debugVisible = false">关闭</ElButton><ElButton type="primary" :loading="invoking" @click="invokeTool">发送调用</ElButton></template></ElDialog>
 
@@ -117,10 +134,20 @@ const statusType = (status?: string, enabled?: boolean) => status === "PUBLISHED
 const formatUpdatedAt = (value?: string) => value ? value.replace("T", " ").slice(0, 16) : "—";
 const changeLabel = (change?: string) => ({ ADDED: "新增", REMOVED: "已移除", SCHEMA_CHANGED: "输入已变更" })[change || ""] || change;
 
+function missingPublishFields(server: McpServer): string[] {
+	return [
+		["服务名称", server.name],
+		["服务定义", server.definition],
+		["领域", server.domainId],
+		["责任方", server.owner],
+		["MCP Endpoint", server.endpointUrl]
+	].filter(([, value]) => !String(value ?? "").trim()).map(([label]) => label);
+}
+
 function upsertServer(server: McpServer) { const index = servers.value.findIndex(item => item.id === server.id); if (index >= 0) servers.value.splice(index, 1, server); else servers.value.push(server); }
 async function loadServers() { loading.value = true; error.value = null; try { const items = await mcpApi.list(); servers.value = items; if (!selectedId.value || !items.some(item => item.id === selectedId.value)) selectedId.value = items[0]?.id || ""; if (selectedId.value) await selectServer(selectedId.value); } catch (cause) { error.value = cause as McpApiError; } finally { loading.value = false; } }
 async function selectServer(id: string) { selectedId.value = id; try { const [server, snapshotItems, logItems, mappingItems] = await Promise.all([mcpApi.get(id), mcpApi.snapshots(id), mcpApi.logs(id), mcpApi.mappings(id)]); upsertServer(server); tools.value = server.tools || []; snapshots.value = snapshotItems; refreshRecords.value = server.refreshRecords || []; logs.value = logItems; mappings.value = mappingItems; } catch (cause) { error.value = cause as McpApiError; } }
-async function testConnection() { if (!selectedServer.value) return; testing.value = true; try { const result = await mcpApi.discover(selectedServer.value.id); await selectServer(selectedServer.value.id); ElMessage[result.outcome === "SUCCESS" ? "success" : "warning"](result.outcome === "SUCCESS" ? `连接成功，发现 ${result.tools?.length || 0} 个工具` : `${result.normalizedError || "连接失败"}：${result.message || "请检查 Endpoint"}`); } catch (cause) { ElMessage.error((cause as McpApiError).message || "连接测试失败"); } finally { testing.value = false; } }
+async function testConnection() { if (!selectedServer.value) return; testing.value = true; try { const result = await mcpApi.discover(selectedServer.value.id); await selectServer(selectedServer.value.id); ElMessage[result.outcome === "SUCCESS" ? "success" : "error"](result.outcome === "SUCCESS" ? `连接成功，发现 ${result.tools?.length || 0} 个工具` : `${result.normalizedError || "连接失败"}：${result.message || "请检查 Endpoint"}`); } catch (cause) { ElMessage.error((cause as McpApiError).message || "连接测试失败"); } finally { testing.value = false; } }
 async function refreshTools() {
 	if (!selectedServer.value) return;
 	refreshing.value = true;
@@ -139,7 +166,7 @@ async function refreshTools() {
 		refreshing.value = false;
 	}
 }
-async function publishService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.publish(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已发布"); }
+async function publishService() { if (!selectedServer.value) return; const missing = missingPublishFields(selectedServer.value); if (missing.length) { ElMessage.error(`请补全必填项：${missing.join("、")}`); return; } await changeServiceState(() => mcpApi.publish(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已发布"); }
 async function unpublishService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.unpublish(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已下架"); }
 async function enableService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.enable(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已启用"); }
 async function disableService() { if (!selectedServer.value) return; await changeServiceState(() => mcpApi.disable(selectedServer.value!.id, selectedServer.value!.revision), "MCP 服务已禁用"); }

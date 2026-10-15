@@ -24,6 +24,8 @@ const props = defineProps<{
 	selectedObjectIds?: string[];
 	selectedObjectId?: string;
 	selectedRelationId?: string;
+	readOnly?: boolean;
+	allowParallel?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -196,7 +198,7 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 	const highlighted = selected || searchMatch || props.selectedObjectId === object.id;
 	const dimmed = hasFocus() && !nodeIsFocused(object.id);
 	const nodeOpacity = dimmed ? 0.24 : object.status === "deprecated" ? 0.45 : 1;
-	const codeText = object.id;
+	const codeText = object.displayCode ?? object.id;
 	return {
 		id: object.id,
 		shape: "object-node",
@@ -216,6 +218,7 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 			domainLabel: { text: domainName, fill: color, opacity: dimmed ? 0.3 : 1 },
 			title: { text: object.name, annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
 			codeText: { text: codeText, annotations: searchAnnotations(codeText), opacity: dimmed ? 0.3 : 1 }
+			,markLabel: { text: object.markLabel ?? "", opacity: dimmed ? 0.3 : 1 }
 		},
 		ports: {
 			groups: {
@@ -631,6 +634,7 @@ onMounted(() => {
 				{ tagName: "text", selector: "domainLabel" },
 				{ tagName: "text", selector: "title" },
 				{ tagName: "text", selector: "codeText" },
+				{ tagName: "text", selector: "markLabel" },
 			],
 			attrs: {
 				body: {
@@ -672,7 +676,8 @@ onMounted(() => {
 					textAnchor: "start",
 					textVerticalAnchor: "middle",
 					textWrap: { width: NODE_WIDTH - 36, height: 16, ellipsis: true }
-				}
+				},
+				markLabel: { refX: 152, refY: 86, fontSize: 11, fill: "#c77625", textAnchor: "start", textVerticalAnchor: "middle" }
 			}
 		},
 		true
@@ -699,7 +704,7 @@ onMounted(() => {
 			vertexAddable: false,
 			vertexDeletable: false,
 			useEdgeTools: false,
-			magnetConnectable: true,
+			magnetConnectable: !props.readOnly,
 			stopDelegateOnDragging: true
 		},
 		connecting: {
@@ -711,7 +716,7 @@ onMounted(() => {
 			allowNode: false,
 			allowPort: true,
 			allowEdge: false,
-			allowMulti: false,
+			allowMulti: props.allowParallel ?? false,
 			highlight: true,
 			router: { name: "manhattan", args: { step: 16, padding: { top: 24, right: 24, bottom: 24, left: 24 } } },
 			connector: { name: "rounded", args: { radius: 10 } },
@@ -747,6 +752,7 @@ onMounted(() => {
 	});
 	graph.on("node:mouseenter", ({ node }) => {
 		node.attr("body/stroke", domainColorOfObject(node.id));
+		if (props.readOnly) return;
 		for (const portId of ["p-left", "p-right", "p-top", "p-bottom"]) {
 			node.portProp(portId, "attrs/circle/opacity", 0.9);
 			node.portProp(portId, "attrs/hitArea/pointerEvents", "all");
@@ -809,6 +815,7 @@ onMounted(() => {
 		const targetId = edge.getTargetCell()?.id;
 		graph!.removeEdge(edge.id);
 		if (sourceId && targetId) {
+			if (props.readOnly) return;
 			emit("create-relation", sourceId, targetId);
 		}
 	});

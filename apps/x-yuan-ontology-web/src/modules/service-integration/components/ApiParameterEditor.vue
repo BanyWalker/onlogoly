@@ -1,0 +1,246 @@
+<template>
+	<div class="api-parameter-editor">
+		<div class="api-editor-toolbar">
+			<span class="api-editor-hint">{{
+				location === "path" ? "路径占位符自动生成参数，Path 参数必须为必填。" : "支持填写字段类型、必填规则、默认值和示例。"
+			}}</span>
+			<div>
+				<ElButton v-if="location === 'header' && !response" text @click="bulkVisible = true">批量粘贴</ElButton
+				><ElButton :icon="Plus" type="primary" plain @click="addParameter">{{
+					location === "header" ? "新增 Header" : "新增参数"
+				}}</ElButton>
+			</div>
+		</div>
+		<ElTable :data="modelValue" empty-text="暂无配置" class="api-parameter-table">
+			<ElTableColumn :label="location === 'header' ? 'Header 名称' : '参数名'" min-width="155"
+				><template #default="{ row, $index }"
+					><ElInput
+						:key="nameVersion"
+						:model-value="row.name"
+						:disabled="Boolean(row.$ref) || lockedNames.includes(row.name ?? '')"
+						placeholder="名称"
+						aria-label="参数名"
+						@change="renameParameter($index, String($event))" /></template
+			></ElTableColumn>
+			<ElTableColumn label="类型" width="115"
+				><template #default="{ row, $index }"
+					><ElSelect
+						:model-value="parameterSchema(row).type ?? ''"
+						:disabled="Boolean(row.$ref || row.content) || isAdvancedSchema(parameterSchema(row))"
+						aria-label="参数类型"
+						@change="patch($index, { schema: changeSchemaType(parameterSchema(row), String($event)) })"
+						><ElOption v-if="!parameterSchema(row).type" label="未指定" value="" /><ElOption
+							v-for="type in schemaTypes"
+							:key="type"
+							:label="type"
+							:value="type" /></ElSelect></template
+			></ElTableColumn>
+			<ElTableColumn label="必填" width="58" align="center"
+				><template #default="{ row, $index }"
+					><ElCheckbox
+						:model-value="location === 'path' || row.required"
+						:disabled="location === 'path' || Boolean(row.$ref)"
+						aria-label="参数必填"
+						@change="patch($index, { required: Boolean($event) })" /></template
+			></ElTableColumn>
+			<ElTableColumn v-if="location === 'header' && !response" label="值来源" width="135"
+				><template #default="{ row, $index }"
+					><ElSelect
+						:model-value="row['x-value-source'] ?? 'input'"
+						:disabled="Boolean(row.$ref)"
+						aria-label="Header 值来源"
+						@change="patch($index, { 'x-value-source': $event })"
+						><ElOption label="调用时传入" value="input" /><ElOption label="固定值" value="fixed" /></ElSelect></template
+			></ElTableColumn>
+			<ElTableColumn :label="location === 'header' && !response ? '固定值 / 示例值' : '示例值'" min-width="145"
+				><template #default="{ row, $index }"
+					><ElInput
+						:model-value="
+							row['x-value-source'] === 'fixed'
+								? String(row['x-fixed-value'] ?? '')
+								: displayValue(row.example !== undefined ? row.example : parameterSchema(row).example)
+						"
+						:disabled="Boolean(row.$ref)"
+						:placeholder="row['x-value-source'] === 'fixed' ? '固定值' : '示例值'"
+						aria-label="参数示例值"
+						@update:model-value="setExample($index, $event)" /></template
+			></ElTableColumn>
+			<ElTableColumn label="说明" min-width="150"
+				><template #default="{ row, $index }"
+					><ElInput
+						:model-value="row.description"
+						:disabled="Boolean(row.$ref)"
+						placeholder="说明"
+						aria-label="参数说明"
+						@update:model-value="patch($index, { description: $event })" /></template
+			></ElTableColumn>
+			<ElTableColumn label="操作" width="100"
+				><template #default="{ row, $index }"
+					><ElButton text type="primary" :disabled="Boolean(row.$ref || row.content)" @click="openDetails($index)">更多</ElButton
+					><ElButton
+						text
+						type="danger"
+						:disabled="lockedNames.includes(row.name ?? '')"
+						:icon="Delete"
+						aria-label="删除参数"
+						@click="removeParameter($index)" /></template
+			></ElTableColumn>
+		</ElTable>
+		<p v-if="modelValue.some(row => row.$ref || row.content)" class="api-editor-hint">
+			引用或自定义编码参数已保留，请通过高级 JSON 编辑。
+		</p>
+		<ElDialog v-model="detailsVisible" title="参数设置" width="900px" append-to-body destroy-on-close>
+			<template v-if="detailsSchema"
+				><ApiSchemaEditor v-model="detailsSchema" /><ElForm label-position="top" class="api-parameter-default"
+					><ElFormItem label="默认值"
+						><ElInput v-model="defaultText" placeholder="按字段类型填写；对象、数组填写 JSON" /></ElFormItem></ElForm
+			></template>
+			<ElAlert v-if="detailsError" :title="detailsError" type="error" :closable="false" />
+			<template #footer
+				><ElButton @click="detailsVisible = false">取消</ElButton
+				><ElButton type="primary" @click="applyDetails">应用</ElButton></template
+			>
+		</ElDialog>
+		<ElDialog v-model="bulkVisible" title="批量添加 Header" width="620px" append-to-body destroy-on-close>
+			<p class="api-editor-hint">每行一个 Header，例如 X-Tenant-Id: ops。已存在或认证相关的 Header 会提示冲突。</p>
+			<ElInput v-model="bulkText" type="textarea" :rows="8" placeholder="X-Tenant-Id: ops" /><ElAlert
+				v-if="bulkError"
+				:title="bulkError"
+				type="error"
+				:closable="false"
+			/>
+			<template #footer
+				><ElButton @click="bulkVisible = false">取消</ElButton
+				><ElButton type="primary" @click="applyBulk">添加</ElButton></template
+			>
+		</ElDialog>
+	</div>
+</template>
+
+<script setup lang="ts">
+import { Delete, Plus } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { ref } from "vue";
+
+import {
+	changeSchemaType,
+	copyJson,
+	displayValue,
+	inputValue,
+	isAdvancedSchema,
+	parameterSchema,
+	schemaTypes,
+	validateSchema
+} from "../api-contract";
+import type { ApiParameter, ApiSchema } from "../types";
+import ApiSchemaEditor from "./ApiSchemaEditor.vue";
+
+const props = withDefaults(
+	defineProps<{ modelValue: ApiParameter[]; location: string; lockedNames?: string[]; response?: boolean }>(),
+	{ lockedNames: () => [], response: false }
+);
+const emit = defineEmits<{ "update:modelValue": [value: ApiParameter[]] }>();
+const detailsVisible = ref(false);
+const detailsIndex = ref(0);
+const detailsSchema = ref<ApiSchema>();
+const defaultText = ref("");
+const detailsError = ref("");
+const bulkVisible = ref(false);
+const bulkText = ref("");
+const bulkError = ref("");
+const nameVersion = ref(0);
+function patch(index: number, fields: Partial<ApiParameter>) {
+	emit(
+		"update:modelValue",
+		props.modelValue.map((row, i) => (i === index ? { ...row, ...fields } : row))
+	);
+}
+function addParameter() {
+	let index = 1;
+	const prefix = props.location === "header" ? "X-Header-" : "param";
+	while (props.modelValue.some(row => row.name?.toLowerCase() === `${prefix}${index}`.toLowerCase())) index++;
+	emit("update:modelValue", [
+		...props.modelValue,
+		{ name: `${prefix}${index}`, in: props.location, required: props.location === "path", schema: { type: "string" } }
+	]);
+}
+function renameParameter(index: number, input: string) {
+	const name = input.trim();
+	const compare = (value?: string) => (props.location === "header" ? value?.toLowerCase() : value);
+	const reserved =
+		props.location === "header" && !props.response && ["authorization", "accept", "content-type"].includes(name.toLowerCase());
+	if (!name || reserved || props.modelValue.some((row, i) => i !== index && compare(row.name) === compare(name))) {
+		ElMessage.warning(reserved ? "此 Header 请通过认证或内容类型配置" : name ? "参数名已存在" : "参数名不能为空");
+		nameVersion.value++;
+		return;
+	}
+	patch(index, { name });
+}
+function removeParameter(index: number) {
+	emit(
+		"update:modelValue",
+		props.modelValue.filter((_, i) => i !== index)
+	);
+}
+function setExample(index: number, text: string) {
+	const row = props.modelValue[index];
+	patch(
+		index,
+		row["x-value-source"] === "fixed" ? { "x-fixed-value": text } : { example: inputValue(text, parameterSchema(row)) }
+	);
+}
+function openDetails(index: number) {
+	detailsIndex.value = index;
+	detailsSchema.value = copyJson(parameterSchema(props.modelValue[index]));
+	defaultText.value = displayValue(detailsSchema.value.default);
+	detailsError.value = "";
+	detailsVisible.value = true;
+}
+function applyDetails() {
+	if (!detailsSchema.value) return;
+	const schema = { ...detailsSchema.value, default: inputValue(defaultText.value, detailsSchema.value) };
+	const error = validateSchema(schema);
+	if (error) {
+		detailsError.value = error;
+		return;
+	}
+	patch(detailsIndex.value, { schema });
+	detailsVisible.value = false;
+}
+function applyBulk() {
+	bulkError.value = "";
+	const rows: ApiParameter[] = [];
+	const names = new Set(props.modelValue.map(row => row.name?.toLowerCase()));
+	for (const line of bulkText.value.split(/\r?\n/).filter(line => line.trim())) {
+		const separator = line.indexOf(":");
+		const name = line.slice(0, separator).trim();
+		if (separator < 1 || !/^[!#$%&'*+.^_`|~\w-]+$/.test(name)) {
+			bulkError.value = `Header 格式无效：${line}`;
+			return;
+		}
+		if (["authorization", "content-type", "accept"].includes(name.toLowerCase())) {
+			bulkError.value = `${name} 请通过认证或内容类型配置`;
+			return;
+		}
+		if (names.has(name.toLowerCase())) {
+			bulkError.value = `Header ${name} 重复`;
+			return;
+		}
+		names.add(name.toLowerCase());
+		rows.push({
+			name,
+			in: "header",
+			schema: { type: "string" },
+			"x-value-source": "fixed",
+			"x-fixed-value": line.slice(separator + 1).trim()
+		});
+	}
+	if (!rows.length) {
+		bulkError.value = "请填写至少一个 Header";
+		return;
+	}
+	emit("update:modelValue", [...props.modelValue, ...rows]);
+	bulkVisible.value = false;
+	bulkText.value = "";
+}
+</script>

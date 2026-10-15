@@ -81,6 +81,7 @@ public class ApiServiceStorage {
 		setIfMissing(service, "createdBy", JsonNodeFactory.instance.textNode("service-admin-local"));
 		setIfMissing(service, "updatedBy", JsonNodeFactory.instance.textNode("service-admin-local"));
 		setIfMissing(service, "endpoints", JsonNodeFactory.instance.arrayNode());
+		setIfMissing(service, "snapshots", JsonNodeFactory.instance.arrayNode());
 		setIfMissing(service, "auth", authDefaults());
 		services().add(service);
 		persist();
@@ -259,8 +260,78 @@ public class ApiServiceStorage {
 		result.put("by", "service-admin-local");
 		endpoint.set("lastTest", result);
 		service.put("updatedAt", Instant.now().toString());
+		ObjectNode log = result.deepCopy();
+		log.put("callId", "CALL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
+		log.put("serviceId", serviceId);
+		log.put("apiId", endpointId);
+		log.put("apiName", endpoint.path("name").asText(endpointId));
+		log.put("resultStatus", outcome);
+		log.put("normalizedError", category);
+		log.put("occurredAt", result.path("at").asText());
+		apiCallLogs().add(log);
 		persist();
 		return result;
+	}
+
+	public synchronized List<ObjectNode> snapshots(String serviceId) {
+		return findService(serviceId).withArray("snapshots").valueStream().map(node -> ((ObjectNode) node).deepCopy()).toList();
+	}
+
+	public synchronized ObjectNode createSnapshot(String serviceId) {
+		ObjectNode service = findService(serviceId);
+		ObjectNode snapshot = appendSnapshot(service);
+		service.put("updatedAt", Instant.now().toString());
+		persist();
+		return snapshot;
+	}
+
+	public synchronized List<ObjectNode> callLogs(String serviceId) {
+		return apiCallLogs().valueStream()
+				.filter(node -> serviceId == null || serviceId.isBlank() || serviceId.equals(node.path("serviceId").asText()))
+				.map(node -> ((ObjectNode) node).deepCopy()).toList();
+	}
+
+	public synchronized List<ObjectNode> mappings(String serviceId, String targetRef) {
+		return apiMappings().valueStream()
+				.filter(node -> (serviceId == null || serviceId.isBlank() || serviceId.equals(node.path("serviceId").asText()))
+						&& (targetRef == null || targetRef.isBlank() || targetRef.equals(node.path("targetRef").asText())))
+				.map(node -> ((ObjectNode) node).deepCopy()).toList();
+	}
+
+	public synchronized ObjectNode createMapping(ObjectNode body) {
+		String id = required(body, "id");
+		if (findMappingOrNull(id) != null) throw IntegrationStorageException.conflict("SI_ID_NOT_UNIQUE", "映射标识已存在: " + id);
+		String serviceId = required(body, "serviceId");
+		ObjectNode service = findService(serviceId);
+		String apiId = required(body, "apiId");
+		findEndpoint(service, apiId);
+		String targetRef = required(body, "targetRef");
+		validateMappingTarget(targetRef);
+		ObjectNode mapping = body.deepCopy();
+		mapping.put("status", "ACTIVE");
+		mapping.put("createdAt", Instant.now().toString());
+		apiMappings().add(mapping);
+		persist();
+		return mapping.deepCopy();
+	}
+
+	public synchronized ObjectNode updateMapping(String id, ObjectNode body) {
+		ObjectNode mapping = findMapping(id);
+		if (body.has("serviceId") && !body.path("serviceId").asText().equals(mapping.path("serviceId").asText())) throw IntegrationStorageException.badRequest("SI_MAPPING_SERVICE_IMMUTABLE", "映射所属服务不可修改");
+		ObjectNode service = findService(mapping.path("serviceId").asText());
+		if (body.has("apiId")) { mapping.put("apiId", body.path("apiId").asText()); findEndpoint(service, mapping.path("apiId").asText()); }
+		for (String field : List.of("targetRef", "mappingKind", "description")) if (body.has(field)) mapping.set(field, body.path(field).deepCopy());
+		validateMappingTarget(mapping.path("targetRef").asText());
+		mapping.put("status", "ACTIVE");
+		persist();
+		return mapping.deepCopy();
+	}
+
+	public synchronized ObjectNode deleteMapping(String id) {
+		ObjectNode mapping = findMapping(id);
+		for (int index = 0; index < apiMappings().size(); index++) if (apiMappings().get(index) == mapping) { apiMappings().remove(index); break; }
+		persist();
+		return mapping.deepCopy();
 	}
 
 	public synchronized ArrayNode importOpenApi(String serviceId, ObjectNode source) {
@@ -342,6 +413,8 @@ public class ApiServiceStorage {
 			seed.put("kind", "service-integration");
 			seed.put("workspace", "ENV-OM-001");
 			seed.putObject("meta").put("generatedAt", Instant.now().toString());
+		seed.putArray("apiCallLog");
+		seed.putArray("apiMappings");
 			ArrayNode services = seed.putArray("apiServices");
 			ObjectNode sample = services.addObject();
 			sample.put("id", "API-ITSM").put("name", "工单查询服务").put("definition", "提供工单查询与状态读取能力").put("domainId", "DOMAIN-OPS").put("owner", "运维平台团队").put("source", "FIX-SI-001 合成端点").put("version", "v1").put("baseUrl", "http://127.0.0.1:18080").put("environment", "测试").put("timeoutMs", 5000).put("status", "DRAFT").put("revision", 1).put("createdAt", Instant.now().toString());
@@ -386,6 +459,66 @@ public class ApiServiceStorage {
 		return null;
 	}
 
+	private ObjectNode findMapping(String id) {
+		ObjectNode mapping = findMappingOrNull(id);
+		if (mapping == null) throw IntegrationStorageException.notFound("SI_MAPPING_NOT_FOUND", "映射不存在: " + id);
+		return mapping;
+	}
+
+	private ObjectNode findMappingOrNull(String id) {
+		for (JsonNode node : apiMappings()) if (id.equals(node.path("id").asText())) return (ObjectNode) node;
+		return null;
+	}
+
+	private ObjectNode appendSnapshot(ObjectNode service) {
+		ArrayNode snapshots = service.withArray("snapshots");
+		ObjectNode snapshot = JsonNodeFactory.instance.objectNode();
+		int snapshotId = snapshots.size() + 1;
+		snapshot.put("snapshotId", snapshotId);
+		snapshot.put("capturedAt", Instant.now().toString());
+		snapshot.put("revision", service.path("revision").asInt(1));
+		ArrayNode apis = snapshot.putArray("apis");
+		for (JsonNode endpoint : service.withArray("endpoints")) apis.add(endpoint.deepCopy());
+		snapshot.put("apiCount", apis.size());
+		ObjectNode diff = snapshot.putObject("diff");
+		int added = 0;
+		int removed = 0;
+		int changed = 0;
+		if (!snapshots.isEmpty()) {
+			ArrayNode previous = snapshots.get(snapshots.size() - 1).withArray("apis");
+			for (JsonNode api : apis) {
+				JsonNode old = findById(previous, api.path("id").asText());
+				if (old == null) added++;
+				else if (!old.toString().equals(api.toString())) changed++;
+			}
+			for (JsonNode api : previous) if (findById(apis, api.path("id").asText()) == null) removed++;
+		}
+		diff.put("added", added).put("removed", removed).put("changed", changed);
+		snapshots.add(snapshot);
+		service.put("currentSnapshotId", snapshotId);
+		return snapshot;
+	}
+
+	private static JsonNode findById(ArrayNode items, String id) {
+		for (JsonNode item : items) if (id.equals(item.path("id").asText())) return item;
+		return null;
+	}
+
+	private void validateMappingTarget(String targetRef) {
+		if (!targetRef.matches("^(OBJ|REL|DOMAIN)-[A-Za-z0-9_-]+(?:[.#/][A-Za-z0-9_-]+)?$") || !targetExists(targetRef)) throw IntegrationStorageException.badRequest("SI_MAPPING_TARGET_MISSING", "映射目标不存在或格式不正确: " + targetRef);
+	}
+
+	private boolean targetExists(String targetRef) {
+		String root = targetRef.split("[.#/]", 2)[0];
+		Path modelPath = documentPath.resolveSibling("object-model.json");
+		try {
+			JsonNode model = Files.exists(modelPath) ? mapper.readTree(Files.readString(modelPath)) : JsonNodeFactory.instance.objectNode();
+			for (JsonNode object : model.path("objects")) if (root.equals(object.path("id").asText()) && !"deleted".equalsIgnoreCase(object.path("status").asText())) return true;
+			return false;
+		}
+		catch (IOException exception) { return false; }
+	}
+
 	private void validateService(ObjectNode body, String id, boolean complete) {
 		List<String> fields = List.of("name", "definition", "baseUrl", "version", "environment", "domainId", "owner");
 		if (complete) {
@@ -406,6 +539,10 @@ public class ApiServiceStorage {
 	private static boolean contains(String value, String query) { return value.toLowerCase(Locale.ROOT).contains(query); }
 
 	private static ObjectNode authDefaults() { return JsonNodeFactory.instance.objectNode().put("authType", "NONE").put("configured", false).put("masked", "未配置"); }
+
+	private ArrayNode apiCallLogs() { return document.withArray("apiCallLog"); }
+
+	private ArrayNode apiMappings() { return document.withArray("apiMappings"); }
 
 	private static ObjectNode defaultContract() {
 		ObjectNode contract = JsonNodeFactory.instance.objectNode();
@@ -465,7 +602,7 @@ public class ApiServiceStorage {
 		return changed;
 	}
 
-	private static ObjectNode summary(ObjectNode service) { ObjectNode item = service.deepCopy(); ArrayNode endpoints = item.withArray("endpoints"); item.remove("endpoints"); item.put("endpointCount", endpoints.size()); item.put("verifiedEndpointCount", (int) endpoints.valueStream().filter(n -> "SUCCESS".equals(n.path("lastTest").path("outcome").asText())).count()); item.set("endpoints", endpoints); return item; }
+	private static ObjectNode summary(ObjectNode service) { ObjectNode item = service.deepCopy(); ArrayNode endpoints = item.withArray("endpoints"); item.remove("endpoints"); item.remove("snapshots"); item.remove("currentSnapshotId"); item.put("endpointCount", endpoints.size()); item.put("verifiedEndpointCount", (int) endpoints.valueStream().filter(n -> "SUCCESS".equals(n.path("lastTest").path("outcome").asText())).count()); item.set("endpoints", endpoints); return item; }
 
 	private void persist() { persistDocument(document); }
 

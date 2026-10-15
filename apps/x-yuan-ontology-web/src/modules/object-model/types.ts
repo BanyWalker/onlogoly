@@ -148,6 +148,8 @@ export interface RelationDetail {
 export interface GraphObject {
 	id: string;
 	name: string;
+	displayCode?: string;
+	markLabel?: string;
 	domainId: string;
 	identityAttrNames: string[];
 	attributeCount?: number;

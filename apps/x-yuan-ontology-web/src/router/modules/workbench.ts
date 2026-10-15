@@ -23,5 +23,19 @@ export const workbenchRoutes: RouteRecordRaw[] = [
 			{ path: "/mcp-service", name: "mcp-service", component: () => import("@/modules/service-integration/McpServicePage.vue"), meta: { title: "MCP服务", icon: "mcpService", menu: true, order: 2 } },
 			{ path: "/function-service", name: "function-service", component: () => import("@/pages/placeholder/ComingSoonPage.vue"), meta: { title: "函数服务", icon: "functionService", menu: true, order: 3, disabled: true, badge: "后续版本" } }
 		]
+	},
+	{
+		path: "fact-access",
+		name: "fact-access",
+		redirect: { name: "object-instance-modeling" },
+		meta: { title: "事实接入", icon: "factAccess", menu: true, order: 3 },
+		children: [
+			{
+				path: "/object-instance-modeling",
+				name: "object-instance-modeling",
+				component: () => import("@/modules/object-fact/ObjectFactPage.vue"),
+				meta: { title: "对象实例建模", icon: "objectInstance", menu: true, order: 1 }
+			}
+		]
 	}
 ];

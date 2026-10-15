@@ -29,6 +29,8 @@ export const appIconRegistry = {
 	apiService: markRaw(Link),
 	mcpService: markRaw(Cpu),
 	functionService: markRaw(Operation),
+	factAccess: markRaw(DataAnalysis),
+	objectInstance: markRaw(Connection),
 	terminology: markRaw(Collection),
 	ruleModel: markRaw(SetUp),
 	inspectionReport: markRaw(DataAnalysis)

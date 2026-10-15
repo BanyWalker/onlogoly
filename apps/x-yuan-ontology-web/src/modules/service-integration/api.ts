@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 
-import type { ApiDefinition, ApiError, ApiService, ApiTestResult } from "./types";
+import type { ApiCallLog, ApiDefinition, ApiError, ApiMapping, ApiService, ApiSnapshot, ApiTestResult } from "./types";
 
 const http = axios.create({ baseURL: "/api/v1/integrations", timeout: 15000 });
 
@@ -82,6 +82,27 @@ export const apiServiceApi = {
 	async testApi(serviceId: string, apiId: string) {
 		const result = await request<ApiTestResult>(() => http.post(`/api-services/${encodeURIComponent(serviceId)}/endpoints/${encodeURIComponent(apiId)}/test`));
 		return { ...result, message: toApiMessage(result.message) };
+	},
+	snapshots(serviceId: string) {
+		return request<ApiSnapshot[]>(() => http.get(`/api-services/${encodeURIComponent(serviceId)}/snapshots`));
+	},
+	createSnapshot(serviceId: string) {
+		return request<ApiSnapshot>(() => http.post(`/api-services/${encodeURIComponent(serviceId)}/snapshots`));
+	},
+	callLogs(serviceId: string) {
+		return request<ApiCallLog[]>(() => http.get("/api-services/call-log", { params: { serviceId } }));
+	},
+	mappings(serviceId?: string) {
+		return request<ApiMapping[]>(() => http.get("/api-services/mappings", { params: serviceId ? { serviceId } : undefined }));
+	},
+	createMapping(body: Partial<ApiMapping> & { id: string; serviceId: string; apiId: string; targetRef: string }) {
+		return request<ApiMapping>(() => http.post("/api-services/mappings", body));
+	},
+	updateMapping(id: string, body: Partial<ApiMapping>) {
+		return request<ApiMapping>(() => http.patch(`/api-services/mappings/${encodeURIComponent(id)}`, body));
+	},
+	removeMapping(id: string) {
+		return request<ApiMapping>(() => http.delete(`/api-services/mappings/${encodeURIComponent(id)}`));
 	},
 	async importOpenApi(service: Partial<ApiService>, document: Record<string, unknown>) {
 		return toApiService(await request<ApiServiceResponse>(() => http.post("/api-services/import", { service: toServiceRequest(service), document })));
