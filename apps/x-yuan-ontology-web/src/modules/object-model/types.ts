@@ -149,6 +149,8 @@ export interface GraphObject {
 	id: string;
 	name: string;
 	displayCode?: string;
+	color?: string;
+	badgeLabel?: string;
 	markLabel?: string;
 	domainId: string;
 	identityAttrNames: string[];
@@ -161,6 +163,7 @@ export interface GraphObject {
 
 export interface GraphRelation {
 	id: string;
+	showCardinality?: boolean;
 	name: string;
 	sourceType: string;
 	targetType: string | string[];

@@ -50,10 +50,11 @@ public class FactStorage {
 			} else {
 				if (Files.exists(this.workspace.resolve("object-facts.json"))) throw new IllegalStateException("存在无权威提交的实例文件，请显式迁移");
 				state = empty();
+				atomicWrite(authority, mapper.writeValueAsBytes(state));
 			}
 			project();
 		} catch (Exception error) {
-			disabledReason = error.getMessage();
+			disabledReason = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
 			log.error("对象事实模块自检失败；其他模块继续运行", error);
 		}
 	}
@@ -81,6 +82,9 @@ public class FactStorage {
 		for (var instance : document.path("instances")) {
 			String id = instance.path("instanceId").asString();
 			if (!id.matches("INST-\\d{6,}") || !ids.add(id)) throw new IllegalStateException("实例稳定标识损坏或重复");
+			if (!instance.path("objectTypeRef").isString() || instance.path("objectTypeRef").asString().isBlank()
+					|| !instance.path("propertyValues").isObject() || !instance.path("businessIdentity").isObject() || !instance.path("sourceRef").isString())
+				throw new IllegalStateException("实例类型、业务标识、取值或来源信息损坏");
 			maxInstance = Math.max(maxInstance, Long.parseLong(id.substring(5)));
 		}
 		var relationIds = new java.util.HashSet<String>();
@@ -140,7 +144,7 @@ public class FactStorage {
 	}
 
 	private void available() {
-		if (disabledReason != null) throw new FactException(503, "OF_MODULE_DISABLED", "对象事实模块不可用：" + disabledReason);
+		if (disabledReason != null || state == null) throw new FactException(503, "OF_MODULE_DISABLED", "对象事实模块不可用：" + disabledReason);
 	}
 
 	@PreDestroy

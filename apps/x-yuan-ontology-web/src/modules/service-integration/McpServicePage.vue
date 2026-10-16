@@ -15,11 +15,9 @@
 
 		<section class="workspace">
 			<aside class="directory">
-				<div class="directory-title"><strong>服务目录</strong><ElTag size="small" type="info" effect="plain">{{ filteredServers.length }}</ElTag></div>
+				<div class="directory-title"><strong>服务目录</strong><div class="directory-title-actions"><span class="directory-count">{{ filteredServers.length }} / {{ servers.length }}</span><ElButton link type="primary" :icon="Plus" @click="openCreate">新增服务</ElButton></div></div>
 				<ElInput v-model="searchText" clearable :prefix-icon="Search" placeholder="搜索名称 / 标识" />
-				<div class="directory-filters">
-					<ElSelect v-model="statusFilter" clearable placeholder="全部状态"><ElOption label="全部" value="" /><ElOption label="草稿" value="DRAFT" /><ElOption label="已发布" value="PUBLISHED" /></ElSelect>
-				</div>
+				<div class="directory-filter-pills"><button v-for="filter in statusFilters" :key="filter.value" type="button" :class="{ active: statusFilter === filter.value }" @click="statusFilter = filter.value">{{ filter.label }}</button></div>
 				<div v-loading="loading" class="server-list">
 					<button v-for="item in filteredServers" :key="item.id" type="button" class="server-item" :class="{ active: item.id === selectedId }" :aria-pressed="item.id === selectedId" :title="`${item.name} · ${item.id}`" @click="selectServer(item.id)">
 						<span class="server-icon" aria-hidden="true"><ElIcon><Cpu /></ElIcon></span>
@@ -31,13 +29,20 @@
 
 			<main v-if="selectedServer" class="detail">
 				<div class="detail-header">
-					<div class="detail-heading"><div class="detail-id">{{ selectedServer.id }} · 修订 r{{ selectedServer.revision }}</div><h2>{{ selectedServer.name || "未命名服务" }} <ElTag :type="statusType(selectedServer.status, selectedServer.enabled)" effect="light">{{ statusLabel(selectedServer.status, selectedServer.enabled) }}</ElTag></h2><p>{{ selectedServer.definition || "尚未填写服务定义" }}</p></div>
-					<div class="detail-actions"><ElButton v-if="selectedServer.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedServer.enabled ? disableService() : enableService">{{ selectedServer.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text @click="openEdit">编辑</ElButton><ElButton v-if="selectedServer.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
+					<div class="detail-heading"><div class="detail-id">{{ selectedServer.id }} · 修订 r{{ selectedServer.revision }}</div><h2>{{ selectedServer.name || "未命名服务" }} <ElTag :type="statusType(selectedServer.status, selectedServer.enabled)" effect="light">{{ statusLabel(selectedServer.status, selectedServer.enabled) }}</ElTag></h2><p>{{ selectedServer.definition || "尚未填写服务定义" }}</p><div class="detail-subline"><span class="mono">{{ selectedServer.endpointUrl }}</span><span>·</span><span>{{ selectedServer.transport === "HTTP" ? "Streamable HTTP" : selectedServer.transport }}</span><span>·</span><span>{{ selectedServer.protocolVersion || "协议版本待发现" }}</span></div></div>
+					<div class="detail-actions"><ElButton v-if="selectedServer.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedServer.enabled ? disableService() : enableService">{{ selectedServer.enabled ? "停用" : "启用" }}</ElButton><ElButton :loading="refreshing" @click="refreshTools">重新发现</ElButton><ElButton @click="openEdit">更换凭证</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text @click="openEdit">编辑</ElButton><ElButton v-if="selectedServer.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
 				</div>
-				<div class="meta-grid"><div><span>Endpoint</span><strong class="mono endpoint-value" :title="selectedServer.endpointUrl">{{ selectedServer.endpointUrl }}</strong></div><div><span>所属领域</span><strong>{{ selectedServer.domainId }}</strong></div><div><span>责任方</span><strong>{{ selectedServer.owner }}</strong></div><div><span>传输 / 协议</span><strong>{{ selectedServer.transport }} · {{ selectedServer.protocolVersion || "待发现" }}</strong></div><div><span>更新时间</span><strong>{{ formatUpdatedAt(selectedServer.updatedAt) }}</strong></div><div><span>认证方式</span><ElTag v-if="!selectedServer.auth?.configured" size="small" type="warning">待配置</ElTag><strong v-else>{{ selectedServer.auth.authType }} · {{ selectedServer.auth.masked || "已配置" }}</strong></div><div><span>默认超时</span><strong>{{ selectedServer.timeoutMs }} ms</strong></div><div><span>最后测试</span><strong v-if="selectedServer.lastTest" :class="selectedServer.lastTest.outcome === 'SUCCESS' ? 'test-success' : 'test-failed'">{{ selectedServer.lastTest.outcome === "SUCCESS" ? "连接成功" : `失败 · ${selectedServer.lastTest.normalizedError || "未知错误"}` }}</strong><strong v-else class="muted">尚未测试</strong></div></div>
 
 				<ElTabs v-model="activeTab" class="detail-tabs">
-					<ElTabPane name="tools"><template #label>工具列表 <ElTag size="small" effect="plain">{{ tools.length }}</ElTag></template>
+					<ElTabPane label="概要" name="overview">
+						<section class="config-card">
+							<div class="config-card-header"><strong>连接配置</strong><span class="config-reference">FR-MCP-008 · DS-19</span></div>
+							<div class="config-grid"><div class="config-row"><span>服务地址</span><strong class="mono">{{ selectedServer.endpointUrl }}</strong></div><div class="config-row"><span>传输方式</span><strong>{{ selectedServer.transport === "HTTP" ? "Streamable HTTP" : selectedServer.transport }} <em>（枚举校验：STREAMABLE_HTTP / HTTP_SSE）</em></strong></div><div class="config-row"><span>协议版本</span><strong class="mono">{{ selectedServer.protocolVersion || "待发现" }}</strong></div><div class="config-row"><span>认证方式</span><strong v-if="selectedServer.auth?.configured">{{ selectedServer.auth.authType }} · {{ selectedServer.auth.masked || "已配置" }}</strong><ElTag v-else size="small" type="warning">待配置</ElTag></div><div class="config-row"><span>领域归属</span><strong>{{ selectedServer.domainId }}</strong></div><div class="config-row"><span>责任方</span><strong>{{ selectedServer.owner }}</strong></div></div>
+							<div class="config-section-title">自定义请求头</div><ElTable :data="selectedServer.headers || []" size="small" empty-text="未配置自定义请求头"><ElTableColumn prop="name" label="名称" min-width="180" /><ElTableColumn prop="masked" label="值（掩码）" min-width="240"><template #default="scope"><span class="mono">{{ scope.row.masked }}</span></template></ElTableColumn><ElTableColumn label="操作" width="100"><template #default><ElButton size="small" text @click="openEdit">更换</ElButton></template></ElTableColumn></ElTable><ElButton class="config-add" size="small" plain @click="openEdit">＋ 新增请求头</ElButton><div class="config-note">请求头值入凭证库加密存储，仅掩码回显；随连接测试、能力发现与调用注入。名称非法或重复时拒绝保存。</div>
+						</section>
+						<section class="config-card"><div class="config-card-header"><strong>服务信息</strong></div><div class="config-grid service-info-grid"><div class="config-row"><span>业务定义</span><strong>{{ selectedServer.definition || "尚未填写服务定义" }}</strong></div><div class="config-row"><span>稳定标识</span><strong class="mono">{{ selectedServer.id }}</strong></div><div class="config-row"><span>修订</span><strong>修订 {{ selectedServer.revision }}</strong></div><div class="config-row"><span>来源</span><strong>{{ selectedServer.source || "MCP 服务注册表" }}</strong></div><div class="config-row"><span>更新时间</span><strong>{{ formatUpdatedAt(selectedServer.updatedAt) }}</strong></div><div class="config-row"><span>默认超时</span><strong>{{ selectedServer.timeoutMs }} ms</strong></div></div></section>
+					</ElTabPane>
+					<ElTabPane name="tools"><template #label>工具 <ElTag size="small" effect="plain">{{ tools.length }}</ElTag></template>
 						<div class="tab-toolbar"><div><strong>工具列表</strong><span class="muted">首次发现默认关闭，启用后才允许调用</span></div><div><ElButton :loading="testing" @click="testConnection">连接测试</ElButton><ElButton :loading="refreshing" @click="refreshTools">刷新工具</ElButton><ElButton type="primary" @click="openCreateMappingFromTool">创建映射</ElButton></div></div>
 						<ElTable :data="tools" stripe empty-text="尚未发现工具">
 							<ElTableColumn prop="name" label="工具" min-width="220"><template #default="scope"><strong>{{ scope.row.name }}</strong><div class="muted">{{ scope.row.description || "无描述" }}</div></template></ElTableColumn>
@@ -47,6 +52,7 @@
 							<ElTableColumn label="操作" width="150" fixed="right"><template #default="scope"><ElButton size="small" text type="primary" :disabled="!scope.row.enabled" @click="openDebugger(scope.row)">调试调用</ElButton><ElButton v-if="scope.row.pendingReview" size="small" text @click="reviewTool(scope.row)">复核</ElButton></template></ElTableColumn>
 						</ElTable>
 					</ElTabPane>
+					<ElTabPane name="test"><template #label>测试调用 <ElTag size="small" type="info">new</ElTag></template><div class="test-tab-panel"><div><strong>测试调用</strong><p>选择已启用工具，使用与真实调用一致的参数校验和审计链路进行联调。</p></div><ElButton type="primary" :disabled="!tools.some(tool => tool.enabled && tool.changeStatus !== 'REMOVED')" @click="openFirstEnabledTool">开始测试调用</ElButton></div></ElTabPane>
 
 					<ElTabPane name="snapshots"><template #label>快照与变更 <ElTag size="small" effect="plain">{{ snapshots.length }}</ElTag></template><div class="tab-toolbar"><div><strong>快照与变更</strong><span class="muted">保留每次发现结果，用于审计工具增删和输入模式变化。</span></div><ElButton :loading="refreshing" @click="refreshTools">刷新并生成快照</ElButton></div><ElTable :data="snapshots" stripe empty-text="暂无快照"><ElTableColumn prop="snapshotId" label="快照" width="90"><template #default="scope">v{{ scope.row.snapshotId }}</template></ElTableColumn><ElTableColumn prop="discoveredAt" label="发现时间" min-width="180" /><ElTableColumn prop="protocolVersion" label="协议版本" width="150" /><ElTableColumn label="工具数" width="100"><template #default="scope">{{ scope.row.tools?.length || 0 }}</template></ElTableColumn></ElTable></ElTabPane>
 
@@ -111,7 +117,7 @@ const testing = ref(false);
 const refreshing = ref(false);
 const invoking = ref(false);
 const error = ref<McpApiError | null>(null);
-const activeTab = ref("tools");
+const activeTab = ref("overview");
 const tools = ref<McpTool[]>([]);
 const snapshots = ref<McpSnapshot[]>([]);
 const refreshRecords = ref<McpRefreshRecord[]>([]);
@@ -128,7 +134,9 @@ const serviceForm = reactive({ id: "", name: "", definition: "", domainId: "DOMA
 const mappingForm = reactive({ toolKey: "", targetRef: "", mappingKind: "RESULT", description: "" });
 
 const selectedServer = computed(() => servers.value.find(item => item.id === selectedId.value) || null);
-const filteredServers = computed(() => servers.value.filter(item => (!statusFilter.value || item.status === statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
+const statusFilters = [{ label: "全部", value: "" }, { label: "已启用", value: "ENABLED" }, { label: "草稿", value: "DRAFT" }, { label: "已禁用", value: "DISABLED" }];
+const matchesStatus = (status: string, enabled: boolean, filter: string) => !filter ? true : filter === "DRAFT" ? status === "DRAFT" : filter === "ENABLED" ? status === "PUBLISHED" && enabled : status === "PUBLISHED" && !enabled;
+const filteredServers = computed(() => servers.value.filter(item => matchesStatus(item.status, item.enabled, statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
 const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已发布 · 启用" : "已发布 · 禁用") : "草稿";
 const statusType = (status?: string, enabled?: boolean) => status === "PUBLISHED" && enabled ? "success" : "info";
 const formatUpdatedAt = (value?: string) => value ? value.replace("T", " ").slice(0, 16) : "—";
@@ -179,6 +187,7 @@ async function saveService() { if (!serviceForm.id) { ElMessage.warning("请填�
 async function deleteService() { if (!selectedServer.value) return; try { await ElMessageBox.confirm(`确认删除草稿服务“${selectedServer.value.name || selectedServer.value.id}”？存在映射时无法删除。`, "请确认", { type: "warning" }); await mcpApi.remove(selectedServer.value.id, selectedServer.value.revision); await loadServers(); ElMessage.success("MCP 服务已删除"); } catch (cause) { if (cause !== "cancel") ElMessage.error((cause as McpApiError).message || "删除失败"); } }
 function schemaPlaceholder(schema: Record<string, unknown>) { return JSON.stringify(schema?.properties || {}, null, 2); }
 function openDebugger(tool: McpTool) { selectedTool.value = tool; debugArguments.value = "{}"; invokeResult.value = null; debugVisible.value = true; }
+function openFirstEnabledTool() { const tool = tools.value.find(item => item.enabled && item.changeStatus !== "REMOVED"); if (tool) openDebugger(tool); }
 async function invokeTool() { if (!selectedServer.value || !selectedTool.value) return; let args: Record<string, unknown>; try { const parsed: unknown = JSON.parse(debugArguments.value || "{}"); if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(); args = parsed as Record<string, unknown>; } catch { ElMessage.error("输入参数必须是 JSON 对象"); return; } if (selectedTool.value.operationNature === "WRITE") { try { await ElMessageBox.confirm("这是写操作，将调用远程 MCP 服务。确认继续？", "确认调用", { type: "warning", confirmButtonText: "继续调用" }); } catch { return; } } invoking.value = true; try { invokeResult.value = await mcpApi.invoke(selectedServer.value.id, selectedTool.value.toolKey, { arguments: args, confirm: selectedTool.value.operationNature === "WRITE" }); await loadLogs(); } catch (cause) { ElMessage.error((cause as McpApiError).message || "调用失败"); } finally { invoking.value = false; } }
 function pretty(value: unknown) { return JSON.stringify(value, null, 2); }
 async function loadLogs() { if (selectedServer.value) logs.value = await mcpApi.logs(selectedServer.value.id); }

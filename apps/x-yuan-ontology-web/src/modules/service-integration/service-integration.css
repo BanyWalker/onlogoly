@@ -109,6 +109,31 @@
 	margin-top: var(--ctff-space-8);
 }
 
+.integration-page .directory-filter-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ctff-space-8);
+	margin-top: var(--ctff-space-8);
+}
+
+.integration-page .directory-filter-pills button {
+	padding: 4px 10px;
+	font: inherit;
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-secondary);
+	cursor: pointer;
+	background: transparent;
+	border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	border-radius: 999px;
+}
+
+.integration-page .directory-filter-pills button:hover,
+.integration-page .directory-filter-pills button.active {
+	color: var(--ctff-brand-color-active);
+	background: var(--ctff-brand-color-background);
+	border-color: var(--ctff-brand-color);
+}
+
 .integration-page .directory-filters .el-select {
 	width: 100%;
 }
@@ -844,7 +869,6 @@ html[data-ctff-theme="light"] .integration-page :is(.service-list-item, .server-
 
 /* ===== API / MCP 服务页品牌规范 ===== */
 .ctff-app-shell:has(.integration-page) {
-	--ctff-shell-sidebar-width: 232px;
 	--ctff-brand-color: #2f7be8;
 	--ctff-brand-color-rgb: 47, 123, 232;
 	--ctff-brand-color-hover: #4a8cf0;
@@ -1371,9 +1395,223 @@ html[data-ctff-theme="light"] .integration-page :is(.directory-toolbar, .directo
 	border-radius: 4px;
 }
 
+/* Shared service detail language: compact summary line and bordered information cards. */
+.integration-page .directory-title-actions {
+	display: inline-flex;
+	gap: var(--ctff-space-8);
+	align-items: center;
+}
+
+.integration-page .directory-count {
+	min-width: 34px;
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+	text-align: center;
+}
+
+.integration-page .detail-subline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	margin-top: var(--ctff-space-8);
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page .config-card {
+	padding: 0;
+	margin: var(--ctff-space-16) 0;
+	overflow: hidden;
+	background: var(--ctff-bg-color-container);
+	border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page .config-card-header {
+	display: flex;
+	gap: var(--ctff-space-8);
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--ctff-space-12) var(--ctff-space-16);
+	background: var(--ctff-bg-color-component);
+	border-bottom: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+}
+
+.integration-page .config-card-header strong {
+	font-size: var(--ctff-font-size-14);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .config-reference {
+	font-family: var(--ctff-font-family-code);
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page .config-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0 var(--ctff-space-32);
+	padding: var(--ctff-space-16);
+}
+
+.integration-page .config-row {
+	display: grid;
+	grid-template-columns: 88px minmax(0, 1fr);
+	gap: var(--ctff-space-12);
+	align-items: baseline;
+	min-width: 0;
+	padding: 7px 0;
+}
+
+.integration-page .config-row > span {
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page .config-row > strong {
+	min-width: 0;
+	font-weight: var(--ctff-font-weight-regular);
+	overflow-wrap: anywhere;
+}
+
+.integration-page .config-row em {
+	font-size: var(--ctff-font-size-12);
+	font-style: normal;
+	font-weight: var(--ctff-font-weight-regular);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page .config-card > .el-table,
+.integration-page .config-card > .el-button,
+.integration-page .config-card > .config-note,
+.integration-page .config-card > .config-section-title {
+	margin-right: var(--ctff-space-16);
+	margin-left: var(--ctff-space-16);
+}
+
+.integration-page .config-section-title {
+	margin-top: var(--ctff-space-4);
+	margin-bottom: var(--ctff-space-8);
+	font-size: var(--ctff-font-size-12);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .config-add {
+	margin-top: var(--ctff-space-8);
+	margin-bottom: var(--ctff-space-8);
+}
+
+.integration-page .config-note {
+	padding: var(--ctff-space-12) 0 var(--ctff-space-16);
+	font-size: var(--ctff-font-size-12);
+	line-height: var(--ctff-line-height-22);
+	color: var(--ctff-text-color-tertiary);
+}
+
+.integration-page .api-summary-card {
+	margin: 0 0 var(--ctff-space-12);
+	container: api-summary / inline-size;
+}
+
+.integration-page .api-summary-card .config-card-header {
+	justify-content: flex-start;
+	padding: var(--ctff-space-12) var(--ctff-space-16) 0;
+	background: transparent;
+	border-bottom: 0;
+}
+
+.integration-page .summary-help {
+	font-size: var(--ctff-font-size-14);
+	color: var(--ctff-text-color-tertiary);
+	cursor: help;
+}
+
+.integration-page .summary-help:focus-visible {
+	outline: var(--ctff-control-outline-width) solid var(--ctff-brand-color);
+	outline-offset: var(--ctff-space-2);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page .api-summary-card .api-summary-fields {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ctff-space-8) var(--ctff-space-24);
+	padding: var(--ctff-space-12) var(--ctff-space-16);
+	margin: 0;
+}
+
+.integration-page .api-summary-field {
+	display: grid;
+	grid-template-columns: 64px minmax(0, 1fr);
+	gap: var(--ctff-space-8);
+	align-items: baseline;
+	min-width: 0;
+}
+
+.integration-page .api-summary-card :is(dt, dd) {
+	margin: 0;
+	font-size: var(--ctff-font-size-14);
+	line-height: var(--ctff-line-height-22);
+}
+
+.integration-page .api-summary-card dt {
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-secondary);
+	white-space: nowrap;
+}
+
+.integration-page .api-summary-card dd {
+	min-width: 0;
+	color: var(--ctff-text-color-primary);
+	overflow-wrap: anywhere;
+}
+
+@container api-summary (width < 760px) {
+	.integration-page .api-summary-card .api-summary-fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@container api-summary (width < 500px) {
+	.integration-page .api-summary-card .api-summary-fields {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.integration-page .test-tab-panel {
+	display: flex;
+	gap: var(--ctff-space-16);
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--ctff-space-20);
+	background: var(--ctff-bg-color-component);
+	border: var(--ctff-line-width) solid var(--ctff-border-color-grid);
+	border-radius: var(--ctff-radius-default);
+}
+
+.integration-page .overview-api-section {
+	margin-top: var(--ctff-space-16);
+}
+
+.integration-page .test-tab-panel strong {
+	font-size: var(--ctff-font-size-16);
+	font-weight: var(--ctff-font-weight-medium);
+}
+
+.integration-page .test-tab-panel p {
+	margin: var(--ctff-space-4) 0 0;
+	font-size: var(--ctff-font-size-12);
+	color: var(--ctff-text-color-tertiary);
+}
+
 @media (width <= 1100px) {
 	.integration-page :is(.service-meta-grid, .meta-grid) {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.integration-page .config-grid {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 
@@ -1406,5 +1644,10 @@ html[data-ctff-theme="light"] .integration-page :is(.directory-toolbar, .directo
 	.integration-page :is(.service-meta-grid, .meta-grid) > div:first-child {
 		flex-direction: column;
 		gap: 4px;
+	}
+
+	.integration-page .test-tab-panel {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 }

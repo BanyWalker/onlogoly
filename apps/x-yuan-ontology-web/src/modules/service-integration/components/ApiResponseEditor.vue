@@ -1,16 +1,14 @@
 <template>
 	<div class="api-response-editor">
-		<div class="api-editor-toolbar">
-			<div class="api-editor-inline">
-				<span>响应状态</span
-				><ElSelect v-model="activeCode" placeholder="选择状态码" aria-label="响应状态码"
-					><ElOption
-						v-for="(response, code) in responseDefinitions"
-						:key="code"
-						:label="`${code} ${response.description ?? ''}`"
-						:value="String(code)"
-				/></ElSelect>
-			</div>
+		<div class="api-editor-toolbar api-response-statusbar">
+			<ElTabs v-model="activeCode" class="api-response-status-tabs" aria-label="响应状态码"
+				><ElTabPane v-for="(_response, code) in responseDefinitions" :key="code" :name="String(code)"
+					><template #label
+						><span :class="String(code).startsWith('2') ? 'api-response-success' : 'api-response-failed'">{{ code }}</span
+						><span>{{ statusNames[String(code)] || (String(code) === "default" ? "Default" : "Response") }}</span></template
+					></ElTabPane
+				></ElTabs
+			>
 			<div>
 				<ElButton type="primary" plain :icon="Plus" @click="openAdd">新增响应</ElButton
 				><ElPopconfirm
@@ -31,6 +29,11 @@
 				:closable="false"
 			/>
 			<template v-else>
+				<div class="api-response-format-caption">
+					<span
+						>HTTP 状态码：<strong>{{ activeCode }}</strong></span
+					><span>名称：{{ statusNames[activeCode] || "自定义响应" }}</span>
+				</div>
 				<ElForm label-position="top"
 					><ElFormItem label="响应说明"
 						><ElInput
@@ -51,7 +54,15 @@
 			</template>
 		</template>
 		<ElEmpty v-else description="暂无响应定义，点击新增响应进行配置" :image-size="60" />
-		<ElDialog v-model="addVisible" title="新增响应" width="440px" append-to-body destroy-on-close>
+		<ElDialog
+			v-model="addVisible"
+			class="api-editor-subdialog"
+			title="新增响应"
+			width="440px"
+			append-to-body
+			destroy-on-close
+			:close-on-click-modal="false"
+		>
 			<ElForm label-position="top"
 				><ElFormItem label="HTTP 状态码"
 					><ElSelect v-model="newCode" filterable allow-create default-first-option aria-label="新增响应状态码"
@@ -81,6 +92,19 @@ import ApiParameterEditor from "./ApiParameterEditor.vue";
 
 const props = defineProps<{ modelValue: Record<string, ApiResponse> }>();
 const emit = defineEmits<{ "update:modelValue": [value: Record<string, ApiResponse>] }>();
+const statusNames: Record<string, string> = {
+	"200": "OK",
+	"201": "Created",
+	"202": "Accepted",
+	"204": "No Content",
+	"400": "Bad Request",
+	"401": "Unauthorized",
+	"403": "Forbidden",
+	"404": "Not Found",
+	"409": "Conflict",
+	"500": "Internal Server Error",
+	"503": "Service Unavailable"
+};
 const responseDefinitions = computed(() =>
 	Object.fromEntries(Object.entries(props.modelValue).filter(([code]) => !code.startsWith("x-")))
 );

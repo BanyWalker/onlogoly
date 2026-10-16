@@ -2,7 +2,15 @@
 
 当前对象建模使用可替换的存储接口与 JSON 适配器，实际数据位于后端平级的 [workspace-data](../workspace-data/README.md)。存储契约、配置、事务恢复和迁移步骤见 [STORAGE.md](./STORAGE.md)。
 
-此目录是从 [Spring Initializr](https://start.spring.io/) 下载并适配的 Java 后端工程，供后续术语、对象、规则和公共建模能力开发使用。当前只提供框架、配置和基础验证，尚无本体业务接口、业务表或审批流程。
+此目录从 [Spring Initializr](https://start.spring.io/) 下载并适配，当前包含对象建模 `modeling`、服务接入 `integration` 和对象事实 `objectfact` 业务模块。术语、规则及审批治理能力按各自后续增量推进。
+
+对象实例建模端点统一位于 `/api/v1/facts`，包含 `/object-types`、`/instances`、`/instances/{id}/references`、`/graph`、`/import`、`/check`、`/data`、`/batches`。写操作携带 `X-Xiyuan-Role: MODELER`；缺省为查看者。PATCH/DELETE 实例以及清除数据必须携带从查询取得的 `If-Match` 修订号。失败为统一错误信封，导入校验拒绝为 HTTP 200 + `data.result=REJECTED`，结构非法为 400，单实例校验失败为 422，引用保护/并发冲突为 409。
+
+`GET /api/v1/facts/graph` 支持 `types`、`domains`、`q`、`mark`、`focus`、`hops`、`limit`；`q`（业务标识 / 名称）与 `mark`（一致性标记）和实例查询共用筛选逻辑。筛选发生在节点数量截断之前，返回 `total` 为匹配节点数，边仅保留两端都在返回节点内的关系。
+
+事实存储采用 `.facts-store/current.json` 同时提交当前数据与只增流水，根目录 `object-facts.json`、`fact-batches.jsonl` 为查看副本；备份须包含 `.facts-store`。实例事实与模型定义隔离，模型通过公开 `ModelingReadFacade` 快照读取。详细实施契约与案例映射见 [PLAN-OF-001](../../../曦元本体平台SDD开发/03_任务与实施/PLAN-OF-001_对象实例建模实施记录.md)。新增或修改后端代码后须重启进程。
+
+对象事实专项验证可执行 `mvnw.cmd -B -ntp "-Dtest=ObjectFactIntegrationTests,FactStorageTests,FactModuleIsolationTests,ObjectFactHttpSmokeTests" test`。测试使用隔离工作空间与 `src/test/resources/fix-of-001/` 模型/拓扑，不修改开发工作空间。
 
 ## 技术基线
 

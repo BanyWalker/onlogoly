@@ -49,6 +49,7 @@ export interface McpServer {
 	definition: string;
 	domainId: string;
 	owner: string;
+	source?: string;
 	endpointUrl: string;
 	transport: "HTTP";
 	protocolVersion?: string;
@@ -57,6 +58,7 @@ export interface McpServer {
 	enabled: boolean;
 	revision: number;
 	auth?: { authType: string; configured: boolean; masked?: string };
+	headers?: Array<{ name: string; masked: string }>;
 	tools: McpTool[];
 	snapshots: McpSnapshot[];
 	refreshRecords?: McpRefreshRecord[];

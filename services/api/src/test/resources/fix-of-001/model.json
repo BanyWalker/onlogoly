@@ -1,0 +1,34 @@
+{
+  "domains": [{"domainId":"DOMAIN-OF-OPS","name":"实例验收运维域","color":"#38A6F2"}],
+  "objects": [
+    {"id":"OBJ-OF-SERVICE","name":"Service","definition":"服务","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-SVC-CODE"]},"attributes":[
+      {"id":"ATTR-OF-SVC-CODE","name":"serviceCode","dataType":"String","required":true,"nullable":false,"readOnlyNature":"来源：服务注册系统","cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-SVC-NAME","name":"name","dataType":"String","required":true,"nullable":false,"cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-SVC-CRITICALITY","name":"criticality","dataType":"Enumeration","required":true,"nullable":false,"cardinality":{"min":1,"max":1},"allowedValues":[{"code":"Critical"},{"code":"High"},{"code":"Medium"},{"code":"Low"}]},
+      {"id":"ATTR-OF-SVC-OWNER","name":"ownerTeamCode","dataType":"String","required":false,"nullable":true,"readOnlyNature":"来源：组织管理系统","cardinality":{"min":0,"max":1}}
+    ]},
+    {"id":"OBJ-OF-APPLICATION","name":"Application","definition":"应用","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-APP-CODE"]},"attributes":[{"id":"ATTR-OF-APP-CODE","name":"applicationCode","dataType":"String","required":true,"nullable":false,"cardinality":{"min":1,"max":1}}]},
+    {"id":"OBJ-OF-ASSET","name":"InfrastructureAsset","definition":"基础设施资产","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-ASSET-CODE"]},"attributes":[{"id":"ATTR-OF-ASSET-CODE","name":"assetCode","dataType":"String","required":true,"nullable":false,"readOnlyNature":"来源：资产系统","cardinality":{"min":1,"max":1}}]},
+    {"id":"OBJ-OF-ALERT","name":"Alert","definition":"告警","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-ALERT-ID"]},"attributes":[
+      {"id":"ATTR-OF-ALERT-ID","name":"sourceAlertId","dataType":"String","required":true,"nullable":false,"readOnlyNature":"来源：监控系统","cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-ALERT-SEVERITY","name":"severity","dataType":"Enumeration","required":true,"nullable":false,"cardinality":{"min":1,"max":1},"allowedValues":[{"code":"Critical"},{"code":"Warning"},{"code":"Info"}]},
+      {"id":"ATTR-OF-ALERT-TIME","name":"occurredAt","dataType":"DateTime","required":true,"nullable":false,"readOnlyNature":"来源：监控系统","cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-ALERT-FEATURE","name":"feature","dataType":"String","required":true,"nullable":false,"cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-ALERT-MAINTENANCE","name":"maintenanceRelated","dataType":"Boolean","required":false,"nullable":true,"nullMeaning":"UNKNOWN","cardinality":{"min":0,"max":1}},
+      {"id":"ATTR-OF-ALERT-SERVICE","name":"service","dataType":"Reference","relationRef":"REL-OF-ALERT-SERVICE","referenceTarget":["OBJ-OF-SERVICE"],"required":false,"nullable":true,"nullMeaning":"NOT_PROVIDED","cardinality":{"min":0,"max":1}},
+      {"id":"ATTR-OF-ALERT-POINTS","name":"pointsTo","dataType":"Reference","relationRef":"REL-OF-ALERT-POINTSTO","referenceTarget":["OBJ-OF-SERVICE","OBJ-OF-ASSET"],"required":true,"nullable":false,"cardinality":{"min":1,"max":"N"}}
+    ]},
+    {"id":"OBJ-OF-INCIDENT","name":"Incident","definition":"故障","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-INCIDENT-CODE"]},"attributes":[{"id":"ATTR-OF-INCIDENT-CODE","name":"incidentCode","dataType":"String","required":true,"nullable":false,"cardinality":{"min":1,"max":1}},{"id":"ATTR-OF-INCIDENT-STATUS","name":"status","dataType":"String","required":true,"nullable":false,"cardinality":{"min":1,"max":1}}]},
+    {"id":"OBJ-OF-WORKORDER","name":"WorkOrder","definition":"工单","domainId":"DOMAIN-OF-OPS","status":"active","identitySpec":{"mode":"SINGLE","attributes":["ATTR-OF-WO-CODE"]},"attributes":[
+      {"id":"ATTR-OF-WO-CODE","name":"workOrderCode","dataType":"String","required":true,"nullable":false,"readOnlyNature":"创建后不可变","cardinality":{"min":1,"max":1}},
+      {"id":"ATTR-OF-WO-ASSIGNEE","name":"assignee","dataType":"String","required":false,"nullable":true,"nullMeaning":"NOT_PROVIDED","cardinality":{"min":0,"max":1}},
+      {"id":"ATTR-OF-WO-CONCLUSION","name":"conclusion","dataType":"String","required":false,"nullable":true,"nullMeaning":"NOT_PROVIDED","cardinality":{"min":0,"max":1}}
+    ]}
+  ],
+  "relations": [
+    {"id":"REL-OF-ALERT-SERVICE","name":"service","sourceType":"OBJ-OF-ALERT","targetType":"OBJ-OF-SERVICE","sourceCardinality":{"min":0,"max":1},"targetCardinality":{"min":0,"max":"N"},"domainId":"DOMAIN-OF-OPS","compositionKind":"Association","status":"active"},
+    {"id":"REL-OF-ALERT-POINTSTO","name":"pointsTo","sourceType":"OBJ-OF-ALERT","targetType":["OBJ-OF-SERVICE","OBJ-OF-ASSET"],"sourceCardinality":{"min":1,"max":"N"},"targetCardinality":{"min":0,"max":"N"},"domainId":"DOMAIN-OF-OPS","compositionKind":"Association","status":"active"},
+    {"id":"REL-OF-SERVICE-SUB","name":"includesSub","sourceType":"OBJ-OF-SERVICE","targetType":"OBJ-OF-SERVICE","sourceCardinality":{"min":0,"max":"N"},"targetCardinality":{"min":0,"max":1},"domainId":"DOMAIN-OF-OPS","compositionKind":"Composition","status":"active"},
+    {"id":"REL-OF-INCIDENT-WO","name":"addresses","sourceType":"OBJ-OF-INCIDENT","targetType":"OBJ-OF-WORKORDER","sourceCardinality":{"min":0,"max":"N"},"targetCardinality":{"min":1,"max":1},"domainId":"DOMAIN-OF-OPS","compositionKind":"Aggregation","status":"active"}
+  ]
+}

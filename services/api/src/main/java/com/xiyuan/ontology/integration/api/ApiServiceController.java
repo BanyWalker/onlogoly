@@ -36,7 +36,7 @@ public class ApiServiceController {
 	@PostMapping("/{id}/endpoints") public Map<String, Object> createEndpoint(@PathVariable String id, @RequestBody ObjectNode body) { return IntegrationResponses.ok(storage.createEndpoint(id, body)); }
 	@PatchMapping("/{id}/endpoints/{endpointId}") public Map<String, Object> updateEndpoint(@PathVariable String id, @PathVariable String endpointId, @RequestBody ObjectNode body) { return IntegrationResponses.ok(storage.updateEndpoint(id, endpointId, body)); }
 	@DeleteMapping("/{id}/endpoints/{endpointId}") public Map<String, Object> deleteEndpoint(@PathVariable String id, @PathVariable String endpointId) { return IntegrationResponses.ok(storage.deleteEndpoint(id, endpointId)); }
-	@PostMapping("/{id}/endpoints/{endpointId}/test") public Map<String, Object> test(@PathVariable String id, @PathVariable String endpointId) { return IntegrationResponses.ok(storage.testEndpoint(id, endpointId)); }
+	@PostMapping("/{id}/endpoints/{endpointId}/test") public Map<String, Object> test(@PathVariable String id, @PathVariable String endpointId, @RequestBody(required = false) ObjectNode body) { return IntegrationResponses.ok(storage.testEndpoint(id, endpointId, body)); }
 	@GetMapping("/{id}/snapshots") public Map<String, Object> snapshots(@PathVariable String id) { return IntegrationResponses.ok(storage.snapshots(id)); }
 	@PostMapping("/{id}/snapshots") public Map<String, Object> createSnapshot(@PathVariable String id) { return IntegrationResponses.ok(storage.createSnapshot(id)); }
 	@GetMapping("/{id}/call-log") public Map<String, Object> callLogs(@PathVariable String id) { return IntegrationResponses.ok(storage.callLogs(id)); }

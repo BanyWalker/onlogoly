@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
 	copyJson,
+	convertContentFormat,
 	createContract,
 	displayValue,
 	exampleFromSchema,
@@ -52,7 +53,7 @@ test("replacing headers preserves imported references, other parameters and sche
 	assert.equal(validateContract(reopened, "/hosts/{hostId}"), null);
 });
 
-test("path synchronization adds missing required parameters without duplicating or deleting existing definitions", () => {
+test("path synchronization derives unique required parameters and prunes removed URL placeholders", () => {
 	const parameters = [
 		{ name: "hostId", in: "path", required: true, schema: { type: "integer" }, example: 7 },
 		{ name: "status", in: "query", schema: { type: "string" } }
@@ -60,9 +61,68 @@ test("path synchronization adds missing required parameters without duplicating 
 	const synced = syncPathParameters(parameters, "/hosts/{hostId}/checks/{checkId}/{checkId}");
 	assert.equal(synced.length, 3);
 	assert.deepEqual(synced[0], parameters[0]);
-	assert.equal(synced[2].required, true);
+	assert.equal(synced.find(parameter => parameter.name === "checkId")?.required, true);
 	assert.equal(validateContract({ parameters: synced }, "/hosts/{hostId}/checks/{checkId}"), null);
 	assert.match(validateContract({ parameters: synced }, "/checks/{checkId}")!.message, /路径参数 hostId/);
+	const pruned = syncPathParameters(synced, "/checks/{checkId}");
+	assert.equal(
+		pruned.find(parameter => parameter.name === "hostId"),
+		undefined
+	);
+	assert.equal(pruned.find(parameter => parameter.name === "status")?.in, "query");
+});
+
+test("request body format is singular, form and text schemas match their editors, and samples obey constraints", () => {
+	assert.equal(
+		validateContract({ requestBody: { content: { "application/json": {}, "text/plain": {} } } }, "/")?.code,
+		"MULTIPLE_REQUEST_FORMATS"
+	);
+	assert.match(validateContract({ requestBody: { required: true } }, "/")!.message, /无请求体/);
+	assert.match(
+		validateContract({ requestBody: { content: { "text/plain": { schema: { type: "object" } } } } }, "/")!.message,
+		/string/
+	);
+	assert.match(
+		validateContract(
+			{
+				requestBody: {
+					content: {
+						"application/x-www-form-urlencoded": { schema: { type: "object", properties: { nested: { type: "object" } } } }
+					}
+				}
+			},
+			"/"
+		)!.message,
+		/不适用于/
+	);
+	assert.match(validateSchema({ type: "integer", minimum: 10, maximum: 1 })!, /下限/);
+	assert.match(validateSchema({ type: "string", pattern: "[" })!, /正则/);
+	assert.match(validateSchema({ type: "integer", enum: ["up"] })!, /枚举值/);
+	assert.match(validateSchema({ type: "string", minLength: 5, example: "a" })!, /示例值/);
+	assert.match(
+		validateContract(
+			{
+				responses: {
+					200: { content: { "application/json": { schema: { type: "integer" }, examples: { invalid: { value: "text" } } } } }
+				}
+			},
+			"/"
+		)!.message,
+		/命名示例 invalid/
+	);
+});
+
+test("format conversions preserve source data and enumerate incompatible fields before replacement", () => {
+	const source = {
+		schema: { type: "object", required: ["nested"], properties: { id: { type: "integer" }, nested: { type: "object" } } },
+		example: { id: 7, nested: {} }
+	};
+	const result = convertContentFormat(source, "application/json", "application/x-www-form-urlencoded");
+	assert.equal(result.losses.length, 1);
+	assert.match(result.losses[0], /nested/);
+	assert.deepEqual(result.media?.schema?.required, []);
+	assert.deepEqual(result.media?.example, { id: 7 });
+	assert.ok(source.schema.properties.nested);
 });
 
 test("examples generate optional nested schemas and preserve primitive roots", () => {
@@ -74,6 +134,9 @@ test("examples generate optional nested schemas and preserve primitive roots", (
 	assert.equal(validateContract({ responses: { "200": { content: { "application/json": { schema, example } } } } }, "/"), null);
 	assert.deepEqual(exampleFromSchema({ type: "array", items: { type: "integer", example: 0 } }), [0]);
 	assert.equal(exampleFromSchema({ type: "boolean", example: false }), false);
+	assert.equal(exampleFromSchema({ type: "integer", minimum: 1 }), 1);
+	assert.equal(exampleFromSchema({ type: "string", minLength: 3 }), "aaa");
+	assert.deepEqual(exampleFromSchema({ type: "array", items: { type: "integer" }, minItems: 2 }), [0, 0]);
 	assert.equal(displayValue(false), "false");
 	assert.equal(inputValue("0", { type: "integer" }), 0);
 	assert.equal(inputValue("001", { type: "string" }), "001");

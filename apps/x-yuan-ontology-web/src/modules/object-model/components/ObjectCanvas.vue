@@ -1,5 +1,7 @@
 <template>
-	<div ref="containerRef" class="object-canvas" />
+	<div ref="viewportRef" class="object-canvas">
+		<div ref="containerRef" class="object-canvas-graph" />
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -26,6 +28,7 @@ const props = defineProps<{
 	selectedRelationId?: string;
 	readOnly?: boolean;
 	allowParallel?: boolean;
+	edgeColor?: string;
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +42,7 @@ const emit = defineEmits<{
 }>();
 
 const containerRef = ref<HTMLDivElement>();
+const viewportRef = ref<HTMLDivElement>();
 let graph: Graph | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let centeredOnce = false;
@@ -66,9 +70,22 @@ function domainColor(domainId: string) {
 	return props.domainColorMap.get(domainId) ?? "#4f7df3";
 }
 
-function domainColorOfObject(objectId: string) {
+function objectColor(object: GraphObject) {
+	return object.color ?? domainColor(object.domainId);
+}
+
+function objectColorOf(objectId: string) {
 	const object = uniqueObjects().find(item => item.id === objectId);
-	return object ? domainColor(object.domainId) : "#4f7df3";
+	return object ? objectColor(object) : "#4f7df3";
+}
+
+function nodeBorderColor(object: GraphObject, highlighted: boolean) {
+	return object.color ?? (highlighted ? objectColor(object) : "#E5EAF2");
+}
+
+function edgeLabelColor(selected: boolean, dimmed = false) {
+	if (props.edgeColor) return selected ? "#4E5969" : dimmed ? "#A9B2C0" : "#86909C";
+	return selected ? "#183D5D" : dimmed ? "#9AAABC" : "#2B5170";
 }
 
 function rgba(color: string, alpha: number) {
@@ -191,8 +208,8 @@ function searchAnnotations(text: string) {
 }
 
 function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
-	const color = domainColor(object.domainId);
-	const domainName = props.domainNameMap.get(object.domainId) ?? object.domainId;
+	const color = objectColor(object);
+	const domainName = object.badgeLabel ?? props.domainNameMap.get(object.domainId) ?? object.domainId;
 	const searchMatch = props.highlightedIds.has(object.id);
 	const selected = selectedIds().has(object.id);
 	const highlighted = selected || searchMatch || props.selectedObjectId === object.id;
@@ -209,7 +226,7 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 		z: 10,
 		attrs: {
 			body: {
-				stroke: highlighted ? color : "#E5EAF2",
+				stroke: nodeBorderColor(object, highlighted),
 				strokeWidth: highlighted ? 1.5 : 1,
 				opacity: nodeOpacity
 			},
@@ -217,8 +234,8 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 			domainDot: { fill: color, opacity: dimmed ? 0.3 : 1 },
 			domainLabel: { text: domainName, fill: color, opacity: dimmed ? 0.3 : 1 },
 			title: { text: object.name, annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
-			codeText: { text: codeText, annotations: searchAnnotations(codeText), opacity: dimmed ? 0.3 : 1 }
-			,markLabel: { text: object.markLabel ?? "", opacity: dimmed ? 0.3 : 1 }
+			codeText: { text: codeText, annotations: searchAnnotations(codeText), opacity: dimmed ? 0.3 : 1 },
+			markLabel: { text: object.markLabel ?? "", opacity: dimmed ? 0.3 : 1 }
 		},
 		ports: {
 			groups: {
@@ -260,10 +277,15 @@ function buildNode(object: GraphObject, connections: ConnectionPlan[]) {
 
 function connectionPlans() {
 	const groups = new Map<string, GraphRelation[]>();
+	const singles: ConnectionPlan[] = [];
 	const visibleIds = new Set(uniqueObjects().map(object => object.id));
 	for (const relation of props.relations.filter(item => item.status !== "deprecated")) {
 		for (const target of relationTargetIds(relation)) {
 			if (!visibleIds.has(relation.sourceType) || !visibleIds.has(target)) {
+				continue;
+			}
+			if (props.allowParallel) {
+				singles.push({ id: `fact-relation:${relation.id}`, sourceType: relation.sourceType, targetType: target, group: [relation], ports: portPair(relation.sourceType, target) });
 				continue;
 			}
 			const key = `${relation.sourceType}\u0000${target}`;
@@ -281,7 +303,7 @@ function connectionPlans() {
 		const ports = portPair(sourceType, targetType);
 		plans.push({ id: `relation:${encodeURIComponent(sourceType)}:${encodeURIComponent(targetType)}`, sourceType, targetType, group, ports });
 	}
-	return plans;
+	return [...singles, ...plans];
 }
 
 type ConnectionPlan = {
@@ -329,13 +351,13 @@ function buildEdges(plans: ConnectionPlan[]) {
 				: relationTouches(selectedIds(), relation)
 		);
 		const dimmed = hasFocus() && !focused && !selected;
-		const color = domainColorOfObject(sourceType);
+		const color = props.edgeColor ?? objectColorOf(sourceType);
 		const isBundle = group.length > 1;
 		const selfLoop = sourceType === targetType;
 		const relationName = isBundle ? `${first.name} +${group.length - 1}` : first.name;
 		const targetRanges = new Set(group.map(relation => cardinalityText(relation.targetCardinality)));
 		const rangeText = [...targetRanges].join(" / ");
-		const labelText = first.annotation?.showLabel === false ? "" : `${relationName} · ${rangeText}`;
+		const labelText = first.annotation?.showLabel === false ? "" : first.showCardinality === false ? relationName : `${relationName} · ${rangeText}`;
 		const loopPorts = selfLoop ? connectionPorts(sourceType, plans) : [];
 		const loopVertices = selfLoop ? selfLoopVertices(
 			sourceType,
@@ -387,7 +409,7 @@ function buildEdges(plans: ConnectionPlan[]) {
 									fontSize: 12,
 									lineHeight: 16,
 									fontWeight: 600,
-									fill: selected ? "#183D5D" : "#2B5170",
+									fill: edgeLabelColor(selected, dimmed),
 									textAnchor: "middle",
 									textVerticalAnchor: "middle",
 									pointerEvents: "none"
@@ -489,10 +511,10 @@ function finishNodeDrag() {
 }
 
 function fitAndCenter() {
-	if (!graph || !containerRef.value) {
+	if (!graph || !viewportRef.value) {
 		return false;
 	}
-	const rect = containerRef.value.getBoundingClientRect();
+	const rect = viewportRef.value.getBoundingClientRect();
 	if (rect.width < 1 || rect.height < 1 || uniqueObjects().length === 0) {
 		return false;
 	}
@@ -576,18 +598,17 @@ function updateSelection() {
 	for (const node of graph.getNodes()) {
 		const object = uniqueObjects().find(item => item.id === node.id);
 		if (!object) continue;
-		const color = domainColor(object.domainId);
 		const focused = nodeIsFocused(node.id);
 		const selected = selectedIds().has(node.id) || props.selectedObjectId === node.id;
 		const dimmed = hasFocus() && !focused;
 		const nodeOpacity = dimmed ? 0.24 : object.status === "deprecated" ? 0.45 : 1;
 		node.attr({
-			body: { stroke: selected || props.highlightedIds.has(node.id) ? color : "#E5EAF2", strokeWidth: selected || props.highlightedIds.has(node.id) ? 1.5 : 1, opacity: nodeOpacity },
+			body: { stroke: nodeBorderColor(object, selected || props.highlightedIds.has(node.id)), strokeWidth: selected || props.highlightedIds.has(node.id) ? 1.5 : 1, opacity: nodeOpacity },
 			domainChipBg: { opacity: dimmed ? 0.2 : 1 },
 			domainDot: { opacity: dimmed ? 0.3 : 1 },
 			domainLabel: { opacity: dimmed ? 0.3 : 1 },
 			title: { annotations: searchAnnotations(object.name), opacity: dimmed ? 0.3 : 1 },
-			codeText: { annotations: searchAnnotations(object.id.toUpperCase()), opacity: dimmed ? 0.3 : 1 },
+			codeText: { annotations: searchAnnotations(object.displayCode ?? object.id), opacity: dimmed ? 0.3 : 1 },
 		});
 	}
 	for (const edge of graph.getEdges()) {
@@ -606,7 +627,7 @@ function updateSelection() {
 		edge.attr("line/strokeWidth", selected ? 2 : data.bundleSize && data.bundleSize > 1 ? 1.7 : 1.3);
 		edge.getLabels().forEach((label, index) => {
 			const fill = label.attrs?.label?.fontSize === 12
-				? selected ? "#183D5D" : dimmed ? "#9AAABC" : "#2B5170"
+				? edgeLabelColor(selected, dimmed)
 				: selected ? "#647E98" : dimmed ? "#B7C3D0" : "#8FA3B8";
 			edge.prop(["labels", String(index), "attrs", "label", "fill"], fill);
 		});
@@ -725,11 +746,11 @@ onMounted(() => {
 				shape: "edge",
 				attrs: {
 					line: {
-						stroke: "#38A6F2",
+						stroke: props.edgeColor ?? "#38A6F2",
 						strokeWidth: 1.3,
 						strokeDasharray: "6 4",
 						strokeLinecap: "round",
-						targetMarker: { name: "block", size: 6, fill: "#38A6F2", stroke: "#38A6F2" }
+						targetMarker: { name: "block", size: 6, fill: props.edgeColor ?? "#38A6F2", stroke: props.edgeColor ?? "#38A6F2" }
 					}
 				}
 			});
@@ -751,7 +772,7 @@ onMounted(() => {
 		emit("select-object", node.id);
 	});
 	graph.on("node:mouseenter", ({ node }) => {
-		node.attr("body/stroke", domainColorOfObject(node.id));
+		node.attr("body/stroke", objectColorOf(node.id));
 		if (props.readOnly) return;
 		for (const portId of ["p-left", "p-right", "p-top", "p-bottom"]) {
 			node.portProp(portId, "attrs/circle/opacity", 0.9);
@@ -759,7 +780,8 @@ onMounted(() => {
 		}
 	});
 	graph.on("node:mouseleave", ({ node }) => {
-		node.attr("body/stroke", props.highlightedIds.has(node.id) || selectedIds().has(node.id) || props.selectedObjectId === node.id ? domainColorOfObject(node.id) : "#E5EAF2");
+		const object = uniqueObjects().find(item => item.id === node.id);
+		if (object) node.attr("body/stroke", nodeBorderColor(object, props.highlightedIds.has(node.id) || selectedIds().has(node.id) || props.selectedObjectId === node.id));
 		for (const portId of ["p-left", "p-right", "p-top", "p-bottom"]) {
 			node.portProp(portId, "attrs/circle/opacity", 0);
 			node.portProp(portId, "attrs/hitArea/pointerEvents", "none");
@@ -776,14 +798,14 @@ onMounted(() => {
 		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
 		edge.attr("line/strokeWidth", data.selected ? 2.4 : data.bundleSize && data.bundleSize > 1 ? 2 : 1.8);
 		edge.getLabels().forEach((label, index) => {
-			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], "#183D5D");
+			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], edgeLabelColor(true));
 		});
 	});
 	graph.on("edge:mouseleave", ({ edge }) => {
-		const data = edge.getData() as { bundleSize?: number; selected?: boolean };
+		const data = edge.getData() as { bundleSize?: number; selected?: boolean; focused?: boolean };
 		edge.attr("line/strokeWidth", data.selected ? 2 : data.bundleSize && data.bundleSize > 1 ? 1.7 : 1.3);
 		edge.getLabels().forEach((label, index) => {
-			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], data.selected ? "#183D5D" : "#2B5170");
+			if (label.attrs?.label?.fontSize === 12) edge.prop(["labels", String(index), "attrs", "label", "fill"], edgeLabelColor(!!data.selected, hasFocus() && !data.focused && !data.selected));
 		});
 	});
 	graph.on("blank:click", () => {
@@ -822,10 +844,10 @@ onMounted(() => {
 
 	redraw(true);
 	resizeObserver = new ResizeObserver(() => {
-		if (!graph || !containerRef.value) {
+		if (!graph || !viewportRef.value) {
 			return;
 		}
-		const rect = containerRef.value.getBoundingClientRect();
+		const rect = viewportRef.value.getBoundingClientRect();
 		if (rect.width < 1 || rect.height < 1) {
 			return;
 		}
@@ -834,13 +856,15 @@ onMounted(() => {
 			centeredOnce = fitAndCenter();
 		}
 	});
-	if (containerRef.value) {
-		resizeObserver.observe(containerRef.value);
+	// X6 writes pixel dimensions to its container. Observe the independent layout
+	// viewport so fullscreen and panel resizing cannot get stuck at those dimensions.
+	if (viewportRef.value) {
+		resizeObserver.observe(viewportRef.value);
 	}
 });
 
 watch(
-	() => [props.objects, props.relations, props.domainColorMap, props.domainNameMap],
+	() => [props.objects, props.relations, props.domainColorMap, props.domainNameMap, props.edgeColor],
 	() => {
 		if (movingNodeId) {
 			redrawPending = true;
@@ -875,12 +899,18 @@ defineExpose({ zoomToFit, zoomIn, zoomOut, resetZoom, setZoomPercent, centerOn }
 	width: 100%;
 	height: 100%;
 	min-height: 0;
+	overflow: hidden;
 
 	/* 迭代五：霜白微蓝底（近乎留白）+ 天蓝/薄荷青极轻氛围光斑，层次由节点投影承担 */
 	background:
 		radial-gradient(circle at 15% 0%, rgb(56 166 242 / 7%), transparent 26%),
 		radial-gradient(circle at 85% 100%, rgb(20 200 180 / 6%), transparent 28%),
 		#f7fafd;
+}
+
+.object-canvas-graph {
+	position: absolute;
+	inset: 0;
 }
 
 :deep(.x6-node) {

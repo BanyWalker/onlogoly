@@ -50,7 +50,7 @@ public final class FactValidator {
 			if (value.isNull() || nullObject) {
 				String reason = value.isObject() ? value.path("nullReason").asString("") : "";
 				String expected = attribute.path("nullMeaning").asString("");
-				if (!attribute.path("nullable").asBoolean(false) || required) errors.add(new Violation(key, path, "PROPERTY_REQUIRED_MISSING", "属性不允许空值"));
+				if (!attribute.path("nullable").asBoolean(false)) errors.add(new Violation(key, path, "PROPERTY_REQUIRED_MISSING", "属性不允许空值"));
 				else if (!reason.equals(expected) || (!expected.isBlank() && !Set.of("UNKNOWN", "NOT_PROVIDED", "NOT_APPLICABLE").contains(reason)))
 					errors.add(new Violation(key, path, "NULL_MEANING_MISMATCH", "空值原因必须符合模型声明：" + expected));
 				continue;
@@ -158,7 +158,7 @@ public final class FactValidator {
 			errors.add(new Violation(key(instance), "relations." + definition.path("id").asString(), "CARDINALITY_OUT_OF_RANGE", definition.path("name").asString() + " " + direction + "数量 " + count + " 不符合 " + bounds.path("min").asInt(0) + ".." + bounds.path("max").asString("N")));
 	}
 	public static String key(JsonNode instance) {
-		return instance.path("instanceKey").asString(instance.path("instanceId").asString());
+		return instance.path("instanceId").asString(instance.path("instanceKey").asString());
 	}
 	private static int maximum(JsonNode bounds) { return bounds.path("max").isNumber() ? bounds.path("max").asInt() : Integer.MAX_VALUE; }
 	private static boolean dateTime(String value) {

@@ -54,10 +54,12 @@ public class FactCommands {
 				}
 				List<JsonNode> all = list(state.path("instances")); all.addAll(added);
 				errors.addAll(validator.unique(all, catalog, affected));
+				int relationIndex = -1;
 				for (JsonNode input : body.path("relations")) {
+					relationIndex++;
 					String source = keys.get(input.path("sourceKey").asString()), target = keys.get(input.path("targetKey").asString());
 					if (source == null || target == null) {
-						errors.add(new Violation(input.path("sourceKey").asString(), "relations[" + relations.size() + "]", "REFERENCE_DANGLING", "关系两端必须引用本文件内的 instanceKey"));
+						errors.add(new Violation(input.path("sourceKey").asString(), "relations[" + relationIndex + "]", "REFERENCE_DANGLING", "关系两端必须引用本文件内的 instanceKey"));
 						continue;
 					}
 					ObjectNode relation = relation(candidate, input.path("relationTypeRef").asString(), source, target, catalog);
@@ -77,6 +79,13 @@ public class FactCommands {
 					state.withObject("meta").withObject("idSequence").put("relation", sequence(candidate, "relation"));
 				}
 			}
+			Map<String, String> localKeys = new HashMap<>();
+			added.forEach(value -> localKeys.put(value.path("instanceId").asString(), value.path("instanceKey").asString()));
+			errors.replaceAll(error -> {
+				List<String> conflicts = error.conflicts().stream().map(ref -> localKeys.containsKey(ref) ? "本批:" + localKeys.get(ref) : ref).toList();
+				return new Violation(localKeys.getOrDefault(error.instanceKey(), error.instanceKey()), error.fieldPath(), error.rule(),
+						"IDENTITY_DUPLICATE".equals(error.rule()) ? "同类型内业务标识重复：" + String.join("、", conflicts) : error.message(), conflicts);
+			});
 			ObjectNode record = record(state, "IMPORT", actor);
 			record.put("batchId", batchId); record.put("sourceRef", body.path("sourceRef").asString("UNKNOWN"));
 			record.put("importedBy", actor); record.put("importedAt", Instant.now().toString());
@@ -146,6 +155,13 @@ public class FactCommands {
 					errors.add(new Violation(id, "propertyValues." + name, "EDIT_READ_ONLY", "只读属性不可修改：" + attribute.path("readOnlyNature").asString()));
 				current.withObject("propertyValues").set(name, value.deepCopy());
 			}
+			if (body.has("unsetProperties") && !body.path("unsetProperties").isArray()) throw new FactException(400, "OF_FILE_INVALID", "unsetProperties 必须是属性名数组");
+			for (JsonNode field : body.path("unsetProperties")) {
+				if (!field.isString()) throw new FactException(400, "OF_FILE_INVALID", "移除属性时必须提供属性名");
+				String name = field.asString(); JsonNode attribute = type == null ? null : FactCatalog.attribute(type, name);
+				if (attribute != null && !attribute.path("readOnlyNature").asString("").isBlank()) errors.add(new Violation(id, "propertyValues." + name, "EDIT_READ_ONLY", "只读属性不可移除"));
+				current.withObject("propertyValues").remove(name);
+			}
 			Set<String> affected = new HashSet<>(Set.of(id));
 			ArrayNode changes = JsonNodeFactory.instance.arrayNode();
 			JsonNode operations = body.path("relationOps");
@@ -193,6 +209,7 @@ public class FactCommands {
 			record.put("instanceRef", id);
 			ObjectNode summary = record.putObject("changeSummary");
 			summary.set("propertyValues", body.path("propertyValues").isMissingNode() ? JsonNodeFactory.instance.objectNode() : body.path("propertyValues").deepCopy());
+			summary.set("unsetProperties", body.path("unsetProperties").isMissingNode() ? JsonNodeFactory.instance.arrayNode() : body.path("unsetProperties").deepCopy());
 			summary.set("relationOps", operations.isMissingNode() ? JsonNodeFactory.instance.arrayNode() : operations.deepCopy());
 			summary.put("deleted", deleting);
 			if (deleting) record.set("removedRelationRefs", changes);
@@ -231,10 +248,20 @@ public class FactCommands {
 			Set<String> ids = new HashSet<>(); instances.forEach(value -> ids.add(value.path("instanceId").asString()));
 			List<Violation> validation = new ArrayList<>(validator.unique(instances, catalog, ids));
 			validation.addAll(validator.relations(instances, edges, catalog, ids, true));
+			Map<String, JsonNode> byId = new HashMap<>();
+			Map<String, List<JsonNode>> adjacency = new HashMap<>();
+			Map<String, List<Violation>> validationById = new HashMap<>();
+			instances.forEach(value -> byId.put(value.path("instanceId").asString(), value));
+			for (JsonNode edge : edges) {
+				adjacency.computeIfAbsent(edge.path("sourceInstanceId").asString(), ignored -> new ArrayList<>()).add(edge);
+				if (!edge.path("sourceInstanceId").equals(edge.path("targetInstanceId"))) adjacency.computeIfAbsent(edge.path("targetInstanceId").asString(), ignored -> new ArrayList<>()).add(edge);
+			}
+			validation.forEach(error -> validationById.computeIfAbsent(error.instanceKey(), ignored -> new ArrayList<>()).add(error));
 			ObjectNode result = JsonNodeFactory.instance.objectNode();
 			ArrayNode pending = result.putArray("pendingReview"), invalid = result.putArray("invalidRef");
 			for (JsonNode node : instances) {
 				ObjectNode instance = (ObjectNode) node;
+				JsonNode previousMarks = instance.path("marks").deepCopy();
 				ArrayNode marks = instance.putArray("marks");
 				String id = instance.path("instanceId").asString(), typeRef = instance.path("objectTypeRef").asString();
 				JsonNode type = catalog.objects.get(typeRef);
@@ -249,15 +276,19 @@ public class FactCommands {
 					}
 					for (Violation error : validator.properties(instance, catalog)) mark(marks, "pendingReview", typeRef, error.message());
 				}
-				for (JsonNode edge : edges) if (id.equals(edge.path("sourceInstanceId").asString()) || id.equals(edge.path("targetInstanceId").asString())) {
+				for (JsonNode edge : adjacency.getOrDefault(id, List.of())) {
 					String ref = edge.path("relationTypeRef").asString(); JsonNode definition = catalog.relations.get(ref);
 					if (!FactCatalog.active(definition)) mark(marks, "invalidRef", ref, "关系类型已删除或废弃");
 					else if (!edge.path("binding").asString().equals(FactCatalog.relationSignature(definition))) mark(marks, "pendingReview", ref, "关系两端或基数定义发生变更");
 					String other = id.equals(edge.path("sourceInstanceId").asString()) ? edge.path("targetInstanceId").asString() : edge.path("sourceInstanceId").asString();
-					JsonNode opposite = instances.stream().filter(value -> other.equals(value.path("instanceId").asString())).findFirst().orElse(null);
+					JsonNode opposite = byId.get(other);
 					if (opposite == null || !FactCatalog.active(catalog.objects.get(opposite.path("objectTypeRef").asString()))) mark(marks, "invalidRef", ref, "关联实例的对象类型已删除或废弃");
 				}
-				for (Violation error : validation) if (FactValidator.key(instance).equals(error.instanceKey())) mark(marks, "pendingReview", error.fieldPath(), error.message());
+				for (Violation error : validationById.getOrDefault(id, List.of())) mark(marks, "pendingReview", error.fieldPath(), error.message());
+				for (JsonNode flag : marks) for (JsonNode previous : previousMarks) {
+					if (flag.path("markKind").equals(previous.path("markKind")) && flag.path("modelElementRef").equals(previous.path("modelElementRef")) && flag.path("reason").equals(previous.path("reason")))
+						((ObjectNode) flag).set("markedAt", previous.path("markedAt"));
+				}
 				boolean hasInvalid = false, hasPending = false;
 				for (JsonNode flag : marks) { if ("invalidRef".equals(flag.path("markKind").asString())) hasInvalid = true; else hasPending = true; }
 				if (hasInvalid) invalid.add(id); if (hasPending) pending.add(id);

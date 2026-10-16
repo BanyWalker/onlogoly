@@ -51,6 +51,29 @@ export interface ApiContract {
 	[key: string]: unknown;
 }
 
+export interface ApiAuthConfig {
+	authType?: "INHERIT" | "NONE" | "API_KEY" | "BEARER" | "BASIC" | "CUSTOM_HEADER";
+	inherit?: boolean;
+	apiKeyName?: string;
+	apiKeyIn?: "header" | "query";
+	apiKeyValue?: string;
+	token?: string;
+	username?: string;
+	password?: string;
+	headerName?: string;
+	headerValue?: string;
+	[key: string]: unknown;
+}
+
+export interface ApiDebugRequest {
+	path?: Record<string, string>;
+	query?: Record<string, string>;
+	headers?: Record<string, string>;
+	body?: unknown;
+	auth?: ApiAuthConfig;
+	variables?: Record<string, string>;
+}
+
 export interface ApiDefinition {
 	id: string;
 	name: string;
@@ -69,6 +92,8 @@ export interface ApiDefinition {
 		message: string;
 		latencyMs: number;
 		at: string;
+		request?: { method: string; url: string; headers?: Record<string, string>; body?: unknown };
+		response?: { status: number; headers?: Record<string, string>; body?: string };
 	} | null;
 }
 
@@ -107,6 +132,8 @@ export interface ApiTestResult {
 	message: string;
 	latencyMs: number;
 	at: string;
+	request?: { method: string; url: string; headers?: Record<string, string>; body?: unknown };
+	response?: { status: number; headers?: Record<string, string>; body?: string };
 }
 
 export interface ApiSnapshot {

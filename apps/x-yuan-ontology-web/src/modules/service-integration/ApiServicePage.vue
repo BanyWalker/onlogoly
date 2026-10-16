@@ -18,14 +18,10 @@
 			<aside class="service-directory">
 				<div class="directory-toolbar">
 					<strong>服务目录</strong>
-					<ElTag size="small" type="info" effect="plain">{{ services.length }}</ElTag>
+					<div class="directory-title-actions"><span class="directory-count">{{ filteredServices.length }} / {{ services.length }}</span><ElButton link type="primary" :icon="Plus" @click="openCreateService">新增服务</ElButton></div>
 				</div>
 				<ElInput v-model="searchText" clearable placeholder="搜索服务名称或标识" :prefix-icon="Search" />
-				<div class="directory-filters">
-					<ElSelect v-model="statusFilter" placeholder="全部状态" clearable>
-						<ElOption label="全部" value="" /><ElOption label="草稿" value="DRAFT" /><ElOption label="已发布" value="PUBLISHED" />
-					</ElSelect>
-				</div>
+				<div class="directory-filter-pills"><button v-for="filter in statusFilters" :key="filter.value" type="button" :class="{ active: statusFilter === filter.value }" @click="statusFilter = filter.value">{{ filter.label }}</button></div>
 				<div v-loading="loading" class="service-list">
 					<button v-for="item in filteredServices" :key="item.id" type="button" class="service-list-item" :class="{ active: item.id === selectedId }" :aria-pressed="item.id === selectedId" :title="`${item.name} · ${item.id}`" @click="selectService(item.id)">
 						<span class="service-list-icon" aria-hidden="true"><ElIcon><component :is="serviceIcon(item.id)" /></ElIcon></span>
@@ -37,13 +33,41 @@
 
 			<main v-if="selectedService" class="service-detail">
 				<div class="detail-titlebar">
-					<div><div class="detail-id">{{ selectedService.id }} · {{ selectedService.version || "未填写版本" }}</div><h2>{{ selectedService.name || "未命名服务" }} <ElTag :type="statusType(selectedService.status, selectedService.enabled)" effect="light">{{ statusLabel(selectedService.status, selectedService.enabled) }}</ElTag></h2><p>{{ selectedService.definition || "尚未填写业务说明" }}</p></div>
-					<div class="detail-actions"><ElButton v-if="selectedService.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedService.enabled ? disableService() : enableService">{{ selectedService.enabled ? "禁用服务" : "启用服务" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text :icon="Edit" @click="openEditService">编辑</ElButton><ElButton v-if="selectedService.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
+					<div><div class="detail-id">{{ selectedService.id }} · {{ selectedService.version || "未填写版本" }}</div><h2>{{ selectedService.name || "未命名服务" }} <ElTag :type="statusType(selectedService.status, selectedService.enabled)" effect="light">{{ statusLabel(selectedService.status, selectedService.enabled) }}</ElTag></h2><p>{{ selectedService.definition || "尚未填写业务说明" }}</p><div class="detail-subline"><span class="mono">{{ selectedService.baseUrl }}</span><span>·</span><span>{{ selectedService.environment || "环境待配置" }}</span><span>·</span><span>HTTP API</span></div></div>
+					<div class="detail-actions"><ElButton v-if="selectedService.status === 'DRAFT'" type="primary" :loading="saving" @click="publishService">发布</ElButton><template v-else><ElButton :loading="saving" @click="selectedService.enabled ? disableService() : enableService">{{ selectedService.enabled ? "停用" : "启用" }}</ElButton><ElButton :loading="saving" @click="unpublishService">下架</ElButton></template><ElButton text :icon="Edit" @click="openEditService">编辑</ElButton><ElButton v-if="selectedService.status === 'DRAFT'" text type="danger" @click="deleteService">删除</ElButton></div>
 				</div>
-				<div class="service-meta-grid"><div><span>基础地址</span><strong class="mono endpoint-value" :title="selectedService.baseUrl">{{ selectedService.baseUrl }}</strong></div><div><span>所属领域</span><strong>{{ selectedService.domainId }}</strong></div><div><span>责任方</span><strong>{{ selectedService.owner }}</strong></div><div><span>认证方式</span><ElTag v-if="!selectedService.auth?.configured" size="small" type="warning">待配置</ElTag><strong v-else>{{ selectedService.auth.masked }}</strong></div><div><span>更新时间</span><strong>{{ formatUpdatedAt(selectedService.updatedAt) }}</strong></div><div><span>依据来源</span><strong>{{ selectedService.source || "未填写" }}</strong></div><div><span>默认超时</span><strong>{{ selectedService.timeoutMs }} ms</strong></div><div><span>修订</span><strong>r{{ selectedService.revision }}</strong></div></div>
 
 				<ElTabs v-model="activeTab" class="service-tabs">
-					<ElTabPane label="API" name="apis"><div class="tab-toolbar"><div><strong>API 列表</strong><span class="muted">共 {{ selectedService.apis.length }} 个已登记 API</span></div><ElButton type="primary" :icon="Plus" @click="openCreateApi">新增 API</ElButton></div><ElTable :data="selectedService.apis" stripe empty-text="暂无 API"><ElTableColumn prop="name" label="API 名称" min-width="180"><template #default="scope"><strong>{{ scope.row.name || "未命名 API" }}</strong><div class="muted">{{ scope.row.id }}</div></template></ElTableColumn><ElTableColumn label="HTTP 操作" width="180"><template #default="scope"><span class="method-pill" :class="scope.row.method.toLowerCase()">{{ scope.row.method || "-" }}</span><span class="mono path-text">{{ scope.row.path || "-" }}</span></template></ElTableColumn><ElTableColumn label="操作性质" width="100"><template #default="scope"><ElTag size="small" :type="scope.row.operationNature === 'WRITE' ? 'warning' : 'info'">{{ scope.row.operationNature === 'WRITE' ? '写操作' : '只读' }}</ElTag></template></ElTableColumn><ElTableColumn label="状态" width="110"><template #default="scope"><ElTag size="small" :type="statusType(scope.row.status, scope.row.enabled)">{{ statusLabel(scope.row.status, scope.row.enabled) }}</ElTag></template></ElTableColumn><ElTableColumn label="最近测试" width="150"><template #default="scope"><span v-if="scope.row.lastTest" :class="scope.row.lastTest.outcome === 'SUCCESS' ? 'test-success' : 'test-failed'">{{ scope.row.lastTest.outcome === 'SUCCESS' ? '通过' : '失败' }} · {{ scope.row.lastTest.category }}</span><span v-else class="muted">未测试</span></template></ElTableColumn><ElTableColumn label="操作" width="220" fixed="right"><template #default="scope"><ElButton size="small" text @click="openEditApi(scope.row)">编辑</ElButton><ElButton size="small" text type="primary" :loading="testingId === scope.row.id" @click="testApi(scope.row)">测试连接</ElButton><ElButton size="small" text type="danger" @click="deleteApi(scope.row)">删除</ElButton></template></ElTableColumn></ElTable></ElTabPane>
+					<ElTabPane label="概要" name="overview">
+						<section class="config-card api-summary-card" aria-label="连接配置">
+							<div class="config-card-header">
+								<strong>连接配置</strong>
+								<ElTooltip content="API 接口可继承服务级认证，也可单独配置认证。凭证仅掩码展示。" placement="top">
+									<ElIcon class="summary-help" tabindex="0" aria-label="服务认证说明"><InfoFilled /></ElIcon>
+								</ElTooltip>
+							</div>
+							<dl class="api-summary-fields">
+								<div class="api-summary-field"><dt>基础地址</dt><dd class="mono">{{ selectedService.baseUrl }}</dd></div>
+								<div class="api-summary-field"><dt>版本</dt><dd class="mono">{{ selectedService.version || "待配置" }}</dd></div>
+								<div class="api-summary-field"><dt>环境</dt><dd>{{ selectedService.environment || "待配置" }}</dd></div>
+								<div class="api-summary-field"><dt>认证方式</dt><dd><template v-if="selectedService.auth?.configured">{{ selectedService.auth.masked || "已配置" }}</template><ElTag v-else size="small" type="warning">待配置</ElTag></dd></div>
+								<div class="api-summary-field"><dt>领域归属</dt><dd>{{ selectedService.domainId }}</dd></div>
+								<div class="api-summary-field"><dt>责任方</dt><dd>{{ selectedService.owner }}</dd></div>
+							</dl>
+						</section>
+						<section class="config-card api-summary-card" aria-label="服务信息">
+							<div class="config-card-header"><strong>服务信息</strong></div>
+							<dl class="api-summary-fields">
+								<div class="api-summary-field"><dt>业务定义</dt><dd>{{ selectedService.definition || "尚未填写业务说明" }}</dd></div>
+								<div class="api-summary-field"><dt>稳定标识</dt><dd class="mono">{{ selectedService.id }}</dd></div>
+								<div class="api-summary-field"><dt>修订</dt><dd>r{{ selectedService.revision }}</dd></div>
+								<div class="api-summary-field"><dt>来源</dt><dd>{{ selectedService.source || "API 服务注册表" }}</dd></div>
+								<div class="api-summary-field"><dt>更新时间</dt><dd>{{ formatUpdatedAt(selectedService.updatedAt) }}</dd></div>
+								<div class="api-summary-field"><dt>默认超时</dt><dd>{{ selectedService.timeoutMs }} ms</dd></div>
+							</dl>
+						</section>
+					<section class="overview-api-section"><div class="tab-toolbar"><div><strong>API 接口列表</strong><span class="muted">共 {{ selectedService.apis.length }} 个已登记 API 接口</span></div><ElButton type="primary" :icon="Plus" @click="openCreateApi">新增 API 接口</ElButton></div><ElTable :data="selectedService.apis" stripe empty-text="暂无 API 接口" @row-click="openDebug"><ElTableColumn prop="name" label="API 接口名称" min-width="180"><template #default="scope"><strong>{{ scope.row.name || "未命名 API 接口" }}</strong><div class="muted">{{ scope.row.id }}</div></template></ElTableColumn><ElTableColumn label="HTTP 操作" width="180"><template #default="scope"><span class="method-pill" :class="scope.row.method.toLowerCase()">{{ scope.row.method || "-" }}</span><span class="mono path-text">{{ scope.row.path || "-" }}</span></template></ElTableColumn><ElTableColumn label="操作性质" width="100"><template #default="scope"><ElTag size="small" :type="scope.row.operationNature === 'WRITE' ? 'warning' : 'info'">{{ scope.row.operationNature === 'WRITE' ? '写操作' : '只读' }}</ElTag></template></ElTableColumn><ElTableColumn label="状态" width="110"><template #default="scope"><ElTag size="small" :type="statusType(scope.row.status, scope.row.enabled)">{{ statusLabel(scope.row.status, scope.row.enabled) }}</ElTag></template></ElTableColumn><ElTableColumn label="最近测试" width="150"><template #default="scope"><span v-if="scope.row.lastTest" :class="scope.row.lastTest.outcome === 'SUCCESS' ? 'test-success' : 'test-failed'">{{ scope.row.lastTest.outcome === 'SUCCESS' ? '通过' : '失败' }} · {{ scope.row.lastTest.category }}</span><span v-else class="muted">未测试</span></template></ElTableColumn><ElTableColumn label="操作" width="260" fixed="right"><template #default="scope"><ElButton size="small" text @click.stop="openEditApi(scope.row)">编辑</ElButton><ElButton size="small" text type="primary" @click.stop="openDebug(scope.row)">调试</ElButton><ElButton size="small" text type="primary" :loading="testingId === scope.row.id" @click.stop="testApi(scope.row)">测试连接</ElButton><ElButton size="small" text type="danger" @click.stop="deleteApi(scope.row)">删除</ElButton></template></ElTableColumn></ElTable></section></ElTabPane>
+					<ElTabPane name="test"><template #label>测试调用 <ElTag size="small" type="info">new</ElTag></template><div class="test-tab-panel"><div><strong>测试调用</strong><p>选择 API 接口后打开调试面板，配置请求头、路径/查询参数、请求体和认证方式。</p></div><ElButton type="primary" :disabled="!selectedService.apis.length" @click="openFirstApiDebug">开始测试调用</ElButton></div></ElTabPane>
 					<ElTabPane name="snapshots"><template #label>快照与变更 <ElTag size="small" effect="plain">{{ snapshots.length }}</ElTag></template><div class="tab-toolbar"><div><strong>快照与变更</strong><span class="muted">保留每次 API 定义，用于审计接口增删和配置变化。</span></div><ElButton :loading="refreshing" @click="createSnapshot">刷新并生成快照</ElButton></div><ElTable :data="snapshots" stripe empty-text="暂无快照"><ElTableColumn prop="snapshotId" label="快照" width="90"><template #default="scope">v{{ scope.row.snapshotId }}</template></ElTableColumn><ElTableColumn prop="capturedAt" label="生成时间" min-width="180" /><ElTableColumn prop="revision" label="修订" width="100" /><ElTableColumn label="API 数量" width="100"><template #default="scope">{{ scope.row.apiCount }}</template></ElTableColumn><ElTableColumn label="变更" min-width="180"><template #default="scope">新增 {{ scope.row.diff?.added || 0 }} · 移除 {{ scope.row.diff?.removed || 0 }} · 修改 {{ scope.row.diff?.changed || 0 }}</template></ElTableColumn></ElTable></ElTabPane>
 					<ElTabPane label="调用记录" name="logs"><div class="tab-toolbar"><div><strong>调用记录</strong><span class="muted">保留 API 测试调用结果，便于定位连接和响应问题。</span></div><ElButton @click="loadLogs">刷新</ElButton></div><ElTable :data="logs" stripe empty-text="暂无调用记录"><ElTableColumn prop="occurredAt" label="时间" min-width="180" /><ElTableColumn label="API" min-width="180"><template #default="scope"><strong>{{ scope.row.apiName || scope.row.apiId }}</strong><div class="muted">{{ scope.row.apiId }}</div></template></ElTableColumn><ElTableColumn label="结果" width="120"><template #default="scope"><ElTag size="small" :type="scope.row.resultStatus === 'SUCCESS' ? 'success' : 'danger'">{{ scope.row.resultStatus === 'SUCCESS' ? '成功' : '失败' }}</ElTag></template></ElTableColumn><ElTableColumn prop="normalizedError" label="错误" min-width="180" /><ElTableColumn label="耗时" width="100"><template #default="scope">{{ scope.row.latencyMs }} ms</template></ElTableColumn></ElTable></ElTabPane>
 					<ElTabPane name="mappings"><template #label>本体映射 <ElTag size="small" effect="plain">{{ mappings.length }}</ElTag></template><div class="tab-toolbar"><div><strong>API 与本体映射</strong><span class="muted">API 调用结果可映射到对象模型元素，目标引用需先存在。</span></div><ElButton type="primary" @click="openCreateMapping">新增映射</ElButton></div><ElTable :data="mappings" stripe empty-text="暂无映射"><ElTableColumn label="API" min-width="180"><template #default="scope"><strong>{{ apiName(scope.row.apiId) }}</strong><div class="muted">{{ scope.row.apiId }}</div></template></ElTableColumn><ElTableColumn prop="targetRef" label="目标引用" min-width="180"><template #default="scope"><span class="mono">{{ scope.row.targetRef }}</span></template></ElTableColumn><ElTableColumn prop="mappingKind" label="映射类型" width="140" /><ElTableColumn prop="description" label="说明" min-width="180" /><ElTableColumn label="操作" width="90"><template #default="scope"><ElButton text type="danger" size="small" @click="removeMapping(scope.row)">删除</ElButton></template></ElTableColumn></ElTable></ElTabPane>
@@ -62,14 +86,15 @@
 					<ElFormItem label="环境" required><ElSelect v-model="serviceForm.environment"><ElOption label="生产" value="生产" /><ElOption label="预发" value="预发" /><ElOption label="测试" value="测试" /></ElSelect></ElFormItem>
 					<ElFormItem label="领域" required><ElInput v-model="serviceForm.domainId" placeholder="例如 DOMAIN-OPS" /></ElFormItem>
 					<ElFormItem label="责任方" required><ElInput v-model="serviceForm.owner" placeholder="例如 运维平台团队" /></ElFormItem>
-					<ElFormItem label="认证方式"><ElSelect v-model="serviceAuthType"><ElOption label="无需认证" value="NONE" /><ElOption label="API Key" value="API_KEY" /><ElOption label="Bearer Token" value="BEARER" /><ElOption label="自定义 Header" value="CUSTOM_HEADER" /></ElSelect></ElFormItem>
 				</div>
 				<ElFormItem label="基础地址" required><ElInput v-model="serviceForm.baseUrl" placeholder="https://api.example.com" /></ElFormItem>
+				<ApiAuthEditor v-model="serviceAuth" />
 				<ElFormItem label="超时(ms)"><ElInputNumber v-model="serviceForm.timeoutMs" :min="1" :max="60000" /></ElFormItem>
 			</ElForm>
 			<template #footer><ElButton @click="serviceDialogVisible = false">取消</ElButton><ElButton type="primary" :loading="saving" @click="saveService">保存草稿</ElButton></template>
 		</ElDialog>
-		<ApiEditorDialog v-model="apiDialogVisible" :api="editingApi" :service="selectedService" :saving="saving" @save="saveApi" />
+		<ApiEditorDialog v-model="apiDialogVisible" :api="editingApi" :service="selectedService" :saving="saving" @save="saveApi" @save-debug="saveApi($event, true)" />
+		<ApiDebugDialog v-model="debugDialogVisible" :api="debugApi" :service="selectedService" :sending="debugSending" :result="debugResult" :error="debugError" @send="sendDebug" @edit="editDebugApi" />
 		<ElDialog v-model="mappingDialogVisible" class="integration-dialog" title="新增本体映射" width="560px" destroy-on-close align-center>
 			<ElForm :model="mappingForm" label-position="top">
 				<ElFormItem label="API" required><ElSelect v-model="mappingForm.apiId" style="width: 100%"><ElOption v-for="api in selectedService?.apis || []" :key="api.id" :label="api.name || api.id" :value="api.id" /></ElSelect></ElFormItem>
@@ -84,13 +109,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Bell, ChromeFilled, Coin, DataLine, Document, Edit, Plus, Search, SetUp } from "@element-plus/icons-vue";
+import { Bell, ChromeFilled, Coin, DataLine, Document, Edit, InfoFilled, Plus, Search, SetUp } from "@element-plus/icons-vue";
 
 import { apiServiceApi } from "./api";
 import ApiEditorDialog from "./components/ApiEditorDialog.vue";
-import type { ApiCallLog, ApiDefinition, ApiError, ApiMapping, ApiService, ApiSnapshot } from "./types";
+import ApiDebugDialog from "./components/ApiDebugDialog.vue";
+import ApiAuthEditor from "./components/ApiAuthEditor.vue";
+import type { ApiAuthConfig, ApiCallLog, ApiDebugRequest, ApiDefinition, ApiError, ApiMapping, ApiService, ApiSnapshot, ApiTestResult } from "./types";
 
 const services = ref<ApiService[]>([]);
 const selectedId = ref("");
@@ -100,23 +127,30 @@ const loading = ref(false);
 const saving = ref(false);
 const testingId = ref("");
 const error = ref<ApiError | null>(null);
-const activeTab = ref("apis");
+const activeTab = ref("overview");
 const refreshing = ref(false);
 const snapshots = ref<ApiSnapshot[]>([]);
 const logs = ref<ApiCallLog[]>([]);
 const mappings = ref<ApiMapping[]>([]);
 const serviceDialogVisible = ref(false);
 const apiDialogVisible = ref(false);
+const debugDialogVisible = ref(false);
 const importDialogVisible = ref(false);
 const mappingDialogVisible = ref(false);
 const editingService = ref<ApiService | null>(null);
 const editingApi = ref<ApiDefinition | null>(null);
-const serviceAuthType = ref("NONE");
+const debugApi = ref<ApiDefinition | null>(null);
+const debugSending = ref(false);
+const debugResult = ref<ApiTestResult | null>(null);
+const debugError = ref("");
+const serviceAuth = ref<ApiAuthConfig>({ authType: "NONE" });
 const serviceForm = reactive<Partial<ApiService>>({ id: "", name: "", definition: "", domainId: "DOMAIN-OPS", owner: "", version: "v1", baseUrl: "", environment: "测试", timeoutMs: 10000 });
 const importForm = reactive({ id: "", name: "", definition: "", version: "", baseUrl: "", environment: "测试", domainId: "DOMAIN-OPS", owner: "服务接入管理员", documentText: "" });
 const mappingForm = reactive({ apiId: "", targetRef: "", mappingKind: "RESULT", description: "" });
 
-const filteredServices = computed(() => services.value.filter(item => (!statusFilter.value || item.status === statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
+const statusFilters = [{ label: "全部", value: "" }, { label: "已启用", value: "ENABLED" }, { label: "草稿", value: "DRAFT" }, { label: "已禁用", value: "DISABLED" }];
+const matchesStatus = (status: string, enabled: boolean, filter: string) => !filter ? true : filter === "DRAFT" ? status === "DRAFT" : filter === "ENABLED" ? status === "PUBLISHED" && enabled : status === "PUBLISHED" && !enabled;
+const filteredServices = computed(() => services.value.filter(item => matchesStatus(item.status, item.enabled, statusFilter.value) && (!searchText.value || `${item.id} ${item.name} ${item.definition}`.toLowerCase().includes(searchText.value.toLowerCase()))));
 const selectedService = computed(() => services.value.find(item => item.id === selectedId.value));
 const statusLabel = (status?: string, enabled?: boolean) => status === "PUBLISHED" ? (enabled ? "已发布 · 启用" : "已发布 · 禁用") : "草稿";
 const statusType = (status?: string, enabled?: boolean) => status === "PUBLISHED" && enabled ? "success" : "info";
@@ -172,10 +206,13 @@ async function selectService(id: string) {
 	}
 	catch (cause) { error.value = cause as ApiError; }
 }
-function openCreateService() { editingService.value = null; serviceAuthType.value = "NONE"; Object.assign(serviceForm, { id: "", name: "", definition: "", domainId: "DOMAIN-OPS", owner: "", version: "v1", baseUrl: "", environment: "测试", timeoutMs: 10000 }); serviceDialogVisible.value = true; }
-function openEditService() { if (!selectedService.value) return; editingService.value = selectedService.value; serviceAuthType.value = selectedService.value.auth?.authType || "NONE"; Object.assign(serviceForm, selectedService.value); serviceDialogVisible.value = true; }
+function openCreateService() { editingService.value = null; Object.assign(serviceForm, { id: "", name: "", definition: "", domainId: "DOMAIN-OPS", owner: "", version: "v1", baseUrl: "", environment: "测试", timeoutMs: 10000 }); serviceDialogVisible.value = true; }
+function openEditService() { if (!selectedService.value) return; editingService.value = selectedService.value; Object.assign(serviceForm, selectedService.value); serviceDialogVisible.value = true; }
 function openCreateApi() { editingApi.value = null; apiDialogVisible.value = true; }
 function openEditApi(api: ApiDefinition) { editingApi.value = api; apiDialogVisible.value = true; }
+function openDebug(api: ApiDefinition) { debugApi.value = api; debugResult.value = null; debugError.value = ""; debugDialogVisible.value = true; }
+function editDebugApi() { if (!debugApi.value || debugSending.value) return; debugDialogVisible.value = false; openEditApi(selectedService.value?.apis.find(api => api.id === debugApi.value?.id) ?? debugApi.value); }
+function openFirstApiDebug() { const api = selectedService.value?.apis[0]; if (api) openDebug(api); }
 function apiName(id: string) { return selectedService.value?.apis.find(api => api.id === id)?.name || id; }
 async function loadLogs() {
 	if (!selectedService.value) return;
@@ -232,8 +269,8 @@ async function removeMapping(mapping: ApiMapping) {
 		if (cause !== "cancel") ElMessage.error((cause as ApiError).message || "删除映射失败");
 	}
 }
-async function saveService() { if (!serviceForm.id) { ElMessage.warning("请填写服务标识"); return; } saving.value = true; try { const body = { id: serviceForm.id, name: serviceForm.name, definition: serviceForm.definition, domainId: serviceForm.domainId, owner: serviceForm.owner, version: serviceForm.version, baseUrl: serviceForm.baseUrl, environment: serviceForm.environment, timeoutMs: serviceForm.timeoutMs, auth: { authType: serviceAuthType.value, configured: editingService.value?.auth?.configured ?? false, masked: editingService.value?.auth?.masked || "未配置" } }; const updated = editingService.value ? await apiServiceApi.update(editingService.value.id, { ...body, revision: editingService.value.revision }) : await apiServiceApi.create(body); await loadServices(); selectedId.value = updated.id; await selectService(updated.id); serviceDialogVisible.value = false; ElMessage.success("API 服务草稿已保存"); } catch (cause) { ElMessage.error((cause as ApiError).message || "保存失败"); } finally { saving.value = false; } }
-async function saveApi(body: Partial<ApiDefinition>) { if (!selectedService.value) return; saving.value = true; try { if (editingApi.value) await apiServiceApi.updateApi(selectedService.value.id, editingApi.value.id, body); else await apiServiceApi.createApi(selectedService.value.id, body); await selectService(selectedService.value.id); apiDialogVisible.value = false; ElMessage.success(editingApi.value ? "API 编辑成功" : "API 新增成功"); } catch (cause) { ElMessage.error((cause as ApiError).message || "API 保存失败"); } finally { saving.value = false; } }
+async function saveService() { if (!serviceForm.id) { ElMessage.warning("请填写服务标识"); return; } saving.value = true; try { const authType = serviceAuth.value.authType || "NONE"; const configured = authType !== "NONE" && Boolean(serviceAuth.value.apiKeyValue || serviceAuth.value.token || serviceAuth.value.password || serviceAuth.value.headerValue); const body = { id: serviceForm.id, name: serviceForm.name, definition: serviceForm.definition, domainId: serviceForm.domainId, owner: serviceForm.owner, version: serviceForm.version, baseUrl: serviceForm.baseUrl, environment: serviceForm.environment, timeoutMs: serviceForm.timeoutMs, auth: { ...serviceAuth.value, authType, configured: configured || editingService.value?.auth?.configured || false, masked: configured ? "已配置" : editingService.value?.auth?.masked || "未配置" } }; const updated = editingService.value ? await apiServiceApi.update(editingService.value.id, { ...body, revision: editingService.value.revision }) : await apiServiceApi.create(body); await loadServices(); selectedId.value = updated.id; await selectService(updated.id); serviceDialogVisible.value = false; ElMessage.success("API 服务草稿已保存"); } catch (cause) { ElMessage.error((cause as ApiError).message || "保存失败"); } finally { saving.value = false; } }
+async function saveApi(body: Partial<ApiDefinition>, debugAfterSave = false) { if (!selectedService.value) return; saving.value = true; try { const saved = editingApi.value ? await apiServiceApi.updateApi(selectedService.value.id, editingApi.value.id, body) : await apiServiceApi.createApi(selectedService.value.id, body); await selectService(selectedService.value.id); apiDialogVisible.value = false; ElMessage.success(editingApi.value ? "API 编辑成功" : "API 新增成功"); if (debugAfterSave) openDebug(selectedService.value.apis.find(api => api.id === saved.id) ?? saved); } catch (cause) { ElMessage.error((cause as ApiError).message || "API 保存失败"); } finally { saving.value = false; } }
 async function testApi(api: ApiDefinition) { if (!selectedService.value) return; testingId.value = api.id; try { const result = await apiServiceApi.testApi(selectedService.value.id, api.id); await selectService(selectedService.value.id); ElMessage[result.outcome === "SUCCESS" ? "success" : "error"](result.message); } catch (cause) { ElMessage.error((cause as ApiError).message || "测试失败"); } finally { testingId.value = ""; } }
 async function publishService() { if (!selectedService.value) return; const missing = missingPublishFields(selectedService.value); if (missing.length) { ElMessage.error(`请补全必填项：${missing.join("、")}`); return; } await changeServiceState(() => apiServiceApi.publish(selectedService.value!.id, selectedService.value!.revision), "API 服务已发布"); }
 async function unpublishService() { if (!selectedService.value) return; await changeServiceState(() => apiServiceApi.unpublish(selectedService.value!.id, selectedService.value!.revision), "API 服务已下架"); }
@@ -243,6 +280,8 @@ async function changeServiceState(action: () => Promise<ApiService>, message: st
 async function deleteApi(api: ApiDefinition) { if (!selectedService.value) return; try { await ElMessageBox.confirm(`确认删除 API “${api.name || api.id}”？`, "请确认", { type: "warning" }); await apiServiceApi.deleteApi(selectedService.value.id, api.id); await selectService(selectedService.value.id); ElMessage.success("API 已删除"); } catch (cause) { if (cause !== "cancel") ElMessage.error((cause as ApiError).message || "操作失败"); } }
 async function deleteService() { if (!selectedService.value) return; try { await ElMessageBox.confirm(`确认删除草稿服务“${selectedService.value.name || selectedService.value.id}”？`, "请确认", { type: "warning" }); await apiServiceApi.remove(selectedService.value.id, selectedService.value.revision); await loadServices(); ElMessage.success("API 服务已删除"); } catch (cause) { if (cause !== "cancel") ElMessage.error((cause as ApiError).message || "删除失败"); } }
 async function handleImportService() { let document: Record<string, unknown>; try { document = JSON.parse(importForm.documentText); } catch { ElMessage.error("请输入有效的 JSON 文档"); return; } saving.value = true; try { const options = Object.fromEntries(Object.entries(importForm).filter(([key, value]) => key !== "documentText" && typeof value === "string" && value.trim())); const created = await apiServiceApi.importOpenApi(options, document); await loadServices(); selectedId.value = created.id; await selectService(created.id); importDialogVisible.value = false; Object.assign(importForm, { id: "", name: "", definition: "", version: "", baseUrl: "", environment: "测试", domainId: "DOMAIN-OPS", owner: "服务接入管理员", documentText: "" }); ElMessage.success(`已导入服务 ${created.name}`); } catch (cause) { ElMessage.error((cause as ApiError).message || "OpenAPI 导入失败"); } finally { saving.value = false; } }
+async function sendDebug(debug: ApiDebugRequest) { if (!selectedService.value || !debugApi.value) return; debugSending.value = true; debugError.value = ""; try { debugResult.value = await apiServiceApi.testApi(selectedService.value.id, debugApi.value.id, debug); await selectService(selectedService.value.id); } catch (cause) { debugError.value = (cause as ApiError).message || "调试失败"; } finally { debugSending.value = false; } }
+watch(serviceDialogVisible, visible => { if (visible) serviceAuth.value = editingService.value?.auth ? { ...editingService.value.auth } as ApiAuthConfig : { authType: "NONE" }; });
 onMounted(loadServices);
 </script>
 

@@ -5,6 +5,20 @@
 	max-height: 90vh;
 }
 
+.api-editor-dialog.el-dialog,
+.api-editor-subdialog.el-dialog {
+	background: var(--ctff-bg-color-container, var(--el-bg-color, #fff));
+}
+
+.api-editor-subdialog.el-dialog {
+	max-width: calc(100vw - 32px);
+}
+
+.api-editor-subdialog .el-dialog__body {
+	max-height: 65vh;
+	overflow: auto;
+}
+
 .api-editor-dialog .el-dialog__body {
 	display: flex;
 	flex: 1 1 auto;
@@ -36,10 +50,28 @@
 }
 
 .api-editor-scroll {
+	display: flex;
 	flex: 1 1 auto;
+	flex-direction: column;
 	height: min(520px, 60vh);
 	min-height: 0;
 	padding: 4px 2px 12px;
+	overflow: hidden;
+}
+
+.api-editor-tabs.el-tabs {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.api-editor-tabs > .el-tabs__header {
+	flex-shrink: 0;
+}
+
+.api-editor-advanced {
+	min-height: 0;
 	overflow: auto;
 }
 
@@ -52,11 +84,11 @@
 	flex-wrap: wrap;
 }
 
-.api-editor-inline > .el-select {
-	width: 250px;
+.api-editor-dialog .api-editor-inline > .el-select {
+	width: 300px;
 }
 
-.api-schema-editor .api-editor-inline > .el-select {
+.api-editor-dialog .api-schema-editor .api-editor-inline > .el-select {
 	width: 150px;
 }
 
@@ -73,7 +105,10 @@
 }
 
 .api-editor-tabs > .el-tabs__content {
+	flex: 1 1 auto;
+	min-height: 0;
 	padding-top: 8px;
+	overflow: auto;
 }
 
 .api-form-grid,
@@ -87,8 +122,93 @@
 	grid-template-columns: 160px minmax(0, 1fr);
 }
 
+.api-request-bar,
+.api-debug-request-line {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.api-request-bar .el-select,
+.api-debug-request-line .el-tag {
+	flex: 0 0 120px;
+}
+
+.api-request-bar .el-input,
+.api-debug-request-line .el-input {
+	flex: 1 1 auto;
+}
+
+.api-auth-line {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.api-debug-tabs .el-tabs__content {
+	min-height: 360px;
+}
+
+.api-debug-section {
+	margin-bottom: 18px;
+}
+
+.api-debug-section > strong {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.api-debug-body-toolbar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.api-debug-result {
+	padding: 12px;
+	margin-top: 14px;
+	background: var(--el-fill-color-light);
+	border: 1px solid var(--el-border-color-lighter);
+	border-radius: 6px;
+}
+
+.api-debug-result-head {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.api-debug-result pre {
+	max-height: 240px;
+	margin: 0;
+	overflow: auto;
+	font-family: monospace;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+.api-debug-request-details {
+	margin-top: 10px;
+	font-size: 12px;
+}
+
+.api-debug-request-details pre {
+	max-height: 180px;
+	padding: 8px;
+	margin-top: 8px;
+	background: var(--el-fill-color-light);
+	border-radius: 4px;
+}
+
 .api-basic-form .el-select,
-.api-basic-form .el-input-number {
+.api-basic-form .el-input-number,
+.api-schema-settings .el-select,
+.api-schema-settings .el-input-number {
 	width: 100%;
 }
 
@@ -111,8 +231,32 @@
 	margin-left: 0;
 }
 
-.api-parameter-default {
-	margin-top: 16px;
+.api-editor-panel,
+.api-schema-settings {
+	padding: 12px;
+	margin: 12px 0;
+	background: var(--el-fill-color-light);
+	border: 1px solid var(--el-border-color-lighter);
+	border-radius: 6px;
+}
+
+.api-schema-settings .el-form-item {
+	margin-bottom: 12px;
+}
+
+.api-editor-error-text {
+	margin: 8px 0;
+	font-size: 12px;
+	color: var(--el-color-danger);
+}
+
+.api-field-actions {
+	display: flex;
+	align-items: center;
+}
+
+.api-field-actions .el-button + .el-button {
+	margin-left: 0;
 }
 
 .api-schema-table {
@@ -122,7 +266,7 @@
 
 .api-schema-row {
 	display: grid;
-	grid-template-columns: minmax(150px, 1.3fr) 115px 44px minmax(130px, 1fr) minmax(100px, 1fr) 32px;
+	grid-template-columns: minmax(130px, 1.3fr) 115px 44px minmax(120px, 1fr) minmax(100px, 1fr) 85px;
 	gap: 8px;
 	align-items: center;
 	padding: 8px;
@@ -195,12 +339,49 @@
 }
 
 .api-editor-footer {
-	padding-top: 8px;
-	border-top: 1px solid var(--el-border-color-lighter);
+	justify-content: flex-end;
 }
 
 .api-editor-dialog :is(.el-dialog__header, .el-dialog__footer) {
 	flex-shrink: 0;
+}
+
+/* Schema types share the same colours across parameters, bodies and debugging. */
+[data-api-schema-type="string"] {
+	--api-schema-type-color: #2f855a;
+}
+
+[data-api-schema-type="integer"] {
+	--api-schema-type-color: #2f6fce;
+}
+
+[data-api-schema-type="number"] {
+	--api-schema-type-color: #a96318;
+}
+
+[data-api-schema-type="boolean"] {
+	--api-schema-type-color: #8757c8;
+}
+
+[data-api-schema-type="object"] {
+	--api-schema-type-color: #0e838a;
+}
+
+[data-api-schema-type="array"] {
+	--api-schema-type-color: #bf4a8a;
+}
+
+[data-api-schema-type="file"] {
+	--api-schema-type-color: #966332;
+}
+
+[data-api-schema-type="files"] {
+	--api-schema-type-color: #6f61ab;
+}
+
+[data-api-schema-type] .el-select__selected-item:not(.is-placeholder),
+.api-parameter-type[data-api-schema-type] {
+	color: var(--api-schema-type-color, var(--el-text-color-regular));
 }
 
 @media (width <= 760px) {
@@ -211,6 +392,10 @@
 	.api-form-grid {
 		grid-template-columns: minmax(0, 1fr);
 		gap: 0;
+	}
+
+	.api-auth-line {
+		grid-template-columns: minmax(0, 1fr);
 	}
 
 	.api-editor-footer > .api-editor-hint {

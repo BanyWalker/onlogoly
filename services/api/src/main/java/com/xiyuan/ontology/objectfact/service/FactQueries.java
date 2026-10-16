@@ -91,11 +91,16 @@ public class FactQueries {
 	}
 
 	public ObjectNode graph(String types, String domains, String focus, int hops, int limit) {
+		return graph(types, domains, "", "", focus, hops, limit);
+	}
+
+	public ObjectNode graph(String types, String domains, String query, String mark, String focus, int hops, int limit) {
 		if (hops < 0 || hops > 3 || limit < 1 || limit > 500) throw new FactException(400, "OF_QUERY_INVALID", "hops 范围为 0..3，limit 范围为 1..500");
 		return storage.read(state -> {
 			FactCatalog catalog = new FactCatalog(models.snapshot());
 			Map<String, JsonNode> eligible = new java.util.LinkedHashMap<>();
-			for (JsonNode instance : state.path("instances")) if (matches(instance, catalog, csv(types), csv(domains), "", "")) eligible.put(instance.path("instanceId").asString(), instance);
+			Set<String> selectedTypes = csv(types), selectedDomains = csv(domains);
+			for (JsonNode instance : state.path("instances")) if (matches(instance, catalog, selectedTypes, selectedDomains, query, mark)) eligible.put(instance.path("instanceId").asString(), instance);
 			List<JsonNode> edges = FactCommands.list(state.path("relationInstances"));
 			Set<String> candidates = new LinkedHashSet<>(eligible.keySet());
 			if (focus != null && !focus.isBlank()) {

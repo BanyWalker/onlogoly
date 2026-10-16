@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 
-import type { ApiCallLog, ApiDefinition, ApiError, ApiMapping, ApiService, ApiSnapshot, ApiTestResult } from "./types";
+import type { ApiCallLog, ApiDebugRequest, ApiDefinition, ApiError, ApiMapping, ApiService, ApiSnapshot, ApiTestResult } from "./types";
 
 const http = axios.create({ baseURL: "/api/v1/integrations", timeout: 15000 });
 
@@ -79,8 +79,8 @@ export const apiServiceApi = {
 	deleteApi(serviceId: string, apiId: string) {
 		return request<ApiDefinition>(() => http.delete(`/api-services/${encodeURIComponent(serviceId)}/endpoints/${encodeURIComponent(apiId)}`));
 	},
-	async testApi(serviceId: string, apiId: string) {
-		const result = await request<ApiTestResult>(() => http.post(`/api-services/${encodeURIComponent(serviceId)}/endpoints/${encodeURIComponent(apiId)}/test`));
+	async testApi(serviceId: string, apiId: string, debug?: ApiDebugRequest) {
+		const result = await request<ApiTestResult>(() => http.post(`/api-services/${encodeURIComponent(serviceId)}/endpoints/${encodeURIComponent(apiId)}/test`, debug ?? {}));
 		return { ...result, message: toApiMessage(result.message) };
 	},
 	snapshots(serviceId: string) {

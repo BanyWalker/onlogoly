@@ -20,8 +20,9 @@ public class FactController {
 	@GetMapping("/instances/{id}") public Map<String, Object> detail(@PathVariable String id) { return FactResponses.ok(queries.detail(id)); }
 	@GetMapping("/instances/{id}/references") public Map<String, Object> references(@PathVariable String id) { return FactResponses.ok(queries.references(id)); }
 	@GetMapping("/graph") public Map<String, Object> graph(@RequestParam(required = false) String types, @RequestParam(required = false) String domains,
+			@RequestParam(required = false) String q, @RequestParam(required = false) String mark,
 			@RequestParam(required = false) String focus, @RequestParam(defaultValue = "1") int hops, @RequestParam(defaultValue = "300") int limit) {
-		return FactResponses.ok(queries.graph(types, domains, focus, hops, limit));
+		return FactResponses.ok(queries.graph(types, domains, q, mark, focus, hops, limit));
 	}
 	@GetMapping("/batches") public Map<String, Object> batches(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "30") int pageSize) { return FactResponses.ok(queries.batches(page, pageSize)); }
 	@PostMapping("/import") public Map<String, Object> importTopology(@RequestBody ObjectNode body,

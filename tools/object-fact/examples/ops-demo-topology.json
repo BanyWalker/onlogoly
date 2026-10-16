@@ -1,0 +1,244 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "instance-topology",
+  "sourceRef": "DEMO-OPS-20261015",
+  "instances": [
+    {
+      "instanceKey": "app-payment",
+      "objectTypeRef": "OBJ-APPLICATION",
+      "propertyValues": {
+        "applicationCode": "DEMO-APP-PAYMENT",
+        "businessDomain": "支付交易",
+        "criticality": "P0",
+        "lifecycleStatus": "RUNNING",
+        "ownerTeam": "支付平台组（示例）"
+      }
+    },
+    {
+      "instanceKey": "app-settlement",
+      "objectTypeRef": "OBJ-APPLICATION",
+      "propertyValues": {
+        "applicationCode": "DEMO-APP-SETTLEMENT",
+        "businessDomain": "清结算",
+        "criticality": "P1",
+        "lifecycleStatus": "RUNNING",
+        "ownerTeam": "清结算组（示例）"
+      }
+    },
+    {
+      "instanceKey": "app-notification",
+      "objectTypeRef": "OBJ-APPLICATION",
+      "propertyValues": {
+        "applicationCode": "DEMO-APP-NOTIFICATION",
+        "businessDomain": "交易通知",
+        "criticality": "P2",
+        "lifecycleStatus": "MAINTENANCE",
+        "ownerTeam": "消息平台组（示例）"
+      }
+    },
+    {
+      "instanceKey": "svc-payment",
+      "objectTypeRef": "OBJ-SERVICE",
+      "propertyValues": {
+        "serviceCode": "DEMO-SVC-PAYMENT-API",
+        "serviceType": "API",
+        "runtime": "Java 21 / Spring Boot",
+        "currentVersion": "2.4.1",
+        "availabilitySla": 99.99,
+        "ownerTeam": "支付平台组（示例）"
+      }
+    },
+    {
+      "instanceKey": "svc-settlement",
+      "objectTypeRef": "OBJ-SERVICE",
+      "propertyValues": {
+        "serviceCode": "DEMO-SVC-SETTLEMENT-WORKER",
+        "serviceType": "WORKER",
+        "runtime": "Java 21 / Spring Boot",
+        "currentVersion": "1.8.0",
+        "availabilitySla": 99.95,
+        "ownerTeam": "清结算组（示例）"
+      }
+    },
+    {
+      "instanceKey": "svc-notification",
+      "objectTypeRef": "OBJ-SERVICE",
+      "propertyValues": {
+        "serviceCode": "DEMO-SVC-NOTIFICATION-CONSUMER",
+        "serviceType": "CONSUMER",
+        "runtime": "Node.js 22",
+        "currentVersion": "3.2.0",
+        "availabilitySla": 99.9,
+        "ownerTeam": "消息平台组（示例）"
+      }
+    },
+    {
+      "instanceKey": "runtime-payment",
+      "objectTypeRef": "OBJ-SERVICE-INSTANCE",
+      "propertyValues": {
+        "instanceCode": "DEMO-PAYMENT-PROD-01",
+        "environment": "PROD",
+        "runtimeStatus": "DEGRADED",
+        "deployedVersion": "2.4.1",
+        "listenPort": 8080
+      }
+    },
+    {
+      "instanceKey": "runtime-settlement",
+      "objectTypeRef": "OBJ-SERVICE-INSTANCE",
+      "propertyValues": {
+        "instanceCode": "DEMO-SETTLEMENT-PROD-01",
+        "environment": "PROD",
+        "runtimeStatus": "HEALTHY",
+        "deployedVersion": "1.8.0",
+        "listenPort": 9090
+      }
+    },
+    {
+      "instanceKey": "runtime-notification",
+      "objectTypeRef": "OBJ-SERVICE-INSTANCE",
+      "propertyValues": {
+        "instanceCode": "DEMO-NOTIFICATION-STAGING-01",
+        "environment": "STAGING",
+        "runtimeStatus": "STOPPED",
+        "deployedVersion": "3.2.0",
+        "listenPort": 3000
+      }
+    },
+    {
+      "instanceKey": "host-payment",
+      "objectTypeRef": "OBJ-HOST",
+      "propertyValues": {
+        "hostname": "demo-pay-node-01",
+        "ipAddress": "192.0.2.11",
+        "operatingSystem": "Ubuntu 24.04 LTS",
+        "environment": "PROD",
+        "hostStatus": "ONLINE",
+        "availabilityZone": "demo-zone-a"
+      }
+    },
+    {
+      "instanceKey": "host-settlement",
+      "objectTypeRef": "OBJ-HOST",
+      "propertyValues": {
+        "hostname": "demo-settle-node-01",
+        "ipAddress": "192.0.2.12",
+        "operatingSystem": "Rocky Linux 9",
+        "environment": "PROD",
+        "hostStatus": "ONLINE",
+        "availabilityZone": "demo-zone-b"
+      }
+    },
+    {
+      "instanceKey": "host-notification",
+      "objectTypeRef": "OBJ-HOST",
+      "propertyValues": {
+        "hostname": "demo-notify-node-01",
+        "ipAddress": "192.0.2.13",
+        "operatingSystem": "Ubuntu 24.04 LTS",
+        "environment": "STAGING",
+        "hostStatus": "MAINTENANCE",
+        "availabilityZone": "demo-zone-a"
+      }
+    },
+    {
+      "instanceKey": "alert-payment",
+      "objectTypeRef": "OBJ-ALERT",
+      "propertyValues": {
+        "alertCode": "DEMO-ALERT-PAY-LATENCY",
+        "metricName": "支付接口 P99 延迟超过 800ms（示例）",
+        "severity": "CRITICAL",
+        "alertStatus": "FIRING",
+        "firedAt": "2026-10-15T09:10:00+08:00",
+        "sourceSystem": "合成监控示例"
+      }
+    },
+    {
+      "instanceKey": "alert-settlement",
+      "objectTypeRef": "OBJ-ALERT",
+      "propertyValues": {
+        "alertCode": "DEMO-ALERT-SETTLE-BACKLOG",
+        "metricName": "清结算任务队列积压超过阈值（示例）",
+        "severity": "WARNING",
+        "alertStatus": "ACKNOWLEDGED",
+        "firedAt": "2026-10-15T09:15:00+08:00",
+        "sourceSystem": "合成监控示例"
+      }
+    },
+    {
+      "instanceKey": "alert-notification",
+      "objectTypeRef": "OBJ-ALERT",
+      "propertyValues": {
+        "alertCode": "DEMO-ALERT-NOTIFY-RESTART",
+        "metricName": "通知服务维护重启完成（示例）",
+        "severity": "INFO",
+        "alertStatus": "RESOLVED",
+        "firedAt": "2026-10-15T08:30:00+08:00",
+        "sourceSystem": "合成监控示例"
+      }
+    },
+    {
+      "instanceKey": "wo-payment",
+      "objectTypeRef": "OBJ-WORKORDER",
+      "propertyValues": {
+        "workOrderNo": "DEMO-WO-20261015-001",
+        "workOrderType": "INCIDENT",
+        "priority": "P1",
+        "workOrderStatus": "IN_PROGRESS",
+        "assignee": "示例值班员甲",
+        "createdAt": "2026-10-15T09:12:00+08:00",
+        "resolvedAt": { "value": null, "nullReason": "NOT_APPLICABLE" }
+      }
+    },
+    {
+      "instanceKey": "wo-settlement",
+      "objectTypeRef": "OBJ-WORKORDER",
+      "propertyValues": {
+        "workOrderNo": "DEMO-WO-20261015-002",
+        "workOrderType": "CHANGE",
+        "priority": "P2",
+        "workOrderStatus": "OPEN",
+        "assignee": "示例值班员乙",
+        "createdAt": "2026-10-15T09:20:00+08:00",
+        "resolvedAt": { "value": null, "nullReason": "NOT_APPLICABLE" }
+      }
+    },
+    {
+      "instanceKey": "wo-notification",
+      "objectTypeRef": "OBJ-WORKORDER",
+      "propertyValues": {
+        "workOrderNo": "DEMO-WO-20261015-003",
+        "workOrderType": "MAINTENANCE",
+        "priority": "P3",
+        "workOrderStatus": "CLOSED",
+        "assignee": "示例值班员丙",
+        "createdAt": "2026-10-15T08:00:00+08:00",
+        "resolvedAt": "2026-10-15T08:45:00+08:00"
+      }
+    }
+  ],
+  "relations": [
+    { "relationTypeRef": "REL-APP-CONTAINS-SVC", "sourceKey": "app-payment", "targetKey": "svc-payment" },
+    { "relationTypeRef": "REL-APP-CONTAINS-SVC", "sourceKey": "app-settlement", "targetKey": "svc-settlement" },
+    { "relationTypeRef": "REL-APP-CONTAINS-SVC", "sourceKey": "app-notification", "targetKey": "svc-notification" },
+    { "relationTypeRef": "REL-SVC-RUNS-INSTANCE", "sourceKey": "svc-payment", "targetKey": "runtime-payment" },
+    { "relationTypeRef": "REL-SVC-RUNS-INSTANCE", "sourceKey": "svc-settlement", "targetKey": "runtime-settlement" },
+    { "relationTypeRef": "REL-SVC-RUNS-INSTANCE", "sourceKey": "svc-notification", "targetKey": "runtime-notification" },
+    { "relationTypeRef": "REL-INSTANCE-RUNS-ON-HOST", "sourceKey": "runtime-payment", "targetKey": "host-payment" },
+    { "relationTypeRef": "REL-INSTANCE-RUNS-ON-HOST", "sourceKey": "runtime-settlement", "targetKey": "host-settlement" },
+    { "relationTypeRef": "REL-INSTANCE-RUNS-ON-HOST", "sourceKey": "runtime-notification", "targetKey": "host-notification" },
+    { "relationTypeRef": "REL-ALERT-AFFECTS-INSTANCE", "sourceKey": "alert-payment", "targetKey": "runtime-payment" },
+    { "relationTypeRef": "REL-ALERT-AFFECTS-INSTANCE", "sourceKey": "alert-settlement", "targetKey": "runtime-settlement" },
+    { "relationTypeRef": "REL-ALERT-AFFECTS-INSTANCE", "sourceKey": "alert-notification", "targetKey": "runtime-notification" },
+    { "relationTypeRef": "REL-WO-HANDLES-ALERT", "sourceKey": "wo-payment", "targetKey": "alert-payment" },
+    { "relationTypeRef": "REL-WO-HANDLES-ALERT", "sourceKey": "wo-settlement", "targetKey": "alert-settlement" },
+    { "relationTypeRef": "REL-WO-HANDLES-ALERT", "sourceKey": "wo-notification", "targetKey": "alert-notification" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-payment", "targetKey": "svc-payment" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-payment", "targetKey": "svc-settlement" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-payment", "targetKey": "svc-notification" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-settlement", "targetKey": "svc-payment" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-settlement", "targetKey": "svc-settlement" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-notification", "targetKey": "svc-payment" },
+    { "relationTypeRef": "REL-WO-ASSOCIATED-SVC", "sourceKey": "wo-notification", "targetKey": "svc-notification" }
+  ]
+}

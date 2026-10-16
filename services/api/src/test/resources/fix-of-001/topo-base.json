@@ -1,0 +1,25 @@
+{
+  "schemaVersion":"1.0", "kind":"instance-topology", "sourceRef":"FIX-OF-001/topo-base",
+  "instances":[
+    {"instanceKey":"svc1","objectTypeRef":"OBJ-OF-SERVICE","propertyValues":{"serviceCode":"SVC-001","name":"订单服务","criticality":"High","ownerTeamCode":"TEAM-A"}},
+    {"instanceKey":"svc2","objectTypeRef":"OBJ-OF-SERVICE","propertyValues":{"serviceCode":"SVC-002","name":"支付服务","criticality":"Medium","ownerTeamCode":"TEAM-B"}},
+    {"instanceKey":"svc3","objectTypeRef":"OBJ-OF-SERVICE","propertyValues":{"serviceCode":"SVC-003","name":"订单查询子服务","criticality":"Medium","ownerTeamCode":"TEAM-A"}},
+    {"instanceKey":"app1","objectTypeRef":"OBJ-OF-APPLICATION","propertyValues":{"applicationCode":"APP-001"}},
+    {"instanceKey":"asset1","objectTypeRef":"OBJ-OF-ASSET","propertyValues":{"assetCode":"ASSET-001"}},
+    {"instanceKey":"asset2","objectTypeRef":"OBJ-OF-ASSET","propertyValues":{"assetCode":"ASSET-002"}},
+    {"instanceKey":"alt1","objectTypeRef":"OBJ-OF-ALERT","propertyValues":{"sourceAlertId":"ALT-001","severity":"Critical","occurredAt":"2026-10-12T08:30:00Z","feature":"订单提交接口延迟","maintenanceRelated":{"value":null,"nullReason":"UNKNOWN"}}},
+    {"instanceKey":"alt2","objectTypeRef":"OBJ-OF-ALERT","propertyValues":{"sourceAlertId":"ALT-002","severity":"Warning","occurredAt":"2026-10-12T09:10:00Z","feature":"磁盘使用率超阈值"}},
+    {"instanceKey":"alt3","objectTypeRef":"OBJ-OF-ALERT","propertyValues":{"sourceAlertId":"ALT-003","severity":"Critical","occurredAt":"2026-10-12T10:05:00Z","feature":"支付超时"}},
+    {"instanceKey":"inc1","objectTypeRef":"OBJ-OF-INCIDENT","propertyValues":{"incidentCode":"INC-001","status":"Confirmed"}},
+    {"instanceKey":"wo1","objectTypeRef":"OBJ-OF-WORKORDER","propertyValues":{"workOrderCode":"WO-2026-0001","assignee":{"value":null,"nullReason":"NOT_PROVIDED"},"conclusion":{"value":null,"nullReason":"NOT_PROVIDED"}}}
+  ],
+  "relations":[
+    {"relationTypeRef":"REL-OF-ALERT-SERVICE","sourceKey":"alt1","targetKey":"svc1"},
+    {"relationTypeRef":"REL-OF-ALERT-POINTSTO","sourceKey":"alt1","targetKey":"svc1"},
+    {"relationTypeRef":"REL-OF-ALERT-POINTSTO","sourceKey":"alt2","targetKey":"asset1"},
+    {"relationTypeRef":"REL-OF-ALERT-POINTSTO","sourceKey":"alt3","targetKey":"svc1"},
+    {"relationTypeRef":"REL-OF-ALERT-POINTSTO","sourceKey":"alt3","targetKey":"svc2"},
+    {"relationTypeRef":"REL-OF-SERVICE-SUB","sourceKey":"svc1","targetKey":"svc3"},
+    {"relationTypeRef":"REL-OF-INCIDENT-WO","sourceKey":"inc1","targetKey":"wo1"}
+  ]
+}

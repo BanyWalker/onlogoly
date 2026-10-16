@@ -2,6 +2,7 @@ package com.xiyuan.ontology.integration.storage;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -13,8 +14,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -63,7 +67,7 @@ public class ApiServiceStorage {
 	}
 
 	public synchronized ObjectNode get(String id) {
-		return findService(id).deepCopy();
+		return publicCopy(findService(id));
 	}
 
 	public synchronized ObjectNode create(ObjectNode body) {
@@ -85,15 +89,24 @@ public class ApiServiceStorage {
 		setIfMissing(service, "auth", authDefaults());
 		services().add(service);
 		persist();
-		return service.deepCopy();
+		return publicCopy(service);
 	}
 
 	public synchronized ObjectNode update(String id, ObjectNode body) {
 		ObjectNode service = findService(id);
 		checkRevision(service, body);
 		validateRequestedState(service, body);
+		if (body.path("auth").isObject()) {
+			ObjectNode requestedAuth = (ObjectNode) body.path("auth");
+			ObjectNode existingAuth = service.withObject("auth");
+			for (String field : requestedAuth.propertyNames()) {
+				JsonNode value = requestedAuth.path(field);
+				if (List.of("secret", "apiKeyValue", "token", "password", "headerValue").contains(field) && value.asText().isBlank()) continue;
+				existingAuth.set(field, value.deepCopy());
+			}
+		}
 		for (String field : body.propertyNames()) {
-			if (!List.of("id", "createdAt", "createdBy", "endpoints", "status", "enabled").contains(field)) {
+			if (!List.of("id", "createdAt", "createdBy", "endpoints", "status", "enabled", "auth").contains(field)) {
 				service.set(field, body.path(field).deepCopy());
 			}
 		}
@@ -105,7 +118,7 @@ public class ApiServiceStorage {
 		service.put("updatedAt", Instant.now().toString());
 		service.put("updatedBy", "service-admin-local");
 		persist();
-		return service.deepCopy();
+		return publicCopy(service);
 	}
 
 	public synchronized ObjectNode publish(String id, ObjectNode body) {
@@ -150,7 +163,7 @@ public class ApiServiceStorage {
 		if (!"DRAFT".equals(service.path("status").asText())) throw IntegrationStorageException.conflict("SI_DELETE_REQUIRES_DRAFT", "已发布服务请先下架再删除");
 		for (int index = 0; index < services().size(); index++) if (services().get(index) == service) { services().remove(index); break; }
 		persist();
-		return service.deepCopy();
+		return publicCopy(service);
 	}
 
 	public synchronized List<ObjectNode> endpoints(String serviceId) {
@@ -189,11 +202,13 @@ public class ApiServiceStorage {
 		if (!List.of("DRAFT", "PUBLISHED").contains(requestedStatus)) throw IntegrationStorageException.badRequest("SI_INVALID_STATUS", "endpoint status must be DRAFT or PUBLISHED");
 		boolean requestedEnabled = body.has("enabled") ? body.path("enabled").asBoolean(false) : endpoint.path("enabled").asBoolean(false);
 		if ("DRAFT".equals(requestedStatus) && requestedEnabled) throw IntegrationStorageException.conflict("SI_INVALID_TRANSITION", "draft endpoint cannot be enabled");
+		ObjectNode previousAuth = endpoint.path("contract").path("x-auth").isObject() ? (ObjectNode) endpoint.path("contract").path("x-auth").deepCopy() : JsonNodeFactory.instance.objectNode();
 		for (String field : body.propertyNames()) {
 			if (!List.of("id", "createdAt", "createdBy").contains(field)) {
 				endpoint.set(field, body.path(field).deepCopy());
 			}
 		}
+		mergeAuthSecrets(endpoint.path("contract").path("x-auth"), previousAuth);
 		validateEndpoint(endpoint, endpointId, "PUBLISHED".equals(requestedStatus));
 		endpoint.put("revision", endpoint.path("revision").asInt(1) + 1);
 		endpoint.put("updatedAt", Instant.now().toString());
@@ -271,6 +286,182 @@ public class ApiServiceStorage {
 		apiCallLogs().add(log);
 		persist();
 		return result;
+	}
+
+	/**
+	 * Executes a request assembled from the Postman-like debug editor. The old
+	 * no-argument method is kept for callers that only need a connectivity check.
+	 */
+	public synchronized ObjectNode testEndpoint(String serviceId, String endpointId, ObjectNode debug) {
+		ObjectNode service = findService(serviceId);
+		ObjectNode endpoint = findEndpoint(service, endpointId);
+		ObjectNode input = debug == null ? JsonNodeFactory.instance.objectNode() : debug;
+		long started = System.nanoTime();
+		String outcome = "FAILED";
+		String category = "NETWORK_UNREACHABLE";
+		String message = "Unable to connect to target service";
+		ObjectNode requestInfo = JsonNodeFactory.instance.objectNode();
+		ObjectNode responseInfo = null;
+		try {
+			ObjectNode variables = input.path("variables").isObject() ? (ObjectNode) input.path("variables") : JsonNodeFactory.instance.objectNode();
+			String url = buildDebugUrl(service, endpoint, input, variables);
+			Map<String, String> headers = buildDebugHeaders(service, endpoint, input, variables);
+			String body = buildDebugBody(endpoint, input, variables);
+			ObjectNode auth = resolveDebugAuth(service, endpoint, input);
+			if ("API_KEY".equalsIgnoreCase(auth.path("authType").asText()) && "query".equalsIgnoreCase(auth.path("apiKeyIn").asText("header"))) {
+				String name = resolveVariables(auth.path("apiKeyName").asText("X-API-Key"), variables);
+				String value = resolveVariables(auth.path("apiKeyValue").asText(auth.path("secret").asText("")), variables);
+				if (!value.isBlank()) url = url + (url.contains("?") ? "&" : "?") + urlEncode(name) + "=" + urlEncode(value);
+			}
+			JsonNode content = endpoint.path("contract").path("requestBody").path("content");
+			if (body != null && !body.isBlank() && content.isObject() && content.size() > 0) headers.putIfAbsent("Content-Type", content.propertyNames().iterator().next());
+			HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(url))
+					.timeout(Duration.ofMillis(Math.min(60000, Math.max(1, service.path("timeoutMs").asLong(10000)))));
+			for (Map.Entry<String, String> header : headers.entrySet()) {
+				if (header.getKey() != null && !header.getKey().isBlank() && header.getValue() != null) {
+					requestBuilder.header(header.getKey(), header.getValue());
+				}
+			}
+			boolean hasBody = body != null && !body.isBlank() && (!List.of("GET", "HEAD").contains(endpoint.path("method").asText("GET").toUpperCase(Locale.ROOT)) || endpoint.path("contract").path("x-allow-request-body").asBoolean(false));
+			HttpRequest request = requestBuilder.method(endpoint.path("method").asText("GET").toUpperCase(Locale.ROOT),
+					hasBody ? HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8) : HttpRequest.BodyPublishers.noBody()).build();
+			requestInfo.put("method", request.method());
+			requestInfo.put("url", url);
+			ObjectNode requestHeaders = JsonNodeFactory.instance.objectNode();
+			headers.forEach(requestHeaders::put);
+			redactRequestHeaders(requestHeaders, auth);
+			requestInfo.set("headers", requestHeaders);
+			if (body != null && !body.isBlank()) requestInfo.put("body", body);
+			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+			responseInfo = JsonNodeFactory.instance.objectNode();
+			responseInfo.put("status", response.statusCode());
+			ObjectNode responseHeaders = JsonNodeFactory.instance.objectNode();
+			response.headers().map().forEach((key, values) -> responseHeaders.put(key, String.join(", ", values)));
+			responseInfo.set("headers", responseHeaders);
+			responseInfo.put("body", response.body() == null ? "" : response.body());
+			if (response.statusCode() >= 200 && response.statusCode() < 300) {
+				outcome = "SUCCESS";
+				category = "NONE";
+				message = "Request completed";
+			}
+			else if (response.statusCode() == 401 || response.statusCode() == 403) {
+				category = "AUTHENTICATION_FAILED";
+				message = "Target service rejected authentication";
+			}
+			else {
+				category = response.statusCode() >= 500 ? "SERVER_ERROR" : "CLIENT_ERROR";
+				message = "Target service returned HTTP " + response.statusCode();
+			}
+		}
+		catch (java.net.http.HttpTimeoutException exception) {
+			category = "TIMEOUT";
+			message = "Request timed out";
+		}
+		catch (Exception exception) {
+			category = "NETWORK_UNREACHABLE";
+		}
+		ObjectNode result = JsonNodeFactory.instance.objectNode();
+		result.put("outcome", outcome);
+		result.put("category", category);
+		result.put("message", message);
+		result.put("latencyMs", (System.nanoTime() - started) / 1_000_000);
+		result.put("at", Instant.now().toString());
+		result.put("by", "service-admin-local");
+		result.set("request", requestInfo);
+		if (responseInfo != null) result.set("response", responseInfo);
+		endpoint.set("lastTest", result);
+		service.put("updatedAt", Instant.now().toString());
+		ObjectNode log = result.deepCopy();
+		log.put("callId", "CALL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
+		log.put("serviceId", serviceId);
+		log.put("apiId", endpointId);
+		log.put("apiName", endpoint.path("name").asText(endpointId));
+		log.put("resultStatus", outcome);
+		log.put("normalizedError", category);
+		log.put("occurredAt", result.path("at").asText());
+		apiCallLogs().add(log);
+		persist();
+		return result;
+	}
+
+	private String buildDebugUrl(ObjectNode service, ObjectNode endpoint, ObjectNode debug, ObjectNode variables) {
+		String path = resolveVariables(endpoint.path("path").asText(""), variables);
+		ObjectNode pathValues = debug.path("path").isObject() ? (ObjectNode) debug.path("path") : JsonNodeFactory.instance.objectNode();
+		for (String key : pathValues.propertyNames()) path = path.replace("{" + key + "}", urlEncode(pathValues.path(key).asText()));
+		String url = resolveVariables(service.path("baseUrl").asText(), variables).replaceAll("/+$", "") + "/" + path.replaceFirst("^/", "");
+		ObjectNode queryValues = debug.path("query").isObject() ? (ObjectNode) debug.path("query") : JsonNodeFactory.instance.objectNode();
+		List<String> query = new ArrayList<>();
+		for (String key : queryValues.propertyNames()) if (!queryValues.path(key).isNull() && !queryValues.path(key).asText().isBlank()) query.add(urlEncode(resolveVariables(key, variables)) + "=" + urlEncode(resolveVariables(queryValues.path(key).asText(), variables)));
+		return query.isEmpty() ? url : url + (url.contains("?") ? "&" : "?") + String.join("&", query);
+	}
+
+	private Map<String, String> buildDebugHeaders(ObjectNode service, ObjectNode endpoint, ObjectNode debug, ObjectNode variables) {
+		Map<String, String> headers = new LinkedHashMap<>();
+		JsonNode contract = endpoint.path("contract");
+		if (contract.path("parameters").isArray()) for (JsonNode parameter : contract.path("parameters")) {
+			if ("header".equalsIgnoreCase(parameter.path("in").asText()) && !parameter.path("name").asText().isBlank()) {
+				String value = parameter.path("x-fixed-value").asText(parameter.path("example").asText(parameter.path("schema").path("default").asText("")));
+				headers.put(resolveVariables(parameter.path("name").asText(), variables), resolveVariables(value, variables));
+			}
+		}
+		if (debug.path("headers").isObject()) for (String key : debug.path("headers").propertyNames()) headers.put(resolveVariables(key, variables), resolveVariables(debug.path("headers").path(key).asText(), variables));
+		applyAuth(headers, resolveDebugAuth(service, endpoint, debug), variables);
+		return headers;
+	}
+
+	private ObjectNode resolveDebugAuth(ObjectNode service, ObjectNode endpoint, ObjectNode debug) {
+		ObjectNode auth = debug.path("auth").isObject() ? (ObjectNode) debug.path("auth") : JsonNodeFactory.instance.objectNode();
+		if ("INHERIT".equalsIgnoreCase(auth.path("authType").asText("INHERIT")) || !auth.has("authType")) {
+			JsonNode endpointAuth = endpoint.path("contract").path("x-auth");
+			auth = endpointAuth.isObject() && !"INHERIT".equalsIgnoreCase(endpointAuth.path("authType").asText("INHERIT"))
+					? (ObjectNode) endpointAuth
+					: service.path("auth").isObject() ? (ObjectNode) service.path("auth") : JsonNodeFactory.instance.objectNode();
+		}
+		return auth;
+	}
+
+	private void applyAuth(Map<String, String> headers, ObjectNode auth, ObjectNode variables) {
+		String type = auth.path("authType").asText("NONE").toUpperCase(Locale.ROOT);
+		if ("API_KEY".equals(type)) {
+			String name = auth.path("apiKeyName").asText("X-API-Key");
+			String value = resolveVariables(auth.path("apiKeyValue").asText(auth.path("secret").asText("")), variables);
+			if (!"query".equalsIgnoreCase(auth.path("apiKeyIn").asText("header"))) headers.put(resolveVariables(name, variables), value);
+		}
+		else if ("BEARER".equals(type)) {
+			String token = resolveVariables(auth.path("token").asText(auth.path("secret").asText("")), variables);
+			if (!token.isBlank()) headers.put("Authorization", "Bearer " + token);
+		}
+		else if ("BASIC".equals(type)) {
+			String raw = resolveVariables(auth.path("username").asText(""), variables) + ":" + resolveVariables(auth.path("password").asText(auth.path("secret").asText("")), variables);
+			headers.put("Authorization", "Basic " + Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8)));
+		}
+		else if ("CUSTOM_HEADER".equals(type) && !auth.path("headerName").asText("").isBlank()) {
+			headers.put(resolveVariables(auth.path("headerName").asText(), variables), resolveVariables(auth.path("headerValue").asText(auth.path("secret").asText("")), variables));
+		}
+	}
+
+	private String buildDebugBody(ObjectNode endpoint, ObjectNode debug, ObjectNode variables) {
+		JsonNode body = debug.get("body");
+		if (body == null || body.isNull()) {
+			JsonNode content = endpoint.path("contract").path("requestBody").path("content");
+			if (content.isObject() && content.size() > 0) body = content.properties().iterator().next().getValue().path("example");
+		}
+		if (body == null || body.isNull()) return "";
+		return resolveVariables(body.isTextual() ? body.asText() : body.toString(), variables);
+	}
+
+	private static String urlEncode(String value) { return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8); }
+
+	private static String resolveVariables(String value, ObjectNode variables) {
+		String resolved = value == null ? "" : value;
+		for (String key : variables.propertyNames()) resolved = resolved.replace("{{" + key + "}}", variables.path(key).asText(""));
+		return resolved;
+	}
+
+	private static void redactRequestHeaders(ObjectNode headers, ObjectNode auth) {
+		if (headers.has("Authorization")) headers.put("Authorization", "••••••");
+		if ("API_KEY".equalsIgnoreCase(auth.path("authType").asText()) && !auth.path("apiKeyName").asText().isBlank()) headers.put(auth.path("apiKeyName").asText(), "••••••");
+		if ("CUSTOM_HEADER".equalsIgnoreCase(auth.path("authType").asText()) && !auth.path("headerName").asText().isBlank()) headers.put(auth.path("headerName").asText(), "••••••");
 	}
 
 	public synchronized List<ObjectNode> snapshots(String serviceId) {
@@ -577,7 +768,7 @@ public class ApiServiceStorage {
 		service.put("updatedAt", Instant.now().toString());
 		service.put("updatedBy", "service-admin-local");
 		persist();
-		return service.deepCopy();
+		return publicCopy(service);
 	}
 
 	private boolean normalizeStates() {
@@ -602,7 +793,28 @@ public class ApiServiceStorage {
 		return changed;
 	}
 
-	private static ObjectNode summary(ObjectNode service) { ObjectNode item = service.deepCopy(); ArrayNode endpoints = item.withArray("endpoints"); item.remove("endpoints"); item.remove("snapshots"); item.remove("currentSnapshotId"); item.put("endpointCount", endpoints.size()); item.put("verifiedEndpointCount", (int) endpoints.valueStream().filter(n -> "SUCCESS".equals(n.path("lastTest").path("outcome").asText())).count()); item.set("endpoints", endpoints); return item; }
+	private static ObjectNode summary(ObjectNode service) { ObjectNode item = publicCopy(service); ArrayNode endpoints = item.withArray("endpoints"); item.remove("endpoints"); item.remove("snapshots"); item.remove("currentSnapshotId"); item.put("endpointCount", endpoints.size()); item.put("verifiedEndpointCount", (int) endpoints.valueStream().filter(n -> "SUCCESS".equals(n.path("lastTest").path("outcome").asText())).count()); item.set("endpoints", endpoints); return item; }
+
+	private static ObjectNode publicCopy(ObjectNode service) {
+		ObjectNode copy = service.deepCopy();
+		stripSensitive(copy.path("auth"));
+		for (JsonNode endpoint : copy.withArray("endpoints")) stripSensitive(endpoint.path("contract").path("x-auth"));
+		return copy;
+	}
+
+	private static void stripSensitive(JsonNode value) {
+		if (!value.isObject()) return;
+		ObjectNode auth = (ObjectNode) value;
+		for (String field : List.of("secret", "apiKeyValue", "token", "password", "headerValue")) auth.remove(field);
+	}
+
+	private static void mergeAuthSecrets(JsonNode targetValue, ObjectNode previous) {
+		if (!targetValue.isObject()) return;
+		ObjectNode target = (ObjectNode) targetValue;
+		for (String field : List.of("secret", "apiKeyValue", "token", "password", "headerValue")) {
+			if ((!target.has(field) || target.path(field).asText().isBlank()) && previous.has(field)) target.set(field, previous.path(field).deepCopy());
+		}
+	}
 
 	private void persist() { persistDocument(document); }
 

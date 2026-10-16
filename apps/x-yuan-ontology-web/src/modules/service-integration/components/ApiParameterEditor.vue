@@ -1,14 +1,9 @@
 <template>
 	<div class="api-parameter-editor">
-		<div class="api-editor-toolbar">
-			<span class="api-editor-hint">{{
-				location === "path" ? "路径占位符自动生成参数，Path 参数必须为必填。" : "支持填写字段类型、必填规则、默认值和示例。"
-			}}</span>
+		<div v-if="location === 'header'" class="api-editor-toolbar">
+			<span class="api-editor-hint">支持填写字段类型、必填规则、默认值和示例。</span>
 			<div>
-				<ElButton v-if="location === 'header' && !response" text @click="bulkVisible = true">批量粘贴</ElButton
-				><ElButton :icon="Plus" type="primary" plain @click="addParameter">{{
-					location === "header" ? "新增 Header" : "新增参数"
-				}}</ElButton>
+				<ElButton v-if="location === 'header' && !response" text @click="bulkVisible = true">批量粘贴</ElButton>
 			</div>
 		</div>
 		<ElTable :data="modelValue" empty-text="暂无配置" class="api-parameter-table">
@@ -17,31 +12,46 @@
 					><ElInput
 						:key="nameVersion"
 						:model-value="row.name"
-						:disabled="Boolean(row.$ref) || lockedNames.includes(row.name ?? '')"
+						:disabled="Boolean(row.$ref) || location === 'path' || lockedNames.includes(row.name ?? '')"
 						placeholder="名称"
 						aria-label="参数名"
 						@change="renameParameter($index, String($event))" /></template
 			></ElTableColumn>
-			<ElTableColumn label="类型" width="115"
+			<ElTableColumn label="类型" width="220"
 				><template #default="{ row, $index }"
-					><ElSelect
-						:model-value="parameterSchema(row).type ?? ''"
-						:disabled="Boolean(row.$ref || row.content) || isAdvancedSchema(parameterSchema(row))"
-						aria-label="参数类型"
-						@change="patch($index, { schema: changeSchemaType(parameterSchema(row), String($event)) })"
-						><ElOption v-if="!parameterSchema(row).type" label="未指定" value="" /><ElOption
-							v-for="type in schemaTypes"
-							:key="type"
-							:label="type"
-							:value="type" /></ElSelect></template
-			></ElTableColumn>
-			<ElTableColumn label="必填" width="58" align="center"
-				><template #default="{ row, $index }"
-					><ElCheckbox
-						:model-value="location === 'path' || row.required"
-						:disabled="location === 'path' || Boolean(row.$ref)"
-						aria-label="参数必填"
-						@change="patch($index, { required: Boolean($event) })" /></template
+					><div class="api-parameter-type-cell">
+						<ElSelect
+							:model-value="parameterSchema(row).type ?? ''"
+							:data-api-schema-type="parameterSchema(row).type ?? ''"
+							:disabled="Boolean(row.$ref || row.content) || isAdvancedSchema(parameterSchema(row))"
+							aria-label="参数类型"
+							@change="patch($index, { schema: changeSchemaType(parameterSchema(row), String($event)) })"
+							><ElOption v-if="!parameterSchema(row).type" label="未指定" value="" /><ElOption
+								v-for="type in schemaTypes"
+								:key="type"
+								:label="type"
+								:value="type"
+						/></ElSelect>
+						<ElTooltip
+							:content="location === 'path' ? 'Path 参数固定必填' : row.required ? '必填，点击设为可选' : '可选，点击设为必填'"
+						>
+							<ElButton
+								text
+								class="api-parameter-required"
+								:class="{ 'is-required': location === 'path' || row.required }"
+								:disabled="location === 'path' || Boolean(row.$ref)"
+								:aria-label="`${row.name} 必填`"
+								:aria-pressed="location === 'path' || Boolean(row.required)"
+								@click="setRequired($index, !row.required)"
+								>*</ElButton
+							>
+						</ElTooltip>
+						<ApiParameterSettings
+							:model-value="row"
+							:location="location"
+							:disabled="Boolean(row.$ref || row.content)"
+							@update:model-value="patch($index, $event)"
+						/></div></template
 			></ElTableColumn>
 			<ElTableColumn v-if="location === 'header' && !response" label="值来源" width="135"
 				><template #default="{ row, $index }"
@@ -74,34 +84,32 @@
 						aria-label="参数说明"
 						@update:model-value="patch($index, { description: $event })" /></template
 			></ElTableColumn>
-			<ElTableColumn label="操作" width="100"
+			<ElTableColumn label="操作" width="56" align="center"
 				><template #default="{ row, $index }"
-					><ElButton text type="primary" :disabled="Boolean(row.$ref || row.content)" @click="openDetails($index)">更多</ElButton
 					><ElButton
 						text
 						type="danger"
-						:disabled="lockedNames.includes(row.name ?? '')"
+						:disabled="location === 'path' || lockedNames.includes(row.name ?? '')"
 						:icon="Delete"
 						aria-label="删除参数"
 						@click="removeParameter($index)" /></template
 			></ElTableColumn>
 		</ElTable>
+		<ElButton v-if="location !== 'path'" text :icon="Plus" class="api-add-parameter-row" @click="addParameter"
+			>添加{{ location === "header" ? " Header" : "参数" }}</ElButton
+		>
 		<p v-if="modelValue.some(row => row.$ref || row.content)" class="api-editor-hint">
 			引用或自定义编码参数已保留，请通过高级 JSON 编辑。
 		</p>
-		<ElDialog v-model="detailsVisible" title="参数设置" width="900px" append-to-body destroy-on-close>
-			<template v-if="detailsSchema"
-				><ApiSchemaEditor v-model="detailsSchema" /><ElForm label-position="top" class="api-parameter-default"
-					><ElFormItem label="默认值"
-						><ElInput v-model="defaultText" placeholder="按字段类型填写；对象、数组填写 JSON" /></ElFormItem></ElForm
-			></template>
-			<ElAlert v-if="detailsError" :title="detailsError" type="error" :closable="false" />
-			<template #footer
-				><ElButton @click="detailsVisible = false">取消</ElButton
-				><ElButton type="primary" @click="applyDetails">应用</ElButton></template
-			>
-		</ElDialog>
-		<ElDialog v-model="bulkVisible" title="批量添加 Header" width="620px" append-to-body destroy-on-close>
+		<ElDialog
+			v-model="bulkVisible"
+			class="api-editor-subdialog"
+			title="批量添加 Header"
+			width="620px"
+			append-to-body
+			destroy-on-close
+			:close-on-click-modal="false"
+		>
 			<p class="api-editor-hint">每行一个 Header，例如 X-Tenant-Id: ops。已存在或认证相关的 Header 会提示冲突。</p>
 			<ElInput v-model="bulkText" type="textarea" :rows="8" placeholder="X-Tenant-Id: ops" /><ElAlert
 				v-if="bulkError"
@@ -122,29 +130,15 @@ import { Delete, Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { ref } from "vue";
 
-import {
-	changeSchemaType,
-	copyJson,
-	displayValue,
-	inputValue,
-	isAdvancedSchema,
-	parameterSchema,
-	schemaTypes,
-	validateSchema
-} from "../api-contract";
-import type { ApiParameter, ApiSchema } from "../types";
-import ApiSchemaEditor from "./ApiSchemaEditor.vue";
+import { changeSchemaType, displayValue, inputValue, isAdvancedSchema, parameterSchema, schemaTypes } from "../api-contract";
+import type { ApiParameter } from "../types";
+import ApiParameterSettings from "./ApiParameterSettings.vue";
 
 const props = withDefaults(
 	defineProps<{ modelValue: ApiParameter[]; location: string; lockedNames?: string[]; response?: boolean }>(),
 	{ lockedNames: () => [], response: false }
 );
 const emit = defineEmits<{ "update:modelValue": [value: ApiParameter[]] }>();
-const detailsVisible = ref(false);
-const detailsIndex = ref(0);
-const detailsSchema = ref<ApiSchema>();
-const defaultText = ref("");
-const detailsError = ref("");
 const bulkVisible = ref(false);
 const bulkText = ref("");
 const bulkError = ref("");
@@ -156,6 +150,7 @@ function patch(index: number, fields: Partial<ApiParameter>) {
 	);
 }
 function addParameter() {
+	if (props.location === "path") return;
 	let index = 1;
 	const prefix = props.location === "header" ? "X-Header-" : "param";
 	while (props.modelValue.some(row => row.name?.toLowerCase() === `${prefix}${index}`.toLowerCase())) index++;
@@ -165,6 +160,7 @@ function addParameter() {
 	]);
 }
 function renameParameter(index: number, input: string) {
+	if (props.location === "path") return;
 	const name = input.trim();
 	const compare = (value?: string) => (props.location === "header" ? value?.toLowerCase() : value);
 	const reserved =
@@ -177,6 +173,7 @@ function renameParameter(index: number, input: string) {
 	patch(index, { name });
 }
 function removeParameter(index: number) {
+	if (props.location === "path") return;
 	emit(
 		"update:modelValue",
 		props.modelValue.filter((_, i) => i !== index)
@@ -189,23 +186,9 @@ function setExample(index: number, text: string) {
 		row["x-value-source"] === "fixed" ? { "x-fixed-value": text } : { example: inputValue(text, parameterSchema(row)) }
 	);
 }
-function openDetails(index: number) {
-	detailsIndex.value = index;
-	detailsSchema.value = copyJson(parameterSchema(props.modelValue[index]));
-	defaultText.value = displayValue(detailsSchema.value.default);
-	detailsError.value = "";
-	detailsVisible.value = true;
-}
-function applyDetails() {
-	if (!detailsSchema.value) return;
-	const schema = { ...detailsSchema.value, default: inputValue(defaultText.value, detailsSchema.value) };
-	const error = validateSchema(schema);
-	if (error) {
-		detailsError.value = error;
-		return;
-	}
-	patch(detailsIndex.value, { schema });
-	detailsVisible.value = false;
+function setRequired(index: number, required: boolean) {
+	if (props.location === "path" || props.modelValue[index]?.$ref) return;
+	patch(index, { required });
 }
 function applyBulk() {
 	bulkError.value = "";
